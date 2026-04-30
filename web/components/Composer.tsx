@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { VoiceInput } from "@/components/VoiceInput";
+import { AudioRecorder } from "@/components/AudioRecorder";
 import { ImageUpload, processImage } from "@/components/ImageUpload";
 
 const SAMPLE_PROMPT =
@@ -9,12 +9,15 @@ const SAMPLE_PROMPT =
 
 type ContentBlock =
   | { type: "text"; text: string }
-  | { type: "image_url"; image_url: { url: string } };
+  | { type: "image_url"; image_url: { url: string } }
+  | { type: "audio_url"; audio_url: { url: string } };
 
 export function Composer() {
   const [prompt, setPrompt] = useState("");
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [imageName, setImageName] = useState<string | null>(null);
+  const [audioDataUrl, setAudioDataUrl] = useState<string | null>(null);
+  const [audioDurationMs, setAudioDurationMs] = useState<number>(0);
   const [streaming, setStreaming] = useState(false);
   const [reasoning, setReasoning] = useState("");
   const [content, setContent] = useState("");
@@ -23,7 +26,7 @@ export function Composer() {
   const abortRef = useRef<AbortController | null>(null);
 
   async function send() {
-    if ((!prompt.trim() && !imageDataUrl) || streaming) return;
+    if ((!prompt.trim() && !imageDataUrl && !audioDataUrl) || streaming) return;
     setStreaming(true);
     setReasoning("");
     setContent("");
@@ -33,16 +36,22 @@ export function Composer() {
     const ac = new AbortController();
     abortRef.current = ac;
 
-    // Build OpenAI-compat multimodal content if image present
+    // Build OpenAI-compat multimodal content
     let messageContent: string | ContentBlock[];
-    if (imageDataUrl) {
+    if (imageDataUrl || audioDataUrl) {
       const blocks: ContentBlock[] = [];
-      if (prompt.trim()) {
-        blocks.push({ type: "text", text: prompt });
-      } else {
-        blocks.push({ type: "text", text: "Describe and analyze this clinical image." });
+      if (audioDataUrl) {
+        blocks.push({ type: "audio_url", audio_url: { url: audioDataUrl } });
       }
-      blocks.push({ type: "image_url", image_url: { url: imageDataUrl } });
+      if (imageDataUrl) {
+        blocks.push({ type: "image_url", image_url: { url: imageDataUrl } });
+      }
+      let textPart = prompt.trim();
+      if (!textPart) {
+        if (audioDataUrl) textPart = "Transcribe the audio and answer the clinical question it contains. Cite guidelines + year for any recommendations.";
+        else textPart = "Describe and analyze this clinical image.";
+      }
+      blocks.push({ type: "text", text: textPart });
       messageContent = blocks;
     } else {
       messageContent = prompt;
@@ -129,6 +138,8 @@ export function Composer() {
     setPrompt("");
     setImageDataUrl(null);
     setImageName(null);
+    setAudioDataUrl(null);
+    setAudioDurationMs(0);
     setReasoning("");
     setContent("");
     setErrorMsg(null);
@@ -140,8 +151,19 @@ export function Composer() {
     setImageName(null);
   }
 
-  function handleVoice(text: string) {
-    setPrompt(text);
+  function clearAudio() {
+    setAudioDataUrl(null);
+    setAudioDurationMs(0);
+  }
+
+  function handleAudio(dataUrl: string, durationMs: number) {
+    setAudioDataUrl(dataUrl);
+    setAudioDurationMs(durationMs);
+    setErrorMsg(null);
+  }
+
+  function handleAudioError(msg: string) {
+    setErrorMsg(msg);
   }
 
   function handleImage(dataUrl: string, name: string) {
@@ -209,6 +231,29 @@ export function Composer() {
           </div>
         )}
 
+        {audioDataUrl && (
+          <div className="flex items-center gap-3 px-5 pt-4 pb-2 border-b border-slate-100 bg-slate-50/40">
+            <div className="w-16 h-16 rounded border border-slate-200 bg-rose-50 flex items-center justify-center text-rose-600">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-slate-700 truncate font-medium">
+                Recording · {(audioDurationMs / 1000).toFixed(1)}s
+              </p>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                16 kHz mono PCM WAV · sent as native Omni audio (no third-party STT)
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={clearAudio}
+              className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1 rounded"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -219,9 +264,11 @@ export function Composer() {
             }
           }}
           placeholder={
-            imageDataUrl
+            audioDataUrl
+              ? "Audio attached. Add a follow-up question or just press Ask MedOmni."
+              : imageDataUrl
               ? "Add context or ask a question about the image..."
-              : "Ask a clinical question. e.g. 'Workup for new HFrEF with EF 35%?' Or attach an image / hold the mic to dictate."
+              : "Ask a clinical question. Or tap the mic to record. Or attach an image."
           }
           rows={4}
           maxLength={4000}
@@ -229,7 +276,11 @@ export function Composer() {
         />
         <div className="flex items-center justify-between border-t border-slate-100 px-3 py-2 bg-slate-50/60">
           <div className="flex gap-1 items-center">
-            <VoiceInput onTranscript={handleVoice} disabled={streaming} />
+            <AudioRecorder
+              onAudio={handleAudio}
+              onError={handleAudioError}
+              disabled={streaming || !!audioDataUrl}
+            />
             <ImageUpload
               onImage={handleImage}
               onError={handleImageError}
@@ -257,7 +308,7 @@ export function Composer() {
               <button
                 type="button"
                 onClick={send}
-                disabled={(!prompt.trim() && !imageDataUrl) || streaming}
+                disabled={(!prompt.trim() && !imageDataUrl && !audioDataUrl) || streaming}
                 className="text-sm font-semibold px-4 py-2 rounded-md bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
               >
                 {streaming ? "Streaming..." : "Ask MedOmni"}
