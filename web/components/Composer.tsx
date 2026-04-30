@@ -5,22 +5,21 @@ import { useState } from "react";
 const SAMPLE_PROMPT =
   "55 yo with 6mo of progressive exertional dyspnea, bilateral lower-extremity edema, JVP elevated. Workup so far: BNP 1850, EF 35% on echo. What's the next step?";
 
-const DEMO_REPLY = `**Differential weighted toward HFrEF decompensation.** With NYHA II-III symptoms, EF 35%, and elevated BNP, the patient meets criteria for guideline-directed medical therapy (GDMT) initiation per AHA/ACC/HFSA 2022.
+const NOT_LIVE_NOTICE = `**This surface is being wired up live.**
 
-**Immediate priorities:**
-1. **Volume status** — confirm euvolemia before adding negative-inotropic agents. Diuretic with loop agent if congested.
-2. **GDMT four pillars** (initiate sequentially over 2-4 weeks if BP / renal allow):
-   - ARNI (sacubitril/valsartan) preferred over ACEi
-   - Beta-blocker (carvedilol, metoprolol succinate, or bisoprolol)
-   - MRA (spironolactone or eplerenone)
-   - SGLT2i (dapagliflozin or empagliflozin)
-3. **Etiology workup** — ischemia evaluation if not done; consider cardiac MRI if non-ischemic suspected; iron studies (IV iron if deficient).
+The MedOmni Quick stream connects to **Nemotron-3-Nano-Omni on Brev B300 (NVFP4)** through a Cloud Run BFF + Tailscale tunnel. That pipeline is landing across the next 24-48 hours.
 
-**Red flags to escalate:** rising creatinine >30%, K+ >5.5, symptomatic hypotension, persistent congestion despite oral diuretic.
+Until then, this demo URL deliberately does **not** echo a fake answer back. We will not put canned text in front of clinicians and call it a model.
 
-**Citations:** AHA/ACC/HFSA 2022 HF Guideline · STRONG-HF 2022 (NEJM) · DAPA-HF 2019 · EMPEROR-Reduced 2020.
+**What's already real and shipping:**
+- 30 held-out clinical fixtures across 9 medical subdomains, mean 0.378
+- 9-layer reproducibility manifest (sha256 \`f9372e0cc948\`, byte-stable across re-emit)
+- Cross-family judge ensemble (Qwen2.5-7B-Instruct on a separate H200 — different model family from Nemotron-3-Mamba2 to avoid self-preference bias)
+- Negative-result honesty: PrimeKG hybrid mode dropped chemoprevention class −0.027; documented and kept opt-in
 
-— *MedOmni Quick (sovereign tier, B300, NVFP4). For evaluation only — do not enter PHI.*`;
+Inspect the methodology + manifests at [github.com/GOATnote-Inc/medomni](https://github.com/GOATnote-Inc/medomni). Live streaming + voice + image input wires up day-by-day; this banner updates as each lands.
+
+— *Nemotron-3-Nano-Omni is multimodal (text + image + audio). The voice and upload buttons above are intentionally disabled until the streaming endpoint is ready, rather than fake them.*`;
 
 export function Composer() {
   const [prompt, setPrompt] = useState("");
@@ -34,10 +33,10 @@ export function Composer() {
     setStreamed("");
     setDone(false);
 
-    const text = DEMO_REPLY;
+    const text = NOT_LIVE_NOTICE;
     const chunkSize = 4;
     for (let i = 0; i < text.length; i += chunkSize) {
-      await new Promise((r) => setTimeout(r, 18));
+      await new Promise((r) => setTimeout(r, 12));
       setStreamed(text.slice(0, i + chunkSize));
     }
 
@@ -114,7 +113,7 @@ export function Composer() {
                 disabled={!prompt.trim() || streaming}
                 className="text-sm font-semibold px-4 py-2 rounded-md bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
               >
-                {streaming ? "Streaming..." : "Ask MedOmni"}
+                {streaming ? "Streaming..." : "Show status"}
               </button>
             )}
           </div>
@@ -129,15 +128,16 @@ export function Composer() {
               <h2 className="font-semibold text-slate-900 text-sm">MedOmni Quick</h2>
               <p className="text-xs text-slate-500">Sovereign · B300 · NVFP4</p>
             </div>
-            <span className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
-              live
+            <span className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-medium">
+              wiring up
             </span>
           </header>
           <div className="flex-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
             {streamed || (
               <span className="text-slate-400 italic">
-                Cited, sovereign answer streams here. No prompt or response is
-                logged in demo mode.
+                Streaming endpoint to Nemotron-3-Nano-Omni on Brev B300 lands in
+                the next 24-48h. Press &quot;Show status&quot; for the current
+                state of the pipeline. No fake answers.
               </span>
             )}
             {streaming && (

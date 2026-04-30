@@ -36,13 +36,22 @@ export default function Home() {
 
         <Composer />
 
-        <section className="text-xs text-slate-500 leading-relaxed border-t border-slate-200 pt-6">
+        <section className="text-xs text-slate-500 leading-relaxed border-t border-slate-200 pt-6 space-y-2">
           <p>
-            <strong className="text-slate-700">For clinicians and researchers:</strong>{" "}
-            this surface is for evaluation. Answers stream from a sovereign,
-            on-premise NVIDIA stack with no third-party LLM calls. Demo mode
-            does not log or retain prompts. Frontier-augmented Pro tier
-            (Anthropic / OpenAI via BAA-covered route) ships post-Nebius.
+            <strong className="text-slate-700">Honest status:</strong> the
+            architecture and the held-out N=30 benchmark are real and
+            reproducible from the public manifest sha256{" "}
+            <code className="font-mono">f9372e0cc948</code>. The interactive
+            streaming endpoint to Nemotron-3-Nano-Omni on B300 is being wired
+            up over the next 24-48 hours. Until it is live, the composer
+            returns a status note rather than fabricate an answer.
+          </p>
+          <p>
+            <strong className="text-slate-700">Why the buttons are disabled:</strong>{" "}
+            Nemotron-3-Nano-Omni is multimodal (text + image + audio). Voice
+            input and image upload land alongside the streaming endpoint over
+            v0 days 3-4 and are intentionally inert here, not faked. The Pro
+            tier (Anthropic / OpenAI via BAA-covered route) ships post-Nebius.
           </p>
         </section>
       </main>
