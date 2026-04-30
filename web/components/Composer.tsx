@@ -357,6 +357,19 @@ export function Composer() {
           </details>
         )}
 
+        {/* Fallback: stream finished but no content was emitted (model
+            routed everything through reasoning channel). Promote the
+            reasoning text into the main answer area so the user sees
+            the response. */}
+        {!streaming && done && !content && reasoning && !errorMsg && (
+          <div className="flex-1 text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
+            <p className="text-[10px] text-slate-400 italic mb-2">
+              Model routed the response through the reasoning channel. Showing it as the answer:
+            </p>
+            {reasoning}
+          </div>
+        )}
+
         {content && (
           <div className="flex-1 text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
             {content}

@@ -100,30 +100,30 @@ export async function POST(req: NextRequest) {
 
   const mode = detectMode(userMessages);
 
-  // Sampling matrix per REDTEAM-SAMPLING.md (server-side guard)
-  let upstreamPayload: Record<string, unknown>;
-  if (mode === "asr") {
-    upstreamPayload = {
-      model: MODEL_ID,
-      messages,
-      stream: true,
-      temperature: 0.0,
-      top_k: 1,
-      max_tokens: 2048,
-      chat_template_kwargs: { enable_thinking: false },
-    };
-  } else {
-    upstreamPayload = {
-      model: MODEL_ID,
-      messages,
-      stream: true,
-      temperature: 0.6,
-      top_p: 0.95,
-      max_tokens: 20480,
-      thinking_token_budget: 17408,
-      chat_template_kwargs: { enable_thinking: true, reasoning_budget: 16384 },
-    };
-  }
+  // Empirical finding (2026-04-30 live test): with `enable_thinking=false` +
+  // audio_url + nemotron_v3 reasoning-parser, ALL output streams to
+  // delta.reasoning and delta.content stays empty. Confirmed via tunnel curl:
+  // thinking=true → 150 reasoning + 27 content chunks; thinking=false → 0
+  // content. So the model-card's ASR settings break our composer's render
+  // path.
+  //
+  // Fix: use thinking-mode params for ALL modalities. Audio gets a smaller
+  // reasoning_budget so transcription completes faster, but enable_thinking
+  // stays TRUE so delta.content actually emits. Mode detection stays for
+  // observability via X-Medomni-Mode header.
+  const upstreamPayload: Record<string, unknown> = {
+    model: MODEL_ID,
+    messages,
+    stream: true,
+    temperature: 0.6,
+    top_p: 0.95,
+    max_tokens: mode === "asr" ? 8192 : 20480,
+    thinking_token_budget: mode === "asr" ? 4096 : 17408,
+    chat_template_kwargs: {
+      enable_thinking: true,
+      reasoning_budget: mode === "asr" ? 3072 : 16384,
+    },
+  };
 
   let upstream: Response;
   try {
