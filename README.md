@@ -1,8 +1,29 @@
+<!--
+  © 2026 GOATnote, Inc. and contributors. All rights reserved.
+
+  Code in this repository is licensed under the Apache License, Version 2.0
+  (see LICENSE). Documentation, architecture briefs, methodology notes, demo
+  fixtures, and held-out benchmark artifacts are released under CC-BY-4.0
+  for public benefit and to surface our research as proof-of-quality.
+
+  You are welcome to read, fork, cite, learn from, and build on this work.
+  Attribution is required (Apache 2.0 + CC-BY-4.0). Trademarks "MedOmni"
+  and "GOATnote" are reserved by GOATnote, Inc.
+
+  This is a working research repository — methodology notes include negative
+  results and corrected diagnoses. Reproducibility manifests are first-class
+  artifacts (sha256-verified byte-deterministic across re-emit). If you
+  reproduce a result and your manifest hash diverges from ours, please open
+  an issue using the "reproducibility" template — that surface is exactly
+  what we want to be debuggable in public.
+-->
+
 # MedOmni
 
-**Sovereign nurse-first medical-LLM stack on NVIDIA's open-component stack.**
-Held-out **0.385** mean across 6 chemoprevention fixtures, **+41%** over v0 baseline,
-deterministic across N=3 seeded trials, manifest sha256 `560baccbb706` byte-stable.
+**Sovereign nurse-first medical reasoning on NVIDIA's open-component stack.**
+Held-out **0.378** mean across 30 fixtures spanning 9 medical subdomains,
+**deterministic** across N=3 seeded trials with cross-family judge,
+manifest sha256 `f9372e0cc948` byte-stable. Released open as proof-of-quality.
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![CUDA](https://img.shields.io/badge/CUDA-13.2-76B900.svg)](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html)
