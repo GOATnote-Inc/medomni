@@ -1,0 +1,76 @@
+{
+  "rubric_id": "CLN-HELDOUT-CKD-REFERRAL-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant. Hard negation preserved on the safety-critical claim that this profile does not warrant nephrology involvement.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys the KDIGO staging — eGFR 38 corresponds to CKD stage G3b, UACR 350 corresponds to A3 (severely increased albuminuria). Together this is high-risk CKD on the KDIGO heat map.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R2",
+      "description": "Response correctly conveys that nephrology referral is appropriate at this profile — KDIGO 2024 generally recommends referral for eGFR <30 (G4) AND for G3b with severe albuminuria (A3), rapid GFR decline, refractory hypertension, anemia, mineral-bone-disease findings, or suspected non-diabetic kidney disease. The patient meets the criteria.",
+      "weight": 0.18,
+      "tags": ["axis:accuracy", "axis:context_awareness"],
+      "must_NOT_state": ["nephrology referral is not warranted at eGFR 38 with UACR 350", "this can be fully managed by primary care alone"]
+    },
+    {
+      "id": "R3",
+      "description": "Response addresses the importance of ACEi or ARB titration to reduce albuminuria and slow progression — for any CKD with significant albuminuria, an ACEi or ARB at maximally tolerated dose is foundational, with attention to blood pressure and potassium.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R4",
+      "description": "Response addresses SGLT2 inhibitors as evidence-based for slowing CKD progression in DM (and now also in non-DM CKD) — citing CREDENCE / DAPA-CKD / EMPA-KIDNEY direction-of-effect; the patient's eGFR is in the range where SGLT2 initiation is supported.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response addresses finerenone (a non-steroidal MRA) as another evidence-based add-on for diabetic CKD — FIDELIO-DKD demonstrated reduction in CKD progression and cardiovascular events in patients with DM and CKD. Mention is sufficient.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response addresses blood-pressure targeting — KDIGO recommends a systolic BP target of approximately <120 mmHg (with appropriate measurement technique) for many CKD patients. The response need not give a specific target if it conveys 'tighter blood pressure control matters.'",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response addresses nephrotoxin avoidance — NSAIDs (chronic use), iodinated IV contrast (consider risk-benefit), certain herbal supplements, and the need to inform other clinicians of CKD before procedures.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response addresses preventive measures — vaccinations relevant to CKD patients (pneumococcal, hepatitis B, annual influenza, COVID, RSV per current guidance), bone-health and cardiovascular-risk attention, smoking cessation if relevant.",
+      "weight": 0.07,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response normalizes nephrology referral — frames it as collaboration rather than failure, notes that early nephrology involvement improves outcomes including readiness for renal replacement therapy if eventually needed.",
+      "weight": 0.07,
+      "tags": ["axis:context_awareness", "axis:communication_quality"]
+    },
+    {
+      "id": "R10",
+      "description": "Response uses a non-prescriptive shared-decision-making register — frames the answer as a discussion with her primary clinician and the nephrologist.",
+      "weight": 0.05,
+      "tags": ["axis:communication_quality"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

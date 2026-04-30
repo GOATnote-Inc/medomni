@@ -1,0 +1,55 @@
+{
+  "id": "CLN-HELDOUT-ASPIRIN-CRC",
+  "case_kind": "patient_chemoprevention_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 52-year-old patient with two first-degree relatives diagnosed with colorectal cancer asks whether daily low-dose aspirin would reduce her CRC risk. The question requires reconciling the USPSTF 2022 recommendation reversal (which downgraded aspirin for CRC primary prevention) against the CAPP2 trial finding in Lynch-syndrome carriers and the ASPREE 2018 elderly-cohort harm signal. The held-out answer must NOT collapse these into a single recommendation; it must distinguish average-risk vs hereditary-syndrome populations, distinguish age strata, and surface that screening colonoscopy — not aspirin — is the dominant risk-reducer in this scenario.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Both my parents had colon cancer. My mom in her early 60s, my dad at 58. I'm 52 now and otherwise healthy. I've read that aspirin can prevent colon cancer. Should I just start taking a baby aspirin every day?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "curious, humble, evidence-grounded, shared-decision-making",
+    "do_NOT": [
+      "prescribe (\"you should start aspirin\" / \"don't take aspirin\")",
+      "treat aspirin as a substitute for colonoscopy",
+      "ignore the USPSTF 2022 reversal of the prior 2016 CRC-prevention recommendation",
+      "conflate average-risk evidence with Lynch-syndrome / hereditary-CRC evidence",
+      "omit the bleeding-risk increase (GI and intracranial)",
+      "skip the genetic-evaluation referral given two first-degree relatives",
+      "claim ASPREE supports aspirin for cancer prevention (it does not — it found increased mortality)"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "drug:aspirin_low_dose",
+      "modifier:two_first_degree_relatives_crc",
+      "modifier:age_50_to_59",
+      "syndrome:lynch_syndrome",
+      "intervention:screening_colonoscopy",
+      "risk:major_bleeding_aspirin",
+      "decision:crc_chemoprevention_threshold"
+    ],
+    "edges_required_for_correct_answer": [
+      "drug:aspirin_low_dose --uspstf_2022_update--> recommendation:withdrawn_for_crc_primary_prevention (insufficient evidence, harms)",
+      "drug:aspirin_low_dose --capp2_trial--> outcome:crc_reduction_lynch_carriers (HR ~0.65 at 10 yr, 600mg/d in trial)",
+      "drug:aspirin_low_dose --aspree_2018--> outcome:no_benefit_increased_all_cause_mortality (age >=70)",
+      "modifier:two_first_degree_relatives_crc --increases--> risk:lifetime_crc (~2-4x baseline)",
+      "modifier:two_first_degree_relatives_crc --triggers--> referral:genetic_evaluation_lynch_fap",
+      "intervention:screening_colonoscopy --first_line_for_familial_risk--> action:earlier_more_frequent (age 40 or 10y before youngest relative; q5y)",
+      "drug:aspirin_low_dose --ncpb_increase--> risk:major_gi_bleeding (~60% relative increase)",
+      "drug:aspirin_low_dose --intracranial_hemorrhage--> risk:hemorrhagic_stroke (small absolute increase)",
+      "decision:crc_chemoprevention_threshold --requires--> assessment:cv_risk_balance_and_genetic_workup_first"
+    ]
+  },
+  "expected_sources_referenced": [
+    "USPSTF 2022 — Aspirin Use to Prevent Cardiovascular Disease: Preventive Medication (recommendation update; CRC primary-prevention claim withdrawn)",
+    "CAPP2 trial — Burn et al., Lancet 2011 (and 10-year follow-up Lancet 2020) — aspirin in Lynch syndrome",
+    "ASPREE — McNeil et al., NEJM 2018 (three companion papers on cardiovascular, bleeding, and all-cause mortality outcomes in healthy elderly)",
+    "US Multi-Society Task Force on Colorectal Cancer — screening guidance for individuals with familial CRC risk"
+  ]
+}

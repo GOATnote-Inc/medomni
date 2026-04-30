@@ -1,0 +1,46 @@
+{
+  "id": "CLN-HELDOUT-H-PYLORI-ERADICATE",
+  "case_kind": "patient_gi_management_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 47-year-old man with epigastric pain who underwent upper endoscopy showing duodenal ulcer and a positive H. pylori biopsy asks his primary nurse practitioner about treatment options. He has no penicillin allergy and has not taken antibiotics in the last several years. The held-out answer must reflect ACG 2024 H. pylori treatment guideline — bismuth quadruple therapy as preferred first-line in regions of high macrolide resistance (now including most of the United States), the 14-day duration, the test-of-cure timing (>=4 weeks after completion of therapy and >=2 weeks off PPI), and the importance of ulcer healing follow-up.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I had an endoscopy for stomach pain last week. They found a duodenal ulcer and the biopsy was positive for H. pylori. The GI office mentioned a 14-day antibiotic regimen. What's the actual plan, and how do we know it worked?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "evidence-grounded, candid, non-paternalistic",
+    "do_NOT": [
+      "describe clarithromycin triple therapy as universally first-line in 2026 (it isn't, in most US regions, due to clarithromycin resistance)",
+      "describe a 7-day course as adequate for first-line therapy in current guidance",
+      "skip the test-of-cure timing requirements (>=4 weeks post-therapy, >=2 weeks off PPI)",
+      "ignore the need for follow-up confirmation of eradication"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:duodenal_ulcer_h_pylori_positive",
+      "regimen:bismuth_quadruple_14d",
+      "regimen:rifabutin_triple",
+      "regimen:vonoprazan_amoxicillin_dual_or_triple",
+      "guideline:acg_2024_h_pylori",
+      "test_of_cure:urea_breath_or_stool_antigen",
+      "concept:clarithromycin_resistance"
+    ],
+    "edges_required_for_correct_answer": [
+      "patient:duodenal_ulcer_h_pylori_positive --first_line_us_2024--> bismuth_quadruple_14d (or rifabutin triple, or vonoprazan-based options)",
+      "concept:clarithromycin_resistance --us_prevalence--> > 15_percent_in_many_regions",
+      "test_of_cure:urea_breath_or_stool_antigen --timing-->= 4_weeks_post_completion_and_>=2_weeks_off_ppi",
+      "guideline:acg_2024_h_pylori --duration--> 14_days_preferred"
+    ]
+  },
+  "expected_sources_referenced": [
+    "ACG Clinical Guideline: Treatment of Helicobacter pylori Infection — Chey et al., Am J Gastroenterol 2024",
+    "Maastricht VI / Florence Consensus on H. pylori — Malfertheiner et al., Gut 2022",
+    "FDA approval of vonoprazan (Voquezna) for H. pylori — 2022"
+  ]
+}

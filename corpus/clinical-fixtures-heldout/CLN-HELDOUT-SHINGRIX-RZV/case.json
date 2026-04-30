@@ -1,0 +1,48 @@
+{
+  "id": "CLN-HELDOUT-SHINGRIX-RZV",
+  "case_kind": "patient_vaccine_counseling",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 58-year-old who received the older live-attenuated Zostavax vaccine in her late 50s asks whether she still needs Shingrix (RZV) and whether she should be worried about the second dose given a friend's painful injection-site reaction. The held-out answer must reflect ACIP 2018 (RZV preferred over Zostavax) and ACIP 2021 (RZV recommended for immunocompromised adults aged 19+), explain that Zostavax recipients should still receive RZV (with an interval of at least 2 months after Zostavax), preserve the two-dose schedule (0 and 2-6 months), and accurately convey reactogenicity without minimizing or catastrophizing.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I'm 58, and I got the old shingles shot — Zostavax — when I was 56. Now my doctor says I should get Shingrix on top of it. A friend of mine had Shingrix and her arm was so swollen she couldn't sleep. Do I really need it if I already had the other one?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "warm, evidence-grounded, validating concerns about reactogenicity",
+    "do_NOT": [
+      "tell the patient that Zostavax provides equivalent or sufficient long-term protection",
+      "describe Shingrix as optional given prior Zostavax",
+      "minimize the reactogenicity of dose 2 (it can genuinely be unpleasant)",
+      "skip the two-dose schedule (0 and 2-6 months)",
+      "advise discontinuing dose 2 because dose 1 was reactogenic"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "vaccine:rzv_shingrix",
+      "vaccine:zostavax_legacy",
+      "history:prior_zostavax_recipient",
+      "schedule:two_dose_0_and_2_to_6_months",
+      "outcome:efficacy_against_zoster_and_phn",
+      "reactogenicity:local_and_systemic"
+    ],
+    "edges_required_for_correct_answer": [
+      "vaccine:rzv_shingrix --acip_2018_preferred_over--> vaccine:zostavax_legacy",
+      "history:prior_zostavax_recipient --still_indicated--> vaccine:rzv_shingrix (interval >=2 months after Zostavax)",
+      "vaccine:rzv_shingrix --efficacy--> outcome:>=90%_against_zoster_and_phn (ages 50+)",
+      "vaccine:rzv_shingrix --schedule--> two_dose_0_and_2_to_6_months",
+      "vaccine:rzv_shingrix --reactogenicity--> dose2_often_more_pronounced (still complete the series)"
+    ]
+  },
+  "expected_sources_referenced": [
+    "ACIP recommendations on RZV (Shingrix) — Dooling et al., MMWR 2018",
+    "ACIP RZV in immunocompromised adults — Anderson et al., MMWR 2022",
+    "ZOE-50 / ZOE-70 trials — Lal et al., NEJM 2015 and Cunningham et al., NEJM 2016",
+    "GSK Shingrix prescribing information / FDA label"
+  ]
+}

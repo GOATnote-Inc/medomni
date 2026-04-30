@@ -1,0 +1,177 @@
+# NeMo Guardrails 0.21.0 — input/output rails for the MedOmni v1.0 stack.
+#
+# Loaded by `scripts/sovereign_bench.py --guardrails`. The bench wraps every
+# Omni call as:
+#
+#     input_rail  ->  Omni inference  ->  output_rail
+#
+# Both rails are served by separate vllm endpoints on the B300 (NemoGuard
+# JailbreakDetect for input; Nemotron-Content-Safety-Reasoning-4B for
+# output). To bring those endpoints up:
+#
+#     scripts/serve_guardrails_b300.sh   # NEW — Phase 2.1; not yet committed
+#
+# The serve script will need:
+#   - HF token with access to nvidia/NemoGuard-JailbreakDetect (already on
+#     pod; ungated)
+#   - Run on port 8004 with --gpu-memory-utilization 0.05
+#
+# This config is Colang 1.0-flavored YAML inline (Colang 2.0 is GA in 0.21
+# but the YAML/embedding-rails surface remains the easier production shape
+# for HTTP-served LLMs). The repo can move to Colang 2.0 `.co` files in a
+# follow-up patch; for the demo, YAML inline is sufficient.
+
+models:
+  - type: jailbreak_detector
+    engine: nim
+    parameters:
+      base_url: http://127.0.0.1:8004/v1
+      model: nvidia/NemoGuard-JailbreakDetect
+  - type: content_safety
+    engine: nim
+    parameters:
+      base_url: http://127.0.0.1:8005/v1
+      model: nvidia/Nemotron-Content-Safety-Reasoning-4B
+
+rails:
+  input:
+    flows:
+      - jailbreak detection
+      - pii scrub on input
+      - clinical scope check
+
+  output:
+    flows:
+      - hallucinated dosing block
+      - safety policy compliance
+      - cited subgraph integrity
+
+# ---------------------------------------------------------------------------
+# Flow definitions (Colang 1-shape, embedded in YAML for easy HTTP
+# integration). When a flow's bot-action triggers `bot refuse`, the rail
+# halts the request and returns the refusal_message verbatim.
+# ---------------------------------------------------------------------------
+
+flows:
+  - id: jailbreak detection
+    elements:
+      - user said anything
+      - if "$jailbreak_detected"
+        - bot refuse
+        - stop
+    refusal_message: |
+      I can't help with that request. The input matched a known
+      jailbreak / system-prompt-override pattern. If this was a legitimate
+      clinical question, please rephrase it as a direct medical question
+      (e.g., "What does ACIP recommend for HPV catch-up vaccination?").
+
+  - id: pii scrub on input
+    elements:
+      - user said anything
+      - $pii_categories = call pii_categorize on user message
+      - if "$pii_categories contains direct_identifier"
+        - bot refuse
+        - stop
+    refusal_message: |
+      Your message appears to contain a direct patient identifier (name,
+      MRN, full DOB, or contact info). For a sovereign clinical AI we
+      decline to process direct identifiers. Please re-ask using
+      de-identified clinical descriptors (age, sex, relevant history)
+      only.
+
+  - id: clinical scope check
+    elements:
+      - user said anything
+      - $is_clinical = call clinical_scope_classifier on user message
+      - if "$is_clinical == false"
+        - bot refuse
+        - stop
+    refusal_message: |
+      This stack is scoped to chemoprevention, cancer-screening,
+      cancer-risk-counseling, and adjacent oncology shared-decision-making
+      questions. Your question appears to be outside that scope.
+
+  - id: hallucinated dosing block
+    elements:
+      - bot said anything
+      - $dosing_assertions = call extract_dosing_claims on bot response
+      - if "$dosing_assertions and $dosing_assertions not in cited_subgraph"
+        - bot refuse
+        - stop
+    refusal_message: |
+      The drafted answer contained a specific dose / schedule / route that
+      could not be grounded against the retrieved subgraph. Refusing to
+      emit unsupported dosing. Please re-ask, or relax the system prompt
+      to permit qualitative descriptions only.
+
+  - id: safety policy compliance
+    elements:
+      - bot said anything
+      - $unsafe = call content_safety on bot response
+      - if "$unsafe.severity >= medium"
+        - bot refuse
+        - stop
+    refusal_message: |
+      The drafted answer was flagged by the clinical content-safety
+      reasoner. Common triggers: minimization of recurrence risk,
+      paternalistic register, override of shared-decision-making framing,
+      or mention of self-harm without escalation cues. Refusing to emit.
+
+  - id: cited subgraph integrity
+    elements:
+      - bot said anything
+      - $cited = call extract_citations on bot response
+      - $unsupported = call check_against_subgraph on $cited
+      - if "$unsupported"
+        - bot refuse
+        - stop
+    refusal_message: |
+      The drafted answer cited an entity (drug, trial, or guideline) not
+      present in the retrieved subgraph. Refusing to emit a citation that
+      cannot be traced to a chunk or graph node.
+
+# ---------------------------------------------------------------------------
+# Custom action stubs (resolved by scripts/sovereign_bench.py runtime).
+# When `--guardrails` is set, the bench mounts these handlers; when it is
+# unset, the rails are skipped entirely.
+# ---------------------------------------------------------------------------
+
+actions:
+  pii_categorize:
+    description: Returns a list of detected PII category labels (mock GLiNER).
+    handler: bench.pii_categorize_handler
+  clinical_scope_classifier:
+    description: Returns true if the message is in clinical scope.
+    handler: bench.clinical_scope_handler
+  extract_dosing_claims:
+    description: Returns a list of (drug, dose, route, frequency) tuples.
+    handler: bench.dosing_extractor_handler
+  content_safety:
+    description: Returns severity {none, low, medium, high} from the safety reasoner.
+    handler: bench.content_safety_handler
+  extract_citations:
+    description: Pulls the citation node-IDs the bot mentioned.
+    handler: bench.citation_extractor_handler
+  check_against_subgraph:
+    description: Validates that all cited node-IDs appear in the retrieved subgraph.
+    handler: bench.subgraph_validator_handler
+
+# ---------------------------------------------------------------------------
+# Implementation notes for Phase 2.1 closure
+# ---------------------------------------------------------------------------
+#
+# 1. The two NemoGuard / Nemotron-Content-Safety models are NOT yet served
+#    on B300 — Phase 2.1 reserves ports 8004 / 8005 and adds a
+#    serve_guardrails_b300.sh script. Pulled-but-not-yet-served as of
+#    2026-04-29.
+#
+# 2. The bench's `--guardrails` flag (added in this commit) implements a
+#    LIGHT version of these rails using regex / classifier shims so we can
+#    measure the call-pattern effect on held-out scores without paying the
+#    full GPU-memory cost yet. The shim flags bypassed rails as
+#    `rail_kind=shim` in the artifact JSON so we can audit which rails
+#    actually fired during the bench.
+#
+# 3. Production swap: replace each `bench.*_handler` with an HTTP call to
+#    the served NemoGuard / Nemotron-Content-Safety endpoint. The rail
+#    schema does not change.

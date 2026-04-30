@@ -1,0 +1,51 @@
+{
+  "id": "CLN-HELDOUT-SGLT2-HFREF",
+  "case_kind": "patient_heart_failure_management_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 68-year-old man with HFrEF (LVEF 32%), NYHA class II symptoms, no diabetes, on optimal medical therapy (sacubitril/valsartan, carvedilol, spironolactone) asks his nurse practitioner about adding dapagliflozin even though he is not diabetic. The held-out answer must reflect the AHA/ACC/HFSA 2022 heart-failure guideline recommendation of an SGLT2 inhibitor as a fourth pillar of GDMT regardless of diabetes status, the DAPA-HF (dapagliflozin) and EMPEROR-Reduced (empagliflozin) trial findings, the genitourinary side-effect profile, the rare euglycemic DKA caveat (more relevant in DM2), and the volume-status / dose-adjustment considerations.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I have heart failure — my ejection fraction is 32%. I'm on Entresto, carvedilol, and spironolactone. My NP wants to add dapagliflozin. But I'm not diabetic. Why am I getting a diabetes drug?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "evidence-grounded, candid, non-paternalistic",
+    "do_NOT": [
+      "describe SGLT2 inhibitors as DM-only drugs",
+      "skip the heart-failure mortality / hospitalization benefit",
+      "minimize the genitourinary infection signal",
+      "ignore the rare euglycemic DKA in non-diabetic HF context (low but reportable)",
+      "describe SGLT2 as a substitute for the existing GDMT pillars"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:hfref_lvef_32_on_three_pillar_gdmt",
+      "drug:dapagliflozin_sglt2",
+      "drug:empagliflozin_sglt2",
+      "trial:dapa_hf",
+      "trial:emperor_reduced",
+      "guideline:aha_acc_hfsa_2022",
+      "harm:genitourinary_mycotic_infection",
+      "harm:rare_euglycemic_dka",
+      "concept:fourth_pillar_gdmt"
+    ],
+    "edges_required_for_correct_answer": [
+      "drug:dapagliflozin_sglt2 --dapa_hf--> reduced_cv_death_or_hf_hospitalization (HR ~0.74)",
+      "drug:empagliflozin_sglt2 --emperor_reduced--> similar_benefit_in_hfref",
+      "patient:hfref_lvef_32_on_three_pillar_gdmt --aha_acc_hfsa_2022--> add_sglt2_as_fourth_pillar (independent of diabetes)",
+      "drug:sglt2 --se--> genitourinary_mycotic_infections_uti",
+      "drug:sglt2 --rare_se--> euglycemic_dka_higher_in_dm2"
+    ]
+  },
+  "expected_sources_referenced": [
+    "DAPA-HF — McMurray et al., NEJM 2019",
+    "EMPEROR-Reduced — Packer et al., NEJM 2020",
+    "AHA/ACC/HFSA 2022 Heart Failure Guideline — Heidenreich et al., J Am Coll Cardiol 2022",
+    "FDA Farxiga heart-failure indication"
+  ]
+}

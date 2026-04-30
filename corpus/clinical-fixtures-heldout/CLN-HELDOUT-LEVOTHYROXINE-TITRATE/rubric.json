@@ -1,0 +1,76 @@
+{
+  "rubric_id": "CLN-HELDOUT-LEVOTHYROXINE-TITRATE-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that levothyroxine (T4) monotherapy is the standard treatment for primary hypothyroidism per ATA 2024 / Endocrine Society guidelines. Combination T4/T3 or desiccated thyroid are NOT routinely recommended for first-line.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["desiccated thyroid is the recommended first-line", "T3 / liothyronine is the routine first-line treatment"]
+    },
+    {
+      "id": "R2",
+      "description": "Response describes the TSH-guided monitoring approach — recheck TSH approximately 4-6 weeks after starting therapy or any dose change, then adjust dose. After stable TSH, monitor every 6-12 months.",
+      "weight": 0.15,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R3",
+      "description": "Response describes the typical TSH target — generally 0.4-4.0 mIU/L for most patients, with some clinicians targeting tighter (0.5-2.5) for younger / pregnancy-planning / specific subsets, and looser for older patients (sometimes up to 4-5).",
+      "weight": 0.10,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R4",
+      "description": "Response correctly conveys the administration practice — take in the morning on an empty stomach, 30-60 minutes before food or other medications. Equivalent phrasings ('first thing in the morning, wait at least half an hour before breakfast') pass.",
+      "weight": 0.15,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R5",
+      "description": "Response addresses interactions that reduce levothyroxine absorption — calcium supplements, iron supplements, PPIs (which reduce gastric acid and impair levothyroxine absorption), antacids, fiber supplements, soy products, coffee. These should be separated by 4 hours or taken at a different time of day.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response describes a realistic timeline for symptomatic improvement — energy, mood, cold intolerance, hair, weight begin improving over weeks but full symptom resolution often takes 2-3 months even with euthyroid TSH. The patient should not expect to feel better immediately.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response addresses brand vs generic with appropriate nuance — generics are bioequivalent under FDA criteria, but switching between manufacturers can produce small TSH shifts, so once a stable dose is achieved many endocrinologists prefer to stay on a consistent brand or manufacturer and recheck TSH if a switch occurs.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response addresses overdose / hyperthyroid signs — palpitations, tremor, heat intolerance, weight loss, insomnia, anxiety — and the need to call the team if these emerge. Long-term over-replacement increases atrial fibrillation and osteoporosis risk.",
+      "weight": 0.08,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response acknowledges special situations briefly — pregnancy (dose typically increases ~25-30%), older adults (start lower / titrate slower), and significant cardiac disease (start lower).",
+      "weight": 0.05,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R10",
+      "description": "Response uses a non-prescriptive shared-decision-making register — frames the answer as part of an ongoing conversation with her endocrinologist or primary clinician.",
+      "weight": 0.04,
+      "tags": ["axis:communication_quality"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

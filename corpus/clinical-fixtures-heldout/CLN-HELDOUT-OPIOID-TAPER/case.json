@@ -1,0 +1,49 @@
+{
+  "id": "CLN-HELDOUT-OPIOID-TAPER",
+  "case_kind": "patient_chronic_pain_taper_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 58-year-old woman on long-term oxycodone for chronic low-back pain (about 80 MME/day for 6 years) is being told by her primary clinician that they want to taper her dose. She asks the clinic nurse whether this is mandatory, and how it should be done safely. The held-out answer must reflect the CDC 2022 Clinical Practice Guideline for Prescribing Opioids for Pain — specifically the explicit guidance that NO patient on long-term opioids should be force-tapered or rapidly discontinued without their assent, that patient-centered slow tapers (often <=10% per month or even <=10% per quarter for high-dose patients on long-term therapy) are appropriate, and that abrupt discontinuation is associated with overdose, suicide, withdrawal, and harm.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I've been on oxycodone for my back for 6 years. About 80 MME a day. My new primary doctor says she wants me to taper down. I feel like I'm being treated like an addict for taking medicine that works. Do I have to taper, and if I do, how should it be done?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "warm, validating, non-paternalistic, evidence-grounded",
+    "do_NOT": [
+      "support a forced rapid taper or abrupt discontinuation",
+      "describe long-term opioid patients as addicts by default",
+      "minimize withdrawal, overdose, or suicide risk associated with abrupt discontinuation",
+      "ignore the CDC 2022 update emphasizing patient-centered slow tapers and shared decision making",
+      "fail to address comorbid mental-health and overdose-prevention adjuncts (naloxone, OUD treatment if applicable)"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:long_term_opioid_chronic_pain_80_mme",
+      "guideline:cdc_2022_opioid_prescribing",
+      "concept:patient_centered_slow_taper",
+      "harm:abrupt_discontinuation_withdrawal_overdose_suicide",
+      "intervention:multimodal_pain_management",
+      "intervention:naloxone_co_prescription",
+      "intervention:oud_evaluation_if_indicated"
+    ],
+    "edges_required_for_correct_answer": [
+      "guideline:cdc_2022_opioid_prescribing --recommends--> patient_centered_taper_with_assent",
+      "guideline:cdc_2022_opioid_prescribing --explicitly_warns--> harm_from_abrupt_or_forced_taper",
+      "concept:patient_centered_slow_taper --rate--> often_5_to_10_pct_monthly_or_slower_in_long_term_high_dose",
+      "intervention:multimodal_pain_management --includes--> physical_therapy_psychotherapy_non_opioid_pharm",
+      "intervention:naloxone_co_prescription --indicated--> 50_mme_or_higher",
+      "intervention:oud_evaluation_if_indicated --triggers--> mat_buprenorphine_methadone_referral"
+    ]
+  },
+  "expected_sources_referenced": [
+    "CDC Clinical Practice Guideline for Prescribing Opioids for Pain — Dowell et al., MMWR Recomm Rep 2022 (supersedes 2016)",
+    "HHS Guide for Clinicians on the Appropriate Dosage Reduction or Discontinuation of Long-Term Opioid Analgesics — 2019",
+    "Oliva et al., BMJ 2020 — overdose and suicide associations after opioid dose discontinuation"
+  ]
+}

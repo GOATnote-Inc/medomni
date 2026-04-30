@@ -1,0 +1,80 @@
+{
+  "rubric_id": "CLN-HELDOUT-HPV-CATCHUP-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; hard negations preserved on safety-critical claims (cannot promise 'prevents cervical cancer' for an adult with prior likely exposure; cannot present vaccination as a substitute for screening).",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response represents the ACIP 2019 expanded recommendation accurately: HPV vaccination is routinely recommended through age 26 for those not adequately vaccinated, and adults aged 27 through 45 may be vaccinated based on shared clinical decision-making. Equivalent paraphrases ('shared decision through 45,' 'catch-up through 26 routinely') should pass; literal token presence is not required.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:instruction_following"]
+    },
+    {
+      "id": "R2",
+      "description": "Response notes the FDA's 2018 expansion of the Gardasil-9 indication to ages 27 through 45 in both women and men. Paraphrases referencing the FDA label expansion are acceptable.",
+      "weight": 0.08,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R3",
+      "description": "Response communicates honestly that the expected benefit at age 35 is meaningfully diminished compared with adolescent vaccination, because most sexually active adults have been exposed to one or more HPV types by their mid-30s, and the vaccine's protection is concentrated in types the recipient has not yet acquired. The response should NOT claim equivalence to adolescent vaccination, and should NOT promise that vaccination will 'prevent cervical cancer' for this individual.",
+      "weight": 0.15,
+      "tags": ["axis:accuracy", "axis:context_awareness"],
+      "must_NOT_state": ["the vaccine will prevent cervical cancer for you", "vaccination at 35 has the same efficacy as at 12"]
+    },
+    {
+      "id": "R4",
+      "description": "Response explicitly states (or makes unmistakably clear) that HPV vaccination is NOT therapeutic — it does not clear existing HPV infections or treat existing cervical lesions. The benefit of catch-up vaccination is limited to protection against vaccine-covered HPV types the recipient has not yet been exposed to.",
+      "weight": 0.12,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["the vaccine will clear an existing HPV infection", "Gardasil-9 treats HPV"]
+    },
+    {
+      "id": "R5",
+      "description": "Response reinforces that HPV vaccination complements but does NOT replace cervical cancer screening. Routine cervical cancer screening (Pap with or without primary HPV testing, per current ACS / USPSTF cadence) must continue regardless of vaccination status.",
+      "weight": 0.12,
+      "tags": ["axis:accuracy", "axis:context_awareness"],
+      "must_NOT_state": ["you can stop Pap smears once vaccinated", "vaccination replaces cervical cancer screening"]
+    },
+    {
+      "id": "R6",
+      "description": "Response represents the FUTURE I/II evidence (or equivalent pivotal-trial evidence) accurately: very high efficacy (commonly cited around 98%) against vaccine-type-specific cervical intraepithelial neoplasia 2+ in HPV-naive participants, with efficacy declining in already-exposed populations. The 'naive vs exposed' efficacy contrast is essential; quoting an exact number is not.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response correctly describes Gardasil-9's coverage: nine HPV types (6, 11, 16, 18, 31, 33, 45, 52, 58), with 16 and 18 historically responsible for the majority of cervical cancers and 6 and 11 covering most genital warts. A paraphrase that conveys 'covers nine types including the major cancer-causing strains' is acceptable.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response correctly conveys the dosing schedule for adults aged 15 and older: a 3-dose series at 0, 1-2 months, and 6 months. Routine HPV testing or Pap testing is NOT required prior to vaccination and should not be presented as a prerequisite.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"],
+      "must_NOT_state": ["you need an HPV test before vaccination", "Pap testing is required before Gardasil-9"]
+    },
+    {
+      "id": "R9",
+      "description": "Response uses a shared-decision-making register: it does not say 'you must get vaccinated' nor 'don't bother at your age,' but rather frames the decision as a worthwhile conversation with her clinician — weighing the diminished but non-zero benefit, sexual-history context, and the patient's own values. The response acknowledges that catch-up vaccination remains a reasonable option for many adults in this age range.",
+      "weight": 0.10,
+      "tags": ["axis:communication_quality"],
+      "must_NOT_state": ["you must get vaccinated", "you should not bother getting vaccinated at your age", "vaccination would be pointless for you"]
+    },
+    {
+      "id": "R10",
+      "description": "Response acknowledges that absolute benefit varies by individual sexual-exposure history, that the vaccine's strongest documented benefits at older ages are smaller than at adolescence, and that this honest uncertainty is part of why ACIP frames the 27-45 window as a shared decision rather than a routine recommendation.",
+      "weight": 0.06,
+      "tags": ["axis:completeness", "axis:communication_quality"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion is scored 0 (not met) or 1 (met) by the judge against the natural-language `description`. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

@@ -1,0 +1,48 @@
+{
+  "id": "CLN-HELDOUT-PCV13-PPSV23-ADULT",
+  "case_kind": "patient_vaccine_counseling",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 67-year-old immunocompetent adult with no prior pneumococcal vaccination asks which pneumococcal vaccine he needs. The held-out answer must reflect the ACIP 2022/2023 simplification: a single dose of PCV20 (or PCV15 followed by PPSV23) is the current adult standard for vaccine-naive adults aged 65+ or aged 19-64 with risk conditions; the older PCV13-then-PPSV23 sequence is no longer the default. The answer must NOT recommend PCV13 (no longer manufactured for adults under this indication) nor recommend PPSV23 alone for vaccine-naive adults.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I just turned 67 and my pharmacist mentioned a pneumonia shot. I haven't had any. He said there are different ones — PCV13, PCV15, PCV20, Pneumovax. Which one am I supposed to get?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "clear, evidence-grounded, non-paternalistic",
+    "do_NOT": [
+      "recommend PCV13 alone for a vaccine-naive 65+ adult under current ACIP guidance",
+      "recommend PPSV23 alone for a vaccine-naive 65+ adult",
+      "describe the older PCV13-then-PPSV23 sequence as the current default",
+      "ignore the ACIP 2022/2023 simplification (PCV20 single-dose OR PCV15 followed by PPSV23 >=1 year later)",
+      "prescribe directly without acknowledging shared decision making"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "vaccine:pcv20",
+      "vaccine:pcv15",
+      "vaccine:ppsv23",
+      "vaccine:pcv13_legacy",
+      "population:adult_65_plus_vaccine_naive",
+      "decision:single_dose_pcv20_vs_sequence_pcv15_ppsv23",
+      "guideline:acip_2022_2023"
+    ],
+    "edges_required_for_correct_answer": [
+      "population:adult_65_plus_vaccine_naive --acip_2022--> option:pcv20_single_dose",
+      "population:adult_65_plus_vaccine_naive --acip_2022--> option:pcv15_then_ppsv23 (>=1 year interval; >=8 weeks if immunocompromised)",
+      "vaccine:pcv13_legacy --no_longer_default--> population:adult_65_plus_vaccine_naive",
+      "vaccine:ppsv23 --no_longer_used_alone--> population:adult_65_plus_vaccine_naive",
+      "decision:single_dose_pcv20_vs_sequence_pcv15_ppsv23 --requires--> shared_decision_making"
+    ]
+  },
+  "expected_sources_referenced": [
+    "ACIP recommendations on adult pneumococcal vaccination — Kobayashi et al., MMWR 2022 (PCV15 / PCV20 update for adults aged 65+ and 19-64 with risk conditions)",
+    "CDC Pink Book — Pneumococcal Disease chapter, current edition",
+    "FDA approval — PCV20 (Prevnar 20) for adults"
+  ]
+}

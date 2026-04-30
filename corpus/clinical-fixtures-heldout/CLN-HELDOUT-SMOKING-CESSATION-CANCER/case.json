@@ -1,0 +1,55 @@
+{
+  "id": "CLN-HELDOUT-SMOKING-CESSATION-CANCER",
+  "case_kind": "patient_chemoprevention_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 54-year-old patient with a history of stage I HPV-positive oropharyngeal cancer (treated 18 months ago, currently no evidence of disease) continues to smoke about half a pack per day. He asks whether he should choose varenicline or nicotine replacement therapy (NRT) to quit. The question requires a synthesis of the EAGLES trial (Anthenelli, Lancet 2016) — which directly compared varenicline, bupropion, NRT-patch, and placebo for both efficacy and neuropsychiatric safety — the USPSTF 2021 tobacco-cessation recommendation, and the 2008 PHS Clinical Practice Guideline on Treating Tobacco Use and Dependence. The held-out answer must NOT prescribe, must explicitly affirm continued cessation as a critical secondary-cancer-prevention measure for this patient, must convey EAGLES' efficacy ranking (varenicline > combination NRT or bupropion > monotherapy NRT > placebo), must convey EAGLES' reassuring neuropsychiatric-safety result, and must reinforce behavioral support as additive.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I had throat cancer about a year and a half ago — stage 1, they say I'm clear now. I'm still smoking about half a pack a day. I want to stop. Should I take varenicline (Chantix) or use the nicotine patch? Which works better and is one safer than the other?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "curious, humble, evidence-grounded, shared-decision-making, supportive",
+    "do_NOT": [
+      "prescribe a specific medication (\"you should take varenicline\" / \"use the patch instead\")",
+      "minimize the urgency of cessation in a head-and-neck cancer survivor (continued smoking substantially increases recurrence and second-primary risk)",
+      "perpetuate the older varenicline neuropsychiatric-risk warning that EAGLES did NOT support (the FDA removed the boxed warning in 2016 based on these data)",
+      "skip behavioral support / counseling as additive to pharmacotherapy",
+      "frame this as 'just willpower' or moralize about prior smoking",
+      "use jargon (partial nicotinic agonist, alpha-4-beta-2 receptor) without lay translation"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "drug:varenicline",
+      "drug:bupropion_sr",
+      "intervention:nicotine_replacement_therapy_nrt",
+      "modifier:head_and_neck_cancer_survivor",
+      "trial:eagles_2016",
+      "guideline:uspstf_2021_tobacco",
+      "guideline:phs_2008_clinical_practice_guideline",
+      "intervention:behavioral_support_counseling"
+    ],
+    "edges_required_for_correct_answer": [
+      "trial:eagles_2016 --efficacy_ranking--> varenicline > bupropion_or_nrt_patch > placebo (continuous abstinence weeks 9-24)",
+      "trial:eagles_2016 --neuropsychiatric_safety--> no_significant_increase_with_varenicline_or_bupropion_vs_placebo (non-psychiatric or psychiatric cohorts)",
+      "trial:eagles_2016 --regulatory_consequence--> fda_removed_varenicline_boxed_warning_2016",
+      "modifier:head_and_neck_cancer_survivor --continued_smoking--> increased_risk_recurrence_and_second_primary (HR ~2-4x in literature)",
+      "guideline:uspstf_2021_tobacco --grade_a--> ask_advise_assist_arrange_with_pharmacotherapy_offered_to_adults_who_smoke",
+      "guideline:phs_2008_clinical_practice_guideline --combination_therapy--> efficacy: combo NRT (patch + short-acting) ~ varenicline > monotherapy NRT > placebo",
+      "intervention:behavioral_support_counseling --additive_with--> pharmacotherapy (~50-100% relative increase in odds of quitting vs medication alone)",
+      "drug:varenicline --common_side_effects--> nausea_vivid_dreams_insomnia (mostly mild, dose-related)",
+      "intervention:nicotine_replacement_therapy_nrt --common_combination--> patch_plus_short_acting_lozenge_or_gum (managing baseline craving + breakthrough)"
+    ]
+  },
+  "expected_sources_referenced": [
+    "EAGLES — Anthenelli RM et al., Lancet 2016;387:2507-2520 — Neuropsychiatric safety and efficacy of varenicline, bupropion, and nicotine patch in smokers with and without psychiatric disorders",
+    "USPSTF 2021 — Interventions for Tobacco Smoking Cessation in Adults, Including Pregnant Persons (JAMA recommendation statement, Grade A for adult cessation)",
+    "PHS 2008 — Treating Tobacco Use and Dependence: 2008 Update, US Public Health Service Clinical Practice Guideline (Fiore et al.)",
+    "FDA Drug Safety Communication 2016 — Removal of the boxed warning for serious mental health side effects from the Chantix (varenicline) and Zyban (bupropion) prescribing information"
+  ]
+}

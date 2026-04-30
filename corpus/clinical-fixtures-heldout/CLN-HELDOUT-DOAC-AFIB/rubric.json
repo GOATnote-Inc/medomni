@@ -1,0 +1,77 @@
+{
+  "rubric_id": "CLN-HELDOUT-DOAC-AFIB-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant. Hard negation preserved on safety-critical claims about valvular-AFib exceptions and DOAC monitoring.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that for non-valvular atrial fibrillation, current AHA/ACC/HRS guidance prefers a DOAC (apixaban, dabigatran, rivaroxaban, or edoxaban) over warfarin for stroke prevention. The patient's profile fits the non-valvular AFib indication for a DOAC.",
+      "weight": 0.18,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["warfarin is the preferred first-line option in non-valvular atrial fibrillation"]
+    },
+    {
+      "id": "R2",
+      "description": "Response notes the indication-exception — for patients with a mechanical heart valve or moderate-to-severe mitral stenosis, warfarin (a vitamin-K antagonist) remains the preferred anticoagulant; DOACs are not approved or are inferior in those settings.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R3",
+      "description": "Response references the CHA2DS2-VASc score to justify anticoagulation — at his profile (age >=65, hypertension, diabetes, prior TIA), the score is well above the threshold (>=2 in men) where anticoagulation is recommended, and his risk-benefit clearly favors anticoagulation.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R4",
+      "description": "Response references the HAS-BLED score (or equivalent bleeding-risk framing) — used to inform shared decision making about modifiable bleeding-risk factors, NOT used to withhold anticoagulation from patients who otherwise need it.",
+      "weight": 0.08,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response references at least one of the major DOAC trials accurately — ARISTOTLE (apixaban), RE-LY (dabigatran), ROCKET-AF (rivaroxaban), or ENGAGE-AF (edoxaban) — and conveys the general finding that DOACs were at least non-inferior to warfarin for stroke/systemic embolism prevention with reduced intracranial hemorrhage; apixaban specifically reduced major bleeding.",
+      "weight": 0.12,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R6",
+      "description": "Response addresses apixaban renal-dose adjustment — the standard apixaban dose is 5 mg BID; a reduced dose of 2.5 mg BID is indicated if the patient meets at least two of three criteria (age >=80, weight <=60 kg, serum creatinine >=1.5 mg/dL) or has severe renal impairment. The response need not memorize all three criteria; it must convey that renal function affects dosing.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response addresses key practical differences honestly — warfarin requires INR monitoring with a target around 2-3, has many drug and food interactions, and has a long history of clinician experience; DOACs do not require routine INR monitoring but DO require periodic renal function checks and have fewer (but still real) drug interactions.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"],
+      "must_NOT_state": ["DOACs require no monitoring at all"]
+    },
+    {
+      "id": "R8",
+      "description": "Response notes reversal-agent availability — vitamin K and prothrombin complex concentrate reverse warfarin; idarucizumab reverses dabigatran; andexanet alfa reverses apixaban and rivaroxaban (with availability and cost considerations).",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response addresses the inherent bleeding risk of any anticoagulant honestly — gastrointestinal bleeding, intracranial hemorrhage, and the need to discuss antiplatelet co-prescription, NSAIDs, and fall-risk modification. The response should not minimize these.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R10",
+      "description": "Response uses a non-prescriptive shared-decision-making register — frames the choice as a discussion with the cardiologist, lays out trade-offs.",
+      "weight": 0.08,
+      "tags": ["axis:communication_quality"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

@@ -1,0 +1,54 @@
+{
+  "id": "CLN-HELDOUT-DOAC-AFIB",
+  "case_kind": "patient_anticoagulation_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 71-year-old man newly diagnosed with non-valvular atrial fibrillation (CHA2DS2-VASc 4: age, hypertension, diabetes, prior TIA) asks whether to start a DOAC (apixaban) versus warfarin. The held-out answer must reflect AHA/ACC/HRS 2024 AFib guideline preference for DOACs over warfarin in non-valvular AFib (except in mechanical valves and moderate-to-severe mitral stenosis), the major-trial-level evidence (RE-LY, ROCKET-AF, ARISTOTLE, ENGAGE-AF), the renal-dose adjustments, the role of CHA2DS2-VASc and HAS-BLED, and the differences in monitoring / interactions / reversal.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I just got told I have atrial fibrillation. I'm 71, have high blood pressure and diabetes, and I had a small stroke (a 'TIA') two years ago. The cardiologist mentioned apixaban or warfarin. Which is better and which should I pick?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "evidence-grounded, candid, non-paternalistic",
+    "do_NOT": [
+      "describe warfarin as preferred over DOACs in non-valvular AFib",
+      "skip the indication-exception (mechanical valves, moderate-to-severe mitral stenosis) where warfarin is still preferred",
+      "minimize the bleeding risk inherent to all anticoagulants",
+      "skip the CHA2DS2-VASc / HAS-BLED framing",
+      "describe DOACs as having 'no monitoring needed' without the renal-function caveat"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:nonvalvular_afib_chads_vasc_4_prior_tia",
+      "drug:apixaban_doac",
+      "drug:warfarin_vka",
+      "score:cha2ds2_vasc",
+      "score:has_bled",
+      "trial:aristotle_apixaban",
+      "trial:rely_dabigatran",
+      "trial:rocket_af_rivaroxaban",
+      "trial:engage_af_edoxaban",
+      "consideration:renal_function_dose_adjust",
+      "exception:mechanical_valve_or_moderate_severe_ms_warfarin"
+    ],
+    "edges_required_for_correct_answer": [
+      "patient:nonvalvular_afib_chads_vasc_4_prior_tia --aha_acc_hrs_2024--> doac_preferred_over_warfarin",
+      "drug:apixaban_doac --aristotle--> reduced_stroke_and_major_bleeding_vs_warfarin",
+      "score:cha2ds2_vasc -->=2_in_men--> anticoagulation_indicated",
+      "drug:apixaban_doac --renal_dose_adjustment--> 2.5mg_bid_if_two_of_three_criteria",
+      "exception:mechanical_valve_or_moderate_severe_ms_warfarin --excludes--> nonvalvular_afib_population"
+    ]
+  },
+  "expected_sources_referenced": [
+    "AHA/ACC/HRS/ACCP 2024 AFib guideline — Joglar et al., Circulation 2024",
+    "ARISTOTLE — Granger et al., NEJM 2011 (apixaban)",
+    "RE-LY — Connolly et al., NEJM 2009 (dabigatran)",
+    "ROCKET-AF — Patel et al., NEJM 2011 (rivaroxaban)",
+    "ENGAGE-AF — Giugliano et al., NEJM 2013 (edoxaban)"
+  ]
+}

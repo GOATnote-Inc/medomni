@@ -1,0 +1,47 @@
+{
+  "id": "CLN-HELDOUT-A1C-ELDERLY",
+  "case_kind": "patient_diabetes_management_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "An 82-year-old with DM2, mild cognitive impairment, lives independently with home aide, on glipizide and metformin. A1c 7.4%. She had two hypoglycemic events in the past 6 months (one symptomatic, one captured by CGM). She asks her daughter (who is asking on her behalf) whether her sugars need to be tighter or whether something should change. The held-out answer must reflect the ADA Standards of Care section on older adults, which recommends individualized A1c targets (commonly less stringent — A1c <8% or even <8.5% — for older adults with multimorbidity / functional limitations / hypoglycemia risk), the deintensification framing, the preference for agents with low hypoglycemia risk over sulfonylureas / insulin in this population, and the role of CGM.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I'm asking on behalf of my mom. She's 82, has diabetes, takes glipizide and metformin. Her A1c is 7.4. She's had two low-blood-sugar episodes in the last six months — one she felt, one her CGM caught while she was sleeping. Should her sugars be tighter, or is something off?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "warm, validating concern, evidence-grounded, shared-decision-making",
+    "do_NOT": [
+      "recommend tightening A1c below 7% in this clinical scenario",
+      "describe sulfonylurea continuation in this patient as without significant hypoglycemia risk",
+      "ignore the deintensification framing for older adults",
+      "minimize the clinical significance of nocturnal hypoglycemia in an elderly patient with cognitive impairment"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:age_82_dm2_mci_recurrent_hypoglycemia",
+      "drug:glipizide_sulfonylurea",
+      "drug:metformin",
+      "concept:individualized_a1c_target_older_adult",
+      "concept:deintensification",
+      "concept:hypoglycemia_risk_in_older_adult",
+      "tool:cgm"
+    ],
+    "edges_required_for_correct_answer": [
+      "patient:age_82_dm2_mci_recurrent_hypoglycemia --ada_soc_older_adults--> a1c_target_<8_or_8.5",
+      "drug:glipizide_sulfonylurea --high_hypoglycemia_risk--> consider_deintensify_or_replace",
+      "concept:hypoglycemia_risk_in_older_adult --downstream--> falls_cardiovascular_events_cognitive_decline",
+      "tool:cgm --useful--> detect_nocturnal_hypoglycemia"
+    ]
+  },
+  "expected_sources_referenced": [
+    "ADA Standards of Care 2025 — Section on Older Adults (Section 13)",
+    "AGS / Endocrine Society guidance on diabetes care in older adults",
+    "ACCORD trial — NEJM 2008 (intensive vs standard glycemic control in older / high-risk DM2)",
+    "VADT and ADVANCE trials (context for less-stringent A1c targets in some populations)"
+  ]
+}

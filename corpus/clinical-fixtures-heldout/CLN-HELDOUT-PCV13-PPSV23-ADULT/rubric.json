@@ -1,0 +1,78 @@
+{
+  "rubric_id": "CLN-HELDOUT-PCV13-PPSV23-ADULT-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; no `must_mention_keywords` on paraphraseable concepts. Hard negations preserved on the safety-critical claim that PCV13-alone is no longer the recommended adult default.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that under the current ACIP recommendation (2022 update), a vaccine-naive adult aged 65+ has two acceptable options: a single dose of PCV20, OR a dose of PCV15 followed by PPSV23 at least one year later. Equivalent phrasings such as 'one shot of Prevnar 20' or 'PCV15 first and Pneumovax later' should pass.",
+      "weight": 0.20,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R2",
+      "description": "Response makes clear that the older sequence of PCV13-then-PPSV23 is no longer the default for vaccine-naive 65+ adults, and PCV13 is not what this patient should now receive. Equivalent phrasing ('the recommendation has been updated,' 'we don't use the old PCV13 sequence anymore in adults') should pass.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["you should get PCV13", "PCV13 is the current adult recommendation", "PCV13 alone is the standard for adults"]
+    },
+    {
+      "id": "R3",
+      "description": "Response makes clear that PPSV23 alone is no longer recommended as the sole pneumococcal vaccine for a vaccine-naive 65+ adult under current ACIP guidance — i.e., a conjugate vaccine (PCV20 or PCV15) is part of the regimen.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["just get Pneumovax / PPSV23 alone", "PPSV23 by itself is sufficient"]
+    },
+    {
+      "id": "R4",
+      "description": "Response correctly conveys the dosing-interval logic when the PCV15 + PPSV23 sequence is chosen: PPSV23 at least one year after PCV15 in immunocompetent adults, with a shorter minimum interval (about 8 weeks) acceptable for immunocompromising conditions. Approximate numeric ranges that match this clinical claim are fine.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response addresses why pneumococcal vaccination matters at this age — broadly, that invasive pneumococcal disease (bacteremia, meningitis) and pneumococcal pneumonia carry meaningful morbidity and mortality in older adults, and vaccination reduces that burden. Specific efficacy numbers are not required.",
+      "weight": 0.08,
+      "tags": ["axis:completeness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response acknowledges that either of the two ACIP-endorsed options is acceptable, and the choice is often a logistical / shared-decision matter (PCV20 simplifies to a single visit; the PCV15+PPSV23 sequence requires a follow-up visit a year later). Equivalent framing — 'either is a fine choice, here's the trade-off' — passes.",
+      "weight": 0.10,
+      "tags": ["axis:context_awareness", "axis:communication_quality"]
+    },
+    {
+      "id": "R7",
+      "description": "Response surfaces common, expected reactogenicity (local injection-site soreness, low-grade transient fevers, fatigue) without minimizing or catastrophizing. Specific incidence percentages are not required.",
+      "weight": 0.07,
+      "tags": ["axis:completeness", "axis:communication_quality"]
+    },
+    {
+      "id": "R8",
+      "description": "Response notes that other ACIP-recommended vaccines for this age band (e.g., shingles RZV / Shingrix, annual influenza, age-appropriate Tdap booster, RSV per current ACIP guidance) are reasonable to discuss at the same visit, and that pneumococcal vaccination does not preclude co-administration with most other adult vaccines.",
+      "weight": 0.07,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response uses a non-prescriptive, shared-decision-making register. It does not say 'you must get vaccine X' but instead lays out the options, evidence, and trade-offs and recommends discussing with his clinician/pharmacist for the booking. Direct prescriptive imperatives are flagged.",
+      "weight": 0.08,
+      "tags": ["axis:communication_quality"],
+      "must_NOT_state": ["you must get PCV20", "you must not get PPSV23"]
+    },
+    {
+      "id": "R10",
+      "description": "Response acknowledges honest uncertainty / scope limits — e.g., that risk-condition status (chronic heart, lung, liver, kidney disease; immunocompromise; cochlear implant; CSF leak) might change the schedule and that the clinician should confirm history before administering.",
+      "weight": 0.07,
+      "tags": ["axis:completeness", "axis:communication_quality"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge against natural-language `description`. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

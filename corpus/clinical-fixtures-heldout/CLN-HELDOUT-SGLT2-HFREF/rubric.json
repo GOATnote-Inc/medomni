@@ -1,0 +1,77 @@
+{
+  "rubric_id": "CLN-HELDOUT-SGLT2-HFREF-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant. Hard negation preserved on safety-critical claim about SGLT2 inhibitors being DM-only.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that SGLT2 inhibitors (dapagliflozin, empagliflozin) are recommended for HFrEF regardless of diabetes status — i.e., the heart-failure benefit is independent of glucose lowering. Equivalent phrasings ('it's not just a diabetes drug anymore') should pass.",
+      "weight": 0.18,
+      "tags": ["axis:accuracy", "axis:context_awareness"],
+      "must_NOT_state": ["SGLT2 inhibitors only benefit diabetic patients", "you do not benefit because you are not diabetic"]
+    },
+    {
+      "id": "R2",
+      "description": "Response cites the AHA/ACC/HFSA 2022 heart-failure guideline (or equivalent contemporary guideline) recommendation of an SGLT2 inhibitor as a fourth pillar of guideline-directed medical therapy for HFrEF on top of an ARNI (or ACEi/ARB), beta-blocker, and MRA.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R3",
+      "description": "Response cites at least one of DAPA-HF (dapagliflozin) or EMPEROR-Reduced (empagliflozin) accurately — both showed reduction in the composite of cardiovascular death or hospitalization for heart failure in HFrEF patients regardless of diabetes status. The hazard-ratio direction must be correct; exact values not required.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R4",
+      "description": "Response gives a high-level mechanism explanation that goes beyond glucose — natriuresis, hemodynamic offloading, possible cardiac-energetic and anti-inflammatory effects. The response should not pretend the mechanism is fully solved; the cardiac-renal benefits are not solely explained by glycemic effect.",
+      "weight": 0.08,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response addresses the genitourinary side-effect signal — increased risk of genital mycotic infections (especially in women) and a smaller signal for urinary tract infections. Hygiene and prompt treatment are reasonable mitigations.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response notes the rare but real euglycemic diabetic-ketoacidosis signal — primarily relevant in patients with type 2 (and especially type 1) diabetes; quite rare in non-diabetic HF patients but worth flagging if there is a question of evolving glucose dysregulation, prolonged fasting, or acute illness.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response notes volume-status / dose considerations — modest osmotic diuresis from SGLT2 inhibition may permit downward adjustment of loop diuretics in some patients; orthostatic / volume depletion in elderly or volume-depleted patients is a consideration; the existing GDMT pillars are not stopped.",
+      "weight": 0.08,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response notes that the existing pillars (sacubitril/valsartan, carvedilol, spironolactone) should be continued — SGLT2 is added on top, not in place of them.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["you can stop the carvedilol / Entresto / spironolactone once you start the SGLT2 inhibitor"]
+    },
+    {
+      "id": "R9",
+      "description": "Response acknowledges access realities — SGLT2 inhibitors may require prior authorization in some plans; the heart-failure indication has improved coverage.",
+      "weight": 0.06,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R10",
+      "description": "Response uses a non-prescriptive shared-decision-making register — frames the decision as a discussion with the NP / cardiologist, lays out trade-offs.",
+      "weight": 0.10,
+      "tags": ["axis:communication_quality"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

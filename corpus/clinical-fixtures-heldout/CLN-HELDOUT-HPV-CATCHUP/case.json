@@ -1,0 +1,56 @@
+{
+  "id": "CLN-HELDOUT-HPV-CATCHUP",
+  "case_kind": "patient_chemoprevention_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 35-year-old patient who was never vaccinated against HPV asks about catch-up Gardasil-9 vaccination. The question requires reconciling the ACIP 2019 expanded catch-up recommendation (routine through age 26; shared clinical decision-making age 27-45), the FDA's 2018 expansion of the Gardasil-9 indication to age 45, the realistic expected benefit (substantially reduced because most adults have already been exposed to several HPV types by their 30s), and the role of vaccination as a complement — not a substitute — for cervical cancer screening. The held-out answer must NOT promise that catch-up vaccination 'prevents cervical cancer' for someone with likely existing HPV exposure, must accurately convey diminished but non-zero benefit, and must reinforce ongoing screening per current ACS / USPSTF guidelines.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I'm 35 and I never got the HPV shot when it first came out. A friend just told me that adults can still get it now — Gardasil-9. Is it worth getting at my age? Will it actually prevent cervical cancer for me?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "curious, humble, evidence-grounded, shared-decision-making",
+    "do_NOT": [
+      "promise the vaccine 'prevents cervical cancer' for an adult with likely prior HPV exposure",
+      "frame catch-up vaccination as a substitute for cervical cancer screening",
+      "claim that HPV vaccination at age 35 has the same efficacy as adolescent vaccination",
+      "skip the ACIP 2019 expanded catch-up framing (routine through 26; shared clinical decision-making 27-45)",
+      "omit that Gardasil-9 covers 9 HPV types (6, 11, 16, 18, 31, 33, 45, 52, 58)",
+      "use a paternalistic register (\"you must get vaccinated\") or a dismissive register (\"don't bother, you're too old\")",
+      "imply HPV testing or Pap is required before vaccination (it is not)"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "vaccine:gardasil_9",
+      "modifier:age_35_unvaccinated",
+      "guideline:acip_2019_catch_up_expansion",
+      "regulator:fda_gardasil9_age_indication",
+      "trial:future_i_ii",
+      "screening:cervical_cancer_screening_acs_uspstf",
+      "concept:diminished_benefit_with_prior_exposure"
+    ],
+    "edges_required_for_correct_answer": [
+      "vaccine:gardasil_9 --covers--> hpv_types:6_11_16_18_31_33_45_52_58",
+      "guideline:acip_2019_catch_up_expansion --routine_recommendation_through--> age:26",
+      "guideline:acip_2019_catch_up_expansion --shared_clinical_decision_making--> age_range:27_to_45",
+      "regulator:fda_gardasil9_age_indication --expanded_in_2018_to--> age:45 (both sexes)",
+      "trial:future_i_ii --efficacy_population--> hpv_naive_to_vaccine_types (~98% prevention of CIN2+ from vaccine-targeted types)",
+      "concept:diminished_benefit_with_prior_exposure --rationale--> most_adults_exposed_to_some_hpv_types_by_mid_30s (benefit limited to types not yet acquired)",
+      "vaccine:gardasil_9 --does_not--> action:clear_existing_hpv_infection (therapeutic claim is false)",
+      "vaccine:gardasil_9 --complements_not_replaces--> screening:cervical_cancer_screening_acs_uspstf",
+      "vaccine:gardasil_9 --schedule_age_15_plus--> dose_count:3 (0, 1-2, 6 months)",
+      "vaccine:gardasil_9 --pre_vaccination--> action:no_routine_hpv_or_pap_test_required"
+    ]
+  },
+  "expected_sources_referenced": [
+    "ACIP — Meites E et al., MMWR Morb Mortal Wkly Rep 2019;68:698-702 — Human Papillomavirus Vaccination for Adults: Updated Recommendations of the Advisory Committee on Immunization Practices",
+    "FDA — Supplemental Approval of Gardasil-9 expanded indication to ages 27-45 (2018)",
+    "FUTURE I and FUTURE II — Garland SM et al., NEJM 2007 / The FUTURE II Study Group, NEJM 2007 — quadrivalent HPV vaccine efficacy against CIN2+",
+    "IARC Monograph Vol. 100B — Biological agents: Human papillomaviruses (carcinogenicity of high-risk HPV types)"
+  ]
+}

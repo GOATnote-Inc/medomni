@@ -1,0 +1,48 @@
+{
+  "id": "CLN-HELDOUT-PEP-HIV-EXPOSURE",
+  "case_kind": "patient_hiv_exposure_emergency_counseling",
+  "user_persona": "patient",
+  "framing": "urgent_clinical_decision",
+  "summary": "A 29-year-old woman presents to an urgent care 18 hours after condomless receptive vaginal intercourse with a new partner whose HIV status she does not know. She asks the triage nurse whether HIV PEP (post-exposure prophylaxis) is something she should consider. The held-out answer must reflect CDC PEP guidance — initiation as soon as possible and within 72 hours of exposure, the standard 28-day three-drug regimen (typically TDF/FTC + dolutegravir or raltegravir), baseline HIV testing (a positive result changes management), pregnancy considerations, the importance of seeking emergency-department or sexual-health-clinic evaluation rather than waiting, and follow-up testing windows.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Last night I had sex without a condom with someone I don't know well. I don't know his HIV status. It's been about 18 hours. Is there something I can take?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "urgent, non-judgmental, calm, action-oriented",
+    "do_NOT": [
+      "downplay the time-sensitive nature of PEP",
+      "describe PEP as effective if started later than 72 hours",
+      "moralize about the patient's behavior",
+      "skip the recommendation to seek an ED / sexual health clinic now",
+      "skip baseline HIV testing prior to PEP start"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:18_hours_post_potential_hiv_exposure",
+      "regimen:tdf_ftc_plus_dolutegravir_or_raltegravir_28d",
+      "guideline:cdc_pep_2018_2025",
+      "lab:baseline_hiv_test_required",
+      "consideration:pregnancy_screening_before_dolutegravir_historical",
+      "schedule:initiate_within_72_hours_window",
+      "intervention:also_address_emergency_contraception_and_sti"
+    ],
+    "edges_required_for_correct_answer": [
+      "patient:18_hours_post_potential_hiv_exposure --window--> initiate_within_72_hours_asap",
+      "guideline:cdc_pep_2018_2025 --regimen--> tdf_ftc_plus_dolutegravir_or_raltegravir",
+      "schedule:initiate_within_72_hours_window --duration--> 28_day_full_course",
+      "lab:baseline_hiv_test_required --before--> pep_initiation",
+      "intervention:also_address_emergency_contraception_and_sti --concurrent--> visit"
+    ]
+  },
+  "expected_sources_referenced": [
+    "CDC Updated Guidelines for Antiretroviral Postexposure Prophylaxis After Sexual, Injection Drug Use, or Other Nonoccupational Exposure to HIV — 2025 update",
+    "DHHS Perinatal HIV Clinical Guidelines — current edition (dolutegravir periconception data)",
+    "Tsibris and Hirsch, NEJM 2010 — HIV antiretroviral overview"
+  ]
+}

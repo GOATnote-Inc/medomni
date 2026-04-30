@@ -1,0 +1,77 @@
+{
+  "rubric_id": "CLN-HELDOUT-H-PYLORI-ERADICATE-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant. Hard negation preserved on the safety-critical claim that clarithromycin-based triple therapy is universally first-line.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that bismuth quadruple therapy (PPI + bismuth subsalicylate or subcitrate + tetracycline + metronidazole) for 14 days is preferred first-line per ACG 2024 in regions of high clarithromycin resistance, which now includes most of the United States.",
+      "weight": 0.18,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R2",
+      "description": "Response correctly conveys that legacy clarithromycin-based triple therapy (PPI + amoxicillin + clarithromycin) is no longer the universal first-line in the US, given clarithromycin resistance prevalence above 15% in many regions.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["clarithromycin triple therapy is the universal first-line treatment", "PPI + amoxicillin + clarithromycin is the standard first-line in 2026"]
+    },
+    {
+      "id": "R3",
+      "description": "Response describes the standard duration — 14 days — which has been shown in meta-analyses to outperform 7-day and 10-day courses for eradication.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R4",
+      "description": "Response notes alternative first-line / salvage options as appropriate — vonoprazan-based regimens (vonoprazan-amoxicillin dual or triple, FDA-approved 2022), rifabutin triple therapy (Talicia, FDA-approved), and levofloxacin-based regimens for salvage. Mention of at least one alternative is sufficient.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response correctly conveys the test-of-cure requirements — eradication should be confirmed with urea breath test or stool antigen test (NOT serology, which remains positive after eradication), at LEAST 4 weeks after completion of the antibiotic course and at least 2 weeks off PPI therapy. Both intervals must be respected to avoid false-negative testing.",
+      "weight": 0.15,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["test of cure can be done immediately after the antibiotic course", "serology can be used to confirm eradication"]
+    },
+    {
+      "id": "R6",
+      "description": "Response addresses common adverse effects of bismuth quadruple therapy — black stools and dark tongue (from bismuth, harmless), GI upset (nausea, diarrhea), metallic taste, alcohol intolerance with metronidazole (disulfiram-like reaction).",
+      "weight": 0.08,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response addresses the importance of strict adherence — incomplete adherence is a common cause of eradication failure and promotes resistance, so completing the full 14 days is essential even if symptoms improve early.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response notes ulcer-healing follow-up — duodenal ulcers typically heal with adequate H. pylori eradication and PPI continuation; ongoing PPI therapy beyond the antibiotic course (typically 4-8 weeks for duodenal ulcer healing) is often appropriate.",
+      "weight": 0.05,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response uses a non-prescriptive shared-decision-making register — frames the answer as a coordinated plan with the GI team, validates the patient's question.",
+      "weight": 0.05,
+      "tags": ["axis:communication_quality"]
+    },
+    {
+      "id": "R10",
+      "description": "Response addresses what to do if the test of cure is positive — confirms that recurrent / persistent infection requires a salvage regimen with different antibiotics (avoiding antibiotics used in the failed regimen), and is not unusual.",
+      "weight": 0.03,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

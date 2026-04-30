@@ -1,0 +1,76 @@
+{
+  "rubric_id": "CLN-HELDOUT-BPH-MEDICAL-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant. This BPH fixture is distinct from the held-out 5ARI-PROSTATE chemoprevention fixture; it concerns symptomatic BPH treatment, not prostate cancer chemoprevention.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that an alpha-blocker (tamsulosin, alfuzosin, or silodosin) is first-line for symptomatic BPH/LUTS in most patients per AUA 2024 — rapid onset, generally well-tolerated.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R2",
+      "description": "Response correctly conveys that 5-alpha-reductase inhibitors (finasteride, dutasteride) work primarily by shrinking the prostate and benefit men with larger glands (typically >30-40 cc); onset of meaningful symptom benefit is delayed (3-6 months). Equivalent phrasing about 'won't help right away; takes months' should pass.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["finasteride starts working in days", "5-ARI provides immediate symptom relief"]
+    },
+    {
+      "id": "R3",
+      "description": "Response references the combination-therapy evidence (MTOPS, CombAT) — combination of alpha-blocker plus 5-ARI is superior to either monotherapy for clinical progression in men with larger prostates / higher baseline risk.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R4",
+      "description": "Response addresses tamsulosin / alpha-blocker side effects — orthostatic hypotension and dizziness (especially with first dose, particularly with non-uroselective alpha-blockers; less with tamsulosin, alfuzosin, silodosin), retrograde ejaculation, intraoperative floppy iris syndrome (relevant if cataract surgery is anticipated).",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response addresses 5-ARI side effects honestly — sexual side effects (decreased libido, erectile dysfunction, ejaculatory dysfunction), gynecomastia, and the persistent post-finasteride syndrome controversy. The patient should know about these realistically.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response notes that 5-ARIs lower PSA by approximately 50% within 6-12 months; future PSA values should be doubled when interpreting for cancer screening.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response surfaces the alternative / adjunct of tadalafil 5 mg daily for LUTS (with or without erectile dysfunction) as an AUA-endorsed option — useful for men in whom the alpha-blocker / 5-ARI side-effect profile is suboptimal or who have concurrent erectile dysfunction.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response addresses lifestyle / behavioral measures — limiting late-evening fluid intake (specifically helpful for nocturia), reducing caffeine and alcohol especially after dinner, double-voiding, addressing sleep apnea and other contributors to nocturia. Pelvic floor work in some patients.",
+      "weight": 0.10,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response notes when surgical / procedural referral becomes appropriate — recurrent UTIs, gross hematuria, bladder stones, refractory retention, severe symptoms unresponsive to medical therapy. The response should treat surgery as a normal part of the BPH care continuum rather than as a failure.",
+      "weight": 0.07,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R10",
+      "description": "Response uses a non-prescriptive shared-decision-making register — frames the choice as a discussion with the urologist, lays out trade-offs.",
+      "weight": 0.10,
+      "tags": ["axis:communication_quality"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

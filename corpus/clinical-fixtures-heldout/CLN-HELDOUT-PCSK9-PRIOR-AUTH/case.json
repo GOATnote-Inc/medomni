@@ -1,0 +1,51 @@
+{
+  "id": "CLN-HELDOUT-PCSK9-PRIOR-AUTH",
+  "case_kind": "patient_lipid_management_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 56-year-old with heterozygous familial hypercholesterolemia and an LDL of 138 mg/dL on rosuvastatin 40 mg + ezetimibe 10 mg asks about PCSK9 inhibitor therapy and whether her insurance is likely to cover it. The held-out answer must accurately describe PCSK9-inhibitor mechanism (alirocumab/evolocumab/inclisiran), efficacy magnitude (~50-60% additional LDL reduction), the FOURIER (evolocumab) and ODYSSEY OUTCOMES (alirocumab) cardiovascular-outcomes trials, typical prior-authorization criteria (HeFH or established ASCVD with LDL above threshold despite max-tolerated statin +/- ezetimibe), and the persistence of out-of-pocket-cost barriers.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I have familial high cholesterol, my LDL is 138 on max-dose rosuvastatin and ezetimibe. My doctor mentioned a 'PCSK9 inhibitor.' I've heard those are expensive. What's involved, and is insurance going to fight me on it?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "evidence-grounded, practical, candid about prior-auth realities",
+    "do_NOT": [
+      "describe PCSK9 inhibitors as a first-line option for routine LDL management",
+      "promise insurance approval",
+      "minimize the realistic prior-authorization workload",
+      "describe inclisiran as identical to alirocumab/evolocumab",
+      "state that PCSK9 inhibitors replace statin therapy"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:hefh_on_max_statin_plus_ezetimibe",
+      "drug:pcsk9_mab_alirocumab_evolocumab",
+      "drug:inclisiran_sirna",
+      "biomarker:ldl_138",
+      "trial:fourier",
+      "trial:odyssey_outcomes",
+      "process:prior_authorization",
+      "concept:hefh_diagnostic_criteria"
+    ],
+    "edges_required_for_correct_answer": [
+      "drug:pcsk9_mab --on_top_of_statin_ezetimibe--> additional_ldl_reduction_50_to_60_pct",
+      "trial:fourier --evolocumab_outcome--> mace_reduction (HR ~0.85)",
+      "trial:odyssey_outcomes --alirocumab_outcome--> mace_reduction_post_acs",
+      "drug:inclisiran_sirna --different_class--> q6mo_dosing_after_loading",
+      "patient:hefh_on_max_statin_plus_ezetimibe --typical_pa_criteria--> ldl_threshold_documented_diagnosis_max_tolerated_lipid_lowering",
+      "process:prior_authorization --realistic--> documentation_burden_appeals_possible"
+    ]
+  },
+  "expected_sources_referenced": [
+    "FOURIER trial — Sabatine et al., NEJM 2017 (evolocumab)",
+    "ODYSSEY OUTCOMES — Schwartz et al., NEJM 2018 (alirocumab post-ACS)",
+    "ORION-10 / ORION-11 — Ray et al., NEJM 2020 (inclisiran)",
+    "Sabatine M., Nat Rev Cardiol 2019 review of PCSK9 biology"
+  ]
+}

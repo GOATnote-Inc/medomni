@@ -1,0 +1,78 @@
+{
+  "rubric_id": "CLN-DEMO-TAMOXIFEN-MIRENA-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "v2 removes hard `must_mention_keywords` token-presence gates on paraphraseable clinical concepts. Judge resolves paraphrase against the natural-language `description`. v1 is preserved for ablation/comparison.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly distinguishes Mirena's mechanism of action as a local intrauterine effect rather than a systemic one, and conveys that systemic absorption of levonorgestrel from the IUD is minimal enough that it is not expected to meaningfully attenuate tamoxifen's breast-cancer protective effect. Equivalent phrasings ('acts locally on the endometrium,' 'low circulating hormone levels,' 'doesn't reach the breast tissue in clinically meaningful amounts') should pass.",
+      "weight": 0.15,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R2",
+      "description": "Response represents the Cochrane evidence accurately: Mirena reduces the incidence of benign endometrial pathology (polyps, hyperplasia) in patients on tamoxifen, but the evidence does NOT support a claim that Mirena prevents endometrial cancer. The response must not assert or imply cancer prevention.",
+      "weight": 0.15,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["Mirena prevents endometrial cancer", "Mirena protects from endometrial cancer"]
+    },
+    {
+      "id": "R3",
+      "description": "Response distinguishes premenopausal from postmenopausal endometrial-cancer risk on tamoxifen, communicating that premenopausal patients have minimal or no established increase in endometrial-cancer risk while postmenopausal patients carry a meaningfully elevated risk (commonly cited as roughly 2-7x baseline, with risk rising after extended use). The judge should verify that both populations are addressed and the asymmetry is conveyed; exact numeric ranges may vary.",
+      "weight": 0.12,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R4",
+      "description": "Response anchors the breast-cancer risk-threshold conversation in a recognized quantitative framework — typically the Gail model 5-year risk threshold around 1.7% used by major US guideline bodies (e.g., USPSTF, NCCN) — and notes that Tyrer-Cuzick (IBIS) is the preferred model when family history is the dominant risk driver. Paraphrases that name the threshold, the model(s), and at least one guideline body should pass; literal token presence is not required.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:instruction_following"]
+    },
+    {
+      "id": "R5",
+      "description": "Response treats nulliparity and family history (especially first-degree relatives) as risk modifiers that feed into a formal risk calculator rather than as standalone indications. It communicates an approximate magnitude for nulliparity (around a 1.27-1.38 hazard ratio) and for first-degree relatives (roughly a doubling of risk for one affected relative; substantially higher for multiple). The framing should be 'inputs to a risk calculation' rather than 'reasons by themselves to start tamoxifen.'",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response uses a shared-decision-making register: curious, helpful, evidence-grounded. It avoids paternalistic prescriptive language ('I recommend,' 'you should take it,' 'you should not take it') and instead frames the discussion as presenting evidence, weighing it together, and computing the patient's specific numbers before any decision.",
+      "weight": 0.10,
+      "tags": ["axis:communication_quality"],
+      "must_NOT_state": ["I recommend", "you should take", "you should not take"],
+      "encouraged_phrasing": ["here's the evidence", "let's calculate", "depends on your values"]
+    },
+    {
+      "id": "R7",
+      "description": "When familial breast-cancer risk is part of the picture, response surfaces hereditary-cancer evaluation (e.g., BRCA1/2 testing, genetic counseling) as a prerequisite consideration before chemoprevention decisions, particularly when a first-degree relative was diagnosed under age 50, or when male breast cancer or ovarian cancer appear in the family.",
+      "weight": 0.08,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response specifies that postmenopausal patients should undergo baseline endometrial assessment before starting tamoxifen — typically a transvaginal ultrasound or office hysteroscopy, consistent with ACOG guidance. Equivalent descriptions of pretreatment endometrial imaging or evaluation should pass.",
+      "weight": 0.06,
+      "tags": ["axis:completeness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response describes the correct monitoring strategy: routine gynecologic care for premenopausal patients; symptom-driven evaluation for postmenopausal patients with prompt workup of any abnormal vaginal bleeding. It does NOT recommend routine surveillance imaging in asymptomatic patients, because that is not evidence-based.",
+      "weight": 0.06,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R10",
+      "description": "Response notes that aromatase inhibitors (e.g., anastrozole, exemestane) are an alternative chemoprevention option for postmenopausal patients and carry a lower endometrial-cancer risk profile than tamoxifen.",
+      "weight": 0.05,
+      "tags": ["axis:completeness"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion is scored 0 (not met) or 1 (met) by the judge against the natural-language `description`. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials. Below that, MedOmni v0 is not done."
+}

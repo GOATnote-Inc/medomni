@@ -1,0 +1,630 @@
+{
+  "clinical_system_prompt": true,
+  "dense_backend": "numpy",
+  "dry_run": false,
+  "embed_model": "nvidia/llama-nemotron-embed-1b-v2",
+  "embed_url": "http://127.0.0.1:8001/v1",
+  "generated_at": "2026-04-30T04:15:27Z",
+  "graph_expand": false,
+  "graph_persona": null,
+  "guardrails_enabled": false,
+  "judge_host": null,
+  "judge_model": "Qwen/Qwen2.5-7B-Instruct",
+  "judge_url": "http://127.0.0.1:8003/v1",
+  "manifest_path": "/Users/kiteboard/prism42-nemotron-med/corpus/clinical-fixtures-heldout",
+  "n_anchors": 0,
+  "n_corpus_chunks": 107,
+  "n_per_trial": 30,
+  "primekg_enabled": false,
+  "primekg_max_hops": null,
+  "primekg_max_nodes": null,
+  "primekg_mode": null,
+  "primekg_n_edges": null,
+  "primekg_n_nodes": null,
+  "primekg_path": null,
+  "primekg_url": null,
+  "rerank_host": null,
+  "rerank_model": "nvidia/llama-3.2-nv-rerankqa-1b-v2",
+  "rerank_url": "http://127.0.0.1:8002/v1",
+  "retrieval_cuvs": false,
+  "retrieval_mode": "hybrid",
+  "retrieval_top_n": 8,
+  "run_id": "715141ba",
+  "seed": 42,
+  "serve_model": "nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4",
+  "serve_url": "http://127.0.0.1:8000/v1",
+  "sovereign": true,
+  "temperature": 0.0,
+  "trial_results": [
+    {
+      "aggregate": {
+        "n": 30,
+        "n_recused": 0,
+        "n_scored": 30,
+        "per_axis": {
+          "accuracy": 0.4019753110364731,
+          "communication_quality": 0.39976086263237964,
+          "completeness": 0.22507301417321376,
+          "context_awareness": 0.3111214680173265,
+          "instruction_following": 0.09570370370370371
+        },
+        "score": 0.369
+      },
+      "per_example": [
+        {
+          "duration_ms": 9862,
+          "example_id": "CLN-HELDOUT-5ARI-PROSTATE",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.4939759036144578,
+            "communication_quality": 0.5,
+            "completeness": 0.3939393939393939,
+            "context_awareness": 0.0,
+            "instruction_following": 1.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nNo, you should not ask for finasteride or dutasteride for prostate cancer prevention based on your current PSA of 3.4 ng/mL and family history alone. These drugs are not recommended for chemoprevention due to significant side effects and lack of proven mortality benefit.\n\n(2) Mechanism:  \nFinasteride and dutasteride inhibit 5-alpha-reductase, reducing dihydrotestosterone (DHT) levels, which shrinks prostate volume and lowers PSA by ~50% over 6\u201312 months. This creates a false impression of reduced cancer risk (via PSA lowering), but the trials (PCPT, REDUCE) showed only a 20\u201325% relative risk reduction in cancer *incidence*\u2014not mortality\u2014and a 25\u201330% increased risk of high-grade cancer (Gleason 7\u201310).\n\n(3) Risk factors:  \n- Your PSA of 3.4 ng/mL is above the 3.0 ng/mL threshold used in the PCPT trial (which excluded men with PSA >3.0), making you ineligible for that study.  \n- Family history of prostate cancer in a first-degree relative (father diagnosed in late 60s) increases your baseline risk.  \n- Both drugs carry substantial side effects: 67.4% erectile dysfunction (finasteride), 9.0% erectile dysfunction (dutasteride), and 4.5% gynecomastia (finasteride).  \n- High-grade cancer risk is elevated (RR 1.27 for Gleason 7\u201310 in PCPT), with no evidence of reduced prostate cancer death.\n\n(4) What we know vs do not know:  \n- Known: Finasteride reduces *incidence* of prostate cancer by ~25% over 7 years (PCPT), but no mortality benefit. Dutasteride reduces incidence by ~23% (REDUCE), but also increases high-grade cancer risk.  \n- Unknown: Whether either drug reduces *prostate cancer mortality* long-term (PCPT follow-up showed no difference in death). Unknown if family history modifies drug efficacy or side effect risk.\n\n(5) Practical next steps:  \n- Discuss PSA adjustment: Since finasteride lowers PSA by ~50%, your actual PSA may be ~6.8 ng/mL if you were on it\u2014this could falsely reassure you. Do not take finasteride without PSA adjustment.  \n- Prioritize shared decision-making: Ask your doctor about active surveillance (repeat PSA in 6\u201312 months), digital rectal exam, or MRI if indicated.  \n- Avoid self-initiating 5-ARI therapy: The FDA explicitly states neither drug is approved for chemoprevention, and off-label use carries significant risks without proven mortality benefit.  \n- Consider risk stratification: Your family history warrants closer monitoring, but chemoprevention is not the appropriate first step. Focus on evidence-based screening and lifestyle factors.",
+          "score": 0.48,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9432,
+          "example_id": "CLN-HELDOUT-A1C-ELDERLY",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.4375,
+            "communication_quality": 0.46666666666666673,
+            "completeness": 0.2777777777777778,
+            "context_awareness": 0.3389830508474576,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Her current A1c of 7.4% is not excessively tight, but the two hypoglycemic episodes indicate her diabetes management may be too aggressive given her age and comorbidities. Tightening sugars further is not advisable and could increase risk of dangerous lows.\n\n(2) Mechanism: Glipizide is a sulfonylurea that stimulates insulin secretion from pancreatic beta cells, increasing hypoglycemia risk, especially in elderly patients. Metformin reduces glucose production and improves insulin sensitivity but has low hypoglycemia risk. At age 82 with diabetes duration and two documented lows (including nocturnal), her regimen likely causes excessive insulin secretion (glipizide) despite metformin, leading to glucose excursions followed by overcorrection.\n\n(3) Risk factors: Age >80, diabetes for unknown duration, two hypoglycemic events (one symptomatic, one nocturnal), use of glipizide (high-risk agent), possible reduced renal function (metformin requires dose adjustment if eGFR <30), and potential cognitive decline impairing hypoglycemia awareness.\n\n(4) What we know vs do not know: We know glipizide increases hypoglycemia risk and that nocturnal hypoglycemia is particularly dangerous in elderly. We do not know her exact eGFR, current glipizide dose, or whether she has orthostatic hypotension or other comorbidities that increase fall risk from lows. We also lack data on whether her A1c reflects adequate long-term control given her hypoglycemic episodes.\n\n(5) Practical next steps: Immediately review current glipizide dose and consider reducing it or discontinuing it due to high hypoglycemia risk. Switch to a lower-risk agent like basal insulin (e.g., glargine) or DPP-4 inhibitor if glucose control is inadequate. Check fasting glucose and pre-meal values to assess patterns. Recheck eGFR for metformin safety. Schedule a comprehensive diabetes review with her physician to individualize targets\u2014less aggressive than typical (e.g., A1c 7.5-8.0% may be safer for her age). Consider CGM alerts and education on hypoglycemia symptoms. Avoid further A1c tightening; focus on safety and quality of life.",
+          "score": 0.35,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9670,
+          "example_id": "CLN-HELDOUT-ASPIRIN-CRC",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.6666666666666666,
+            "communication_quality": 0.6153846153846154,
+            "completeness": 0.23809523809523808,
+            "context_awareness": 0.425531914893617,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: No, you should not start taking daily aspirin without first discussing it with your physician, as the potential bleeding risks may outweigh the benefits for your specific situation.  \n\n(2) Mechanism: Aspirin reduces colorectal cancer risk through anti-inflammatory and antiplatelet effects, with benefits emerging only after 10-20 years of use (hazard ratio 0.60; 95% CI, 0.47-0.76) in high-risk populations like Lynch syndrome. However, this evidence applies to prolonged use in specific groups, not average-risk individuals with family history.  \n\n(3) Risk factors: Your family history (first-degree relatives diagnosed before age 55) increases your colorectal cancer risk, but you lack Lynch syndrome or other high-risk features. Key risks of aspirin include major gastrointestinal bleeding (14/1,000 over 10 years at low doses) and hemorrhagic stroke (3.2/1,000), with bleeding risk escalating significantly in adults \u226560 years.  \n\n(4) What we know vs do not know: We know aspirin shows strong CRC prevention in Lynch syndrome (HR 0.65; 95% CI, 0.43-0.97) and long-term use in general populations (17.5-year follow-up: Peto OR 0.82), but we do not know if your family history alone qualifies you for meaningful benefit. The USPSTF states evidence is \"inadequate\" for average-risk individuals, and recent trials (e.g., ASPREE) show potential harm (1.74x higher CRC mortality at 4.7 years).  \n\n(5) Practical next steps: Schedule a visit with your doctor to discuss your family history, assess your individual risk (e.g., via tools like the NCI risk calculator), and evaluate bleeding risk factors (e.g., history of ulcers, anticoagulant use, age). Do not start aspirin without medical guidance\u2014consider alternative prevention strategies like colonoscopy screening (recommended starting at 45-50 for average risk) and lifestyle modifications (physical activity, high-fiber diet).",
+          "score": 0.48,
+          "trial": 0
+        },
+        {
+          "duration_ms": 10541,
+          "example_id": "CLN-HELDOUT-BISPHOSPHONATE-AI",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.26666666666666666,
+            "communication_quality": 0.42857142857142855,
+            "completeness": 0.4482758620689655,
+            "context_awareness": 0.0,
+            "instruction_following": 0.5
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Yes, zoledronic acid is evidence-based for reducing breast cancer recurrence risk in postmenopausal women with early-stage hormone-positive breast cancer, and it is considered safe when used appropriately.  \n\n(2) Mechanism: Zoledronic acid is a bisphosphonate that inhibits bone resorption (osteoclast activity), which reduces bone metastases\u2014a common site of breast cancer recurrence\u2014and may also suppress tumor growth through anti-angiogenic effects and reduced bone-derived growth factors.  \n\n(3) Risk factors: The primary risk is potential bone density loss if delayed (as seen in Z-FAST/ZO-FAST trials), but since you\u2019re starting upfront with anastrozole (which causes bone loss), the risk of fracture is low with proper dosing. The main safety concerns are rare (e.g., acute-phase reaction, renal impairment, or osteonecrosis of the jaw), but these are uncommon in clinical practice with standard dosing.  \n\n(4) What we know vs do not know:  \n- *Known*: The EBCTCG 2015 meta-analysis (n=18,766) confirms bisphosphonates (including zoledronic acid) reduce recurrence and improve survival in *postmenopausal* women with early-stage breast cancer. The Z-FAST/ZO-FAST trials (2009) show upfront zoledronic acid preserves bone density and improves disease-free survival compared to delayed initiation.  \n- *Not known*: Long-term effects beyond 10+ years (e.g., impact on mortality beyond 5\u201310 years), optimal duration of treatment, and whether benefits persist after stopping therapy.  \n\n(5) Practical next steps:  \n- Confirm you\u2019re postmenopausal (anastrozole use confirms this, as it induces menopause).  \n- Discuss with your oncologist whether zoledronic acid is indicated for *you* based on your specific risk profile (e.g., bone density, fracture risk).  \n- If recommended, start zoledronic acid *now* (upfront) with anastrozole, as delayed initiation may reduce efficacy (per Z-FAST/ZO-FAST).  \n- Monitor for side effects (e.g., flu-like symptoms after infusion, rare kidney issues) and ensure adequate calcium/vitamin D intake to support bone health.  \n- Continue regular bone density monitoring (e.g., DEXA scans) as part of your care plan.",
+          "score": 0.32,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9455,
+          "example_id": "CLN-HELDOUT-BPH-MEDICAL",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.1780821917808219,
+            "communication_quality": 0.0,
+            "completeness": 0.0,
+            "context_awareness": 0.0,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Tamsulosin is the appropriate choice for your urinary symptoms; finasteride is not indicated for symptom relief and carries significant sexual and hormonal side effects without proven mortality benefit.  \n\n(2) Mechanism: Tamsulosin is an alpha-1 blocker that relaxes smooth muscle in the prostate and bladder neck, improving urine flow by blocking alpha-adrenergic receptors. Finasteride is a 5-alpha-reductase inhibitor that reduces prostate volume over time by inhibiting conversion of testosterone to dihydrotestosterone (DHT), but it does not directly improve urinary flow.  \n\n(3) Risk factors: Tamsulosin has low systemic absorption and minimal sexual side effects (discontinuation rate ~1-2% in trials). Finasteride carries high risk of sexual dysfunction (67.4% in PCPT trial), loss of libido (65.4%), and gynecomastia (4.5%), with 36.8% of men discontinuing due to these issues.  \n\n(4) What we know vs do not know: We know tamsulosin effectively reduces urinary symptoms (e.g., 50-60% improvement in flow rates in BPH trials), while finasteride reduces prostate cancer incidence by 24.8% in the PCPT trial but shows no mortality benefit. However, finasteride\u2019s high-grade cancer signal (6.4% vs 5.1% placebo) and sexual side effects are well-documented. We do not know if combining both would mitigate risks or provide additive benefit, as no trials have evaluated this strategy for symptom management.  \n\n(5) Practical next steps: Start tamsulosin 0.4 mg daily for symptom relief. Reassess in 4-6 weeks; if symptoms persist, consider adding finasteride only if prostate volume is significantly enlarged (e.g., PSA >4.0 ng/mL) and cancer risk is high, but avoid due to side effect burden. Monitor for sexual dysfunction and discontinuation. PSA of 1.6 is low-risk, and no cancer signs on exam make finasteride\u2019s preventive benefit unlikely to outweigh harms.",
+          "score": 0.13,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9821,
+          "example_id": "CLN-HELDOUT-CKD-REFERRAL",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.38271604938271603,
+            "communication_quality": 0.0,
+            "completeness": 0.0,
+            "context_awareness": 0.42857142857142855,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nYes, a kidney specialist (nephrologist) referral is necessary and strongly recommended given your eGFR of 38, proteinuria (ratio 350), diabetes, and hypertension. Your primary care physician should initiate this referral.\n\n(2) Mechanism:  \nYour eGFR of 38 indicates stage 3b chronic kidney disease (CKD), and a protein-to-creatinine ratio of 350 confirms significant proteinuria. Diabetes and hypertension are the leading causes of CKD progression. Proteinuria directly damages kidney filtration units, accelerates CKD progression, and increases cardiovascular risk. The combination of these factors creates a high-risk scenario requiring specialized monitoring and management to prevent kidney failure, cardiovascular events, and mortality.\n\n(3) Risk factors:  \n- **Diabetes (15 years)**: Major driver of CKD progression; hyperglycemia damages glomeruli.  \n- **Hypertension**: Uncontrolled BP accelerates glomerular injury.  \n- **eGFR 38**: Confirms significant decline in kidney function (normal >90; <60 requires specialist evaluation).  \n- **Proteinuria (ratio 350)**: Strong predictor of CKD progression (HR 1.5\u20132.0 for progression to ESRD).  \n- **Age 62**: Age-related CKD risk is elevated, especially with comorbidities.  \n- **Combined risk**: Diabetes + hypertension + proteinuria = high risk for rapid CKD progression (per NCI PDQ 2025).\n\n(4) What we know vs do not know:  \n- **Known**: Proteinuria (350) + eGFR 38 + diabetes + hypertension = high-risk CKD (NCI PDQ 2025). Proteinuria is a validated biomarker for CKD progression (NCI PDQ 2025).  \n- **Not known**: Exact rate of CKD progression without intervention; optimal timing for referral (though guidelines mandate referral for eGFR <45 + proteinuria).  \n- **Not known**: Whether primary care can adequately manage this without nephrology (evidence shows specialists reduce progression by 30\u201340% in high-risk patients).\n\n(5) Practical next steps:  \n- **Immediate referral to nephrology**: Your primary care should refer you *now* (not wait for \"maybe\").  \n- **Optimize BP control**: Target <130/80 mmHg (per KDIGO 2023 guidelines) to slow CKD progression.  \n- **Tight glycemic control**: Aim for HbA1c <7.0% (per ADA 2023) to reduce kidney damage.  \n- **Avoid nephrotoxic agents**: Confirm with nephrologist about avoiding NSAIDs, certain antibiotics, or contrast dye.  \n- **Monitor proteinuria**: Repeat urine protein test in 3 months to confirm persistence (NCI PDQ 2025).  \n- **Do not delay**: CKD progression can accelerate rapidly; early nephrology care improves outcomes (NCI PDQ 2025).  \n\n*Source: NCI PDQ 2025 (Colorectal Cancer Prevention \u00a7 Hereditary Risk, \u00a7 Hormone Therapy, \u00a7 Statins) and KDIGO 2023 CKD guidelines (noting proteinuria as key progression marker).*",
+          "score": 0.31,
+          "trial": 0
+        },
+        {
+          "duration_ms": 10518,
+          "example_id": "CLN-HELDOUT-DOAC-AFIB",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.43478260869565216,
+            "communication_quality": 1.0,
+            "completeness": 0.29411764705882354,
+            "context_awareness": 0.0,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nApixaban is generally preferred over warfarin for most patients like you (71 years old with atrial fibrillation, hypertension, diabetes, and prior TIA), as it has lower risk of major bleeding and no need for regular blood monitoring. However, the best choice depends on your individual bleeding risk, kidney function, and ability to adhere to medication.\n\n(2) Mechanism:  \nApixaban is a direct oral anticoagulant (DOAC) that selectively inhibits factor Xa in the coagulation cascade, preventing clot formation without requiring regular blood tests. Warfarin works by inhibiting vitamin K-dependent clotting factors (II, VII, IX, X), requiring frequent INR monitoring to maintain therapeutic levels and avoid bleeding complications.\n\n(3) Risk factors:  \n- Higher bleeding risk with warfarin due to narrow therapeutic window and need for frequent monitoring (especially problematic in elderly patients with comorbidities like diabetes and hypertension).  \n- Apixaban has more predictable pharmacokinetics and lower risk of intracranial hemorrhage compared to warfarin.  \n- Your prior TIA suggests possible vascular disease, which may increase bleeding risk with warfarin.  \n- Diabetes and hypertension may contribute to bleeding risk, particularly with warfarin\u2019s variable dosing.\n\n(4) What we know vs do not know:  \n- **Known**: Apixaban shows lower rates of major bleeding (including intracranial hemorrhage) and all-cause mortality in atrial fibrillation patients compared to warfarin in major trials (e.g., AVERROES, ARISTOTLE). Warfarin\u2019s efficacy is well-established but requires strict monitoring.  \n- **Not known**: Your exact kidney function (apixaban is contraindicated if eGFR <25 mL/min), bleeding risk profile (e.g., history of falls, gastrointestinal issues), and whether you have a mechanical heart valve (warfarin preferred for those). Also, long-term real-world data on DOACs in patients with prior stroke/TIA is limited.\n\n(5) Practical next steps:  \n- Discuss with your cardiologist:  \n  - Your kidney function (creatinine clearance) to rule out apixaban contraindications.  \n  - Your bleeding risk (e.g., history of falls, gastrointestinal bleeding, or other comorbidities).  \n  - Your ability to adhere to medication (apixaban is taken twice daily vs. warfarin\u2019s daily dose adjustments).  \n- Consider a shared decision-making conversation about:  \n  - The trade-off between apixaban\u2019s lower bleeding risk vs. warfarin\u2019s established track record.  \n  - Whether you\u2019re willing to accept regular blood tests for warfarin or prefer apixaban\u2019s convenience.  \n- If apixaban is chosen, ensure dose adjustment based on renal function and weight (standard dose is 5 mg twice daily unless renal impairment or low weight).  \n- If warfarin is chosen, confirm you can commit to INR monitoring every 2\u20134 weeks initially and maintain consistent vitamin K intake.  \n\n*Note: Given your age (>70), prior stroke, and multiple risk factors, apixaban is often first-line per current guidelines (e.g., AHA/ACC), but individualized assessment is critical.*",
+          "score": 0.48,
+          "trial": 0
+        },
+        {
+          "duration_ms": 8791,
+          "example_id": "CLN-HELDOUT-DVT-PROPHYLAX-ORTHO",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.0,
+            "communication_quality": 0.5,
+            "completeness": 0.0,
+            "context_awareness": 0.2708333333333333,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: You must continue rivaroxaban for at least 3-6 months after knee replacement, and cannot safely switch to aspirin at this stage.  \n(2) Mechanism: Rivaroxaban is a direct oral anticoagulant (DOAC) that prevents blood clots by inhibiting factor Xa; aspirin is an antiplatelet agent that only affects platelet aggregation and offers no meaningful clot prevention after joint replacement.  \n(3) Risk factors: Knee replacement carries high risk of venous thromboembolism (VTE) for 3-6 months post-op; aspirin provides minimal VTE protection in this context and increases bleeding risk without reducing clot risk.  \n(4) What we know vs do not know:  \n  - Known: Rivaroxaban 10 mg daily is standard for 3-6 months post-knee replacement (per orthopedic guidelines); aspirin has no evidence for VTE prevention after joint replacement and increases bleeding risk.  \n  - Unknown: Exact duration beyond 6 months (varies by individual risk), and whether aspirin could ever be substituted without compromising clot prevention.  \n(5) Practical next steps: Continue rivaroxaban for the full prescribed duration (typically 3-6 months), discuss with your orthopedic surgeon before considering any change, and do not switch to aspirin without medical evaluation.",
+          "score": 0.13,
+          "trial": 0
+        },
+        {
+          "duration_ms": 11095,
+          "example_id": "CLN-HELDOUT-EZETIMIBE-ADD-ON",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.8793103448275862,
+            "communication_quality": 0.0,
+            "completeness": 0.5769230769230769,
+            "context_awareness": 0.4,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nAdding ezetimibe to your current atorvastatin 80 mg regimen is likely indicated and beneficial for you, given your recent myocardial infarction (heart attack) and LDL level of 92 mg/dL, which remains above guideline-recommended targets for secondary prevention.\n\n(2) Mechanism:  \nEzetimibe reduces intestinal cholesterol absorption by 15-20%, complementing statin therapy (which inhibits HMG-CoA reductase). This dual mechanism leads to additional LDL-C reduction of 15-20% on top of statin monotherapy. In secondary prevention patients like you, this further lowers LDL to levels associated with improved cardiovascular outcomes.\n\n(3) Risk factors:  \n- Recent myocardial infarction (within 1-2 years)  \n- LDL-C level of 92 mg/dL (above target for secondary prevention)  \n- Age (though not specified, secondary prevention targets apply regardless)  \n- Current statin therapy (80 mg atorvastatin is high-intensity)\n\n(4) What we know vs do not know:  \n- Known: Strong evidence supports LDL-C lowering for secondary prevention (post-MI patients). High-intensity statins reduce major adverse cardiovascular events by 25-30%. Ezetimibe adds proven incremental benefit when LDL remains above target.  \n- Unknown: Your specific 10-year CVD risk estimate (not calculable due to prior MI), long-term real-world effectiveness of adding ezetimibe beyond 2 years, and your individual tolerance to potential side effects (ezetimibe is generally well-tolerated).\n\n(5) Practical next steps:  \n- Discuss with your cardiologist whether your current LDL goal (typically <70 mg/dL for secondary prevention) is being met  \n- Consider lipid panel recheck in 4-12 weeks after adding ezetimibe to assess LDL reduction  \n- Evaluate for potential side effects (ezetimibe has low risk of myopathy or liver enzyme changes compared to statins)  \n- Continue high-intensity statin unless adverse effects occur  \n- Maintain adherence to cardiovascular risk-lowering lifestyle (diet, exercise, smoking cessation if applicable)  \n\nEvidence-based rationale: The ACC/AHA guidelines for secondary prevention recommend achieving LDL-C <70 mg/dL, with high-intensity statin + ezetimibe as first-line combination therapy when targets are not met with statin alone. Your LDL of 92 mg/dL indicates suboptimal control for secondary prevention.",
+          "score": 0.61,
+          "trial": 0
+        },
+        {
+          "duration_ms": 11381,
+          "example_id": "CLN-HELDOUT-GERD-PPI-STEPDOWN",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.5909090909090909,
+            "communication_quality": 0.2727272727272727,
+            "completeness": 0.32653061224489793,
+            "context_awareness": 0.3023255813953488,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nStopping omeprazole abruptly is generally safe for most people, but you should consult your physician first to assess your individual risk-benefit profile, as long-term use may require a gradual taper in specific cases.\n\n(2) Mechanism:  \nOmeprazole is a proton pump inhibitor (PPI) that irreversibly blocks gastric acid production. Long-term suppression (8+ years) may lead to:  \n- Altered gut microbiome (reduced *Lactobacillus*, increased *Enterococcus*)  \n- Impaired nutrient absorption (B12, magnesium, calcium)  \n- Increased risk of C. difficile infection and pneumonia  \n- Potential associations with dementia (observational data only), kidney injury, and fractures (via malabsorption)  \n\n(3) Risk factors:  \n- Duration: >2 years use correlates with higher risk of adverse events (per FDA warnings)  \n- Age: >65 years increases fracture and kidney risk  \n- Comorbidities: renal impairment, osteoporosis, or history of *C. diff* infection  \n- Dose/duration: 20 mg daily for 8 years exceeds typical short-term use (<8 weeks)  \n\n(4) What we know vs do not know:  \n\u2705 Known:  \n- PPIs increase risk of C. diff infection by 40-50% (JAMA Intern Med 2017)  \n- 25% higher risk of Clostridioides difficile colitis (Gastroenterology 2019)  \n- 20-30% increased risk of bone fractures (BMJ 2019)  \n- 15-20% increased risk of chronic kidney disease (Kidney Int 2020)  \n\u274c Not known:  \n- Causal link to dementia (observational only; confounding by indication)  \n- Exact mechanism of renal injury (likely via magnesium deficiency)  \n- Whether risk diminishes after discontinuation (long-term data lacking)  \n\n(5) Practical next steps:  \n- **Do not stop abruptly** if you have:  \n  - History of peptic ulcer disease or esophagitis  \n  - *H. pylori* infection (PPIs are used in eradication therapy)  \n  - Severe GERD symptoms (risk of rebound acid hypersecretion)  \n- **Action plan**:  \n  1. Schedule a visit to discuss duration (8 years is beyond guideline-recommended limits)  \n  2. Request:  \n     - Bone density scan (T-score)  \n     - Magnesium/B12 level testing  \n     - Assessment for *H. pylori* (urea breath test)  \n  3. If stopping:  \n     - Taper over 4-8 weeks (e.g., reduce to 10 mg daily for 4 weeks, then 5 mg for 4 weeks)  \n     - Monitor for rebound symptoms (heartburn worsening for 2-8 weeks)  \n  4. Consider alternatives:  \n     - H2 blocker (e.g., famotidine 20 mg PRN) for intermittent use  \n     - Non-pharmacological measures (weight loss, dietary changes, elevating head of bed)  \n\n*Evidence-based note*: The FDA states PPIs should be used \"at the lowest effective dose for the shortest duration needed\" (2020 safety communication). Discontinuation should be individualized\u2014never stop without medical guidance if you have high-risk conditions.",
+          "score": 0.42,
+          "trial": 0
+        },
+        {
+          "duration_ms": 10095,
+          "example_id": "CLN-HELDOUT-GLP1-DM2-INIT",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.13513513513513514,
+            "communication_quality": 0.0,
+            "completeness": 0.0,
+            "context_awareness": 0.30303030303030304,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Ozempic (a GLP-1 receptor agonist) is a strong fit for you given your type 2 diabetes, obesity (BMI 34), and recent stent placement, as it addresses both glycemic control and cardiovascular risk reduction more effectively than simply increasing metformin.  \n\n(2) Mechanism: Ozempic mimics incretin hormones (GLP-1) to enhance insulin secretion, suppress glucagon, slow gastric emptying, and promote satiety\u2014leading to improved glucose control, weight loss, and reduced cardiovascular events. Metformin primarily reduces hepatic glucose production and improves insulin sensitivity but does not directly target weight or cardiovascular risk.  \n\n(3) Risk factors: Ozempic carries a small but notable risk of pancreatitis and potential cardiovascular effects (e.g., heart palpitations), though these are less pronounced than with nicotine replacement therapy. Your recent stent placement (2 years ago) means cardiovascular risk remains elevated, making Ozempic\u2019s cardiovascular benefits particularly relevant. Metformin has minimal cardiovascular risk but no weight-loss benefit.  \n\n(4) What we know vs do not know:  \n- *Known*: Ozempic reduces HbA1c by 1\u20131.5% (vs metformin\u2019s 0.5\u20131%), promotes 5\u201310% weight loss, and lowers cardiovascular risk (per NCI 2024 data on GLP-1 agonists reducing 10/13 obesity-related cancers and cardiovascular events).  \n- *Unknown*: Long-term effects (>3 years) of Ozempic in patients with prior stent placement are less studied, though EAGLES trial data support its safety in high-risk cardiovascular patients.  \n\n(5) Practical next steps:  \n- Discuss Ozempic with your doctor, emphasizing your BMI (34), diabetes duration (6 years), and stent history (2 years) as key factors supporting its use.  \n- Request a cardiovascular risk assessment (e.g., 10-year ASCVD risk) to confirm eligibility for statin therapy (per USPSTF 2022), as Ozempic\u2019s cardiovascular benefits align with this.  \n- If Ozempic is chosen, monitor for gastrointestinal side effects (nausea, vomiting) and ensure sustained weight loss (per NCI data showing sustained loss reduces cancer risk).  \n- Avoid solely increasing metformin, as it lacks weight-loss and cardiovascular benefits critical for your profile.",
+          "score": 0.1,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9371,
+          "example_id": "CLN-HELDOUT-H-PYLORI-ERADICATE",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.24210526315789474,
+            "communication_quality": 0.0,
+            "completeness": 0.2777777777777778,
+            "context_awareness": 0.0,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: The standard treatment is a 14-day triple therapy regimen containing a proton pump inhibitor (PPI), clarithromycin, and amoxicillin (or metronidazole if allergic), with follow-up testing via urea breath test or stool antigen 4 weeks after completing antibiotics to confirm eradication.\n\n(2) Mechanism: The PPI (e.g., omeprazole) suppresses gastric acid, creating an unfavorable environment for H. pylori. Clarithromycin and amoxicillin/ metronidazole act as bactericidal agents targeting the bacteria's cellular processes. The 14-day duration ensures eradication of persistent bacteria in the gastric mucosa.\n\n(3) Risk factors: Antibiotic resistance (especially to clarithromycin), incomplete adherence, prior antibiotic use, and high bacterial load increase treatment failure risk. The regimen's efficacy is reduced if PPI is not taken correctly or if resistance to clarithromycin is present.\n\n(4) What we know vs do not know: We know the 14-day triple therapy is first-line based on multiple studies (e.g., Maastricht guidelines) showing >85% eradication rates in susceptible populations. We do not know the specific antibiotic components used in your regimen (e.g., whether clarithromycin or metronidazole was chosen), your allergy history, or whether resistance testing was performed prior to prescribing.\n\n(5) Practical next steps: Complete the full 14-day course exactly as prescribed. Schedule a follow-up appointment with your GI provider 4 weeks after finishing antibiotics for a confirmatory breath or stool test. Do not stop antibiotics early, even if symptoms improve.",
+          "score": 0.23,
+          "trial": 0
+        },
+        {
+          "duration_ms": 10408,
+          "example_id": "CLN-HELDOUT-HPV-CATCHUP",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.2261904761904762,
+            "communication_quality": 0.625,
+            "completeness": 0.23333333333333336,
+            "context_awareness": 0.4444444444444444,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nYes, Gardasil-9 vaccination is still recommended for you at age 35 through shared clinical decision-making, and it can meaningfully reduce your risk of cervical cancer by protecting against HPV types 31, 35, 45, 52, and 58\u2014though the benefit is lower than in adolescents because you may have already been exposed to some vaccine-targeted types.\n\n(2) Mechanism:  \nGardasil-9 is a non-replicating recombinant vaccine that induces immunity against nine high-risk HPV types (6, 11, 16, 18, 31, 33, 35, 45, 52, 58). It prevents infection with these types, thereby reducing the risk of persistent HPV infection, precancerous lesions (CIN 2/3), and ultimately cervical cancer. The 9-valent vaccine offers broader coverage than the older quadrivalent (4-valent) vaccine, particularly against HPV types 31, 35, 45, 52, and 58, which cause ~20% of cervical cancers.\n\n(3) Risk factors:  \n- Age 35+ means higher likelihood of prior HPV exposure (especially HPV-16/18, which cause ~70% of cervical cancers).  \n- If you\u2019ve had new sexual partners or multiple partners since adolescence, ongoing risk persists.  \n- Smoking and long-term oral contraceptive use increase cervical cancer risk in HPV-positive individuals, further justifying vaccination.  \n- Immunocompromised status (e.g., HIV) would strengthen the case for vaccination, but even without this, benefit exists.\n\n(4) What we know vs do not know:  \n- **Known**: Vaccination provides protection against HPV types not previously contracted; real-world data show ~87% reduction in cervical cancer risk in vaccinated women (NCI 2025). The 9-valent vaccine reduces type-specific cancer risk by 80\u201390% in unexposed individuals.  \n- **Not known**: Exact individualized risk reduction for someone your age with unknown prior exposure; duration of protection beyond 10\u201315 years is still being studied; effectiveness depends on completion of full dosing schedule (2 or 3 doses based on initiation age).\n\n(5) Practical next steps:  \n- Schedule a visit with your clinician to discuss shared decision-making, as recommended by ACIP for ages 27\u201345.  \n- Confirm you are not pregnant (vaccination is safe but should be deferred during pregnancy).  \n- Complete the 2-dose series (if initiated before age 15) or 3-dose series (if starting at 15+ or with immunocompromise), spaced 6\u201312 months apart.  \n- Continue routine cervical cancer screening (Pap/HPV tests) as recommended, since vaccination does not replace screening.  \n- Discuss with your provider whether your sexual history and risk factors (e.g., smoking, OC use) make vaccination particularly beneficial.",
+          "score": 0.29,
+          "trial": 0
+        },
+        {
+          "duration_ms": 8953,
+          "example_id": "CLN-HELDOUT-LEVOTHYROXINE-TITRATE",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.4725274725274725,
+            "communication_quality": 0.0,
+            "completeness": 0.5833333333333334,
+            "context_awareness": 0.0,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Take levothyroxine on an empty stomach 30-60 minutes before breakfast, swallow whole with water, and avoid calcium, iron, or soy products within 4 hours. TSH normalization typically occurs within 4-6 weeks, with symptom improvement following 6-12 weeks. TSH should be checked 6-8 weeks after starting or adjusting dose, then every 6-12 months if stable.\n\n(2) Mechanism: Levothyroxine replaces deficient thyroid hormone (T4), which is converted to active T3 in peripheral tissues. It suppresses elevated TSH by restoring negative feedback to the pituitary gland, normalizing thyroid hormone levels.\n\n(3) Risk factors: Inconsistent timing of dosing, concomitant medications/supplements (e.g., calcium, iron, PPIs, soy) that impair absorption, poor adherence, or incorrect food interactions (e.g., taking with food or high-fiber meals).\n\n(4) What we know vs do not know: We know levothyroxine effectively lowers TSH in hypothyroidism with proper adherence and timing. We do not know individual variability in symptom response timelines, exact optimal TSH target range for all patients, or how long symptom resolution takes for specific complaints (e.g., fatigue, cold intolerance).\n\n(5) Practical next steps: Take levothyroxine on empty stomach 30-60 minutes before breakfast, avoid food/supplements for 4 hours, and schedule a TSH test at 6-8 weeks. If TSH remains elevated, dose adjustment may be needed. Continue regular monitoring per clinical guidance.",
+          "score": 0.43,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9463,
+          "example_id": "CLN-HELDOUT-NALOXONE-RX",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.0,
+            "communication_quality": 1.0,
+            "completeness": 0.10714285714285714,
+            "context_awareness": 0.48717948717948717,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Narcan (naloxone) is prescribed to reverse opioid overdose effects, including respiratory depression, which can occur with hydromorphone use even when taken as prescribed.  \n\n(2) Mechanism: Narcan is an opioid receptor antagonist that rapidly binds to mu-opioid receptors, displacing hydromorphone and reversing its effects within 1-3 minutes. It counteracts respiratory depression by restoring normal breathing patterns without causing euphoria or withdrawal.  \n\n(3) Risk factors:  \n- Hydromorphone\u2019s long half-life (3-4 hours) increases overdose risk during dose adjustments or if taken with other CNS depressants (e.g., benzodiazepines, alcohol).  \n- Chronic pancreatitis may cause unpredictable pain fluctuations, raising overdose risk during severe pain episodes.  \n- No safe threshold exists for opioid overdose; even therapeutic doses can cause respiratory failure in susceptible individuals.  \n\n(4) What we know vs do not know:  \n- **Known**: Narcan is FDA-approved for opioid overdose reversal and is safe for non-users (no effect if no opioids present).  \n- **Not known**: Your specific risk profile (e.g., exact hydromorphone dose, comorbidities) determines how urgently Narcan should be used. The prescription assumes potential for accidental overdose, not intentional misuse.  \n\n(5) Practical next steps:  \n- **Training**: Ask your doctor or pharmacist for a step-by-step demonstration on administering Narcan (nasal spray/injection) and how to recognize overdose signs (slow/shallow breathing, blue lips/fingernails, unresponsiveness).  \n- **Accessibility**: Keep Narcan in a visible, accessible location (e.g., bedside, kitchen) and ensure household members know where it is.  \n- **Reassessment**: Discuss with your doctor whether your hydromorphone dose or regimen needs adjustment to minimize overdose risk, given your chronic condition.  \n- **Emergency plan**: Program 911 with your location and confirm Narcan\u2019s location with trusted contacts.  \n\n*Source: CDC/WHO guidelines on opioid overdose reversal (2023); NCI/USPSTF data on opioid safety in chronic pain management.*",
+          "score": 0.24,
+          "trial": 0
+        },
+        {
+          "duration_ms": 10484,
+          "example_id": "CLN-HELDOUT-OMEGA3-REDUCEIT",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.6219512195121951,
+            "communication_quality": 0.0,
+            "completeness": 0.24137931034482762,
+            "context_awareness": 1.0,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: No, icosapent ethyl is not the same as over-the-counter fish oil supplements. Icosapent ethyl is a prescription medication (Epanova) containing high-purity eicosapentaenoic acid (EPA) at 1,000 mg per capsule, while most fish oil supplements contain mixed omega-3 fatty acids (EPA/DHA) at lower concentrations and lack the standardized, high-dose EPA required for cardiovascular benefit.\n\n(2) Mechanism: Icosapent ethyl is a prescription-only, highly purified EPA formulation (95%+ EPA) that reduces cardiovascular events by 25% in high-risk patients through triglyceride lowering and anti-inflammatory effects. It works via the PPAR-\u03b1 pathway to decrease hepatic VLDL production and increase EPA clearance. Standard fish oil supplements contain variable EPA/DHA ratios (typically 18-30% EPA) and lack the consistent, high-dose EPA needed for the proven cardiovascular benefit seen in the REDUCE-IT trial.\n\n(3) Risk factors: Your age (61), prior heart attack, diabetes, and elevated triglycerides (220 mg/dL) place you in the high-risk category where icosapent ethyl is indicated (REDUCE-IT trial criteria: triglycerides \u2265150 mg/dL + established CVD). Fish oil supplements pose bleeding risks (58% increased GI bleeding in aspirin users) and lack consistent efficacy for your specific indication.\n\n(4) What we know vs do not know: We know icosapent ethyl reduces major cardiovascular events by 25% in patients like you (REDUCE-IT trial: HR 0.75, 95% CI 0.66-0.85). We do not know if standard fish oil provides equivalent benefit\u2014REDUCE-IT used pure EPA, while most supplements contain mixed EPA/DHA. The 2022 USPSTF grade D recommendation against aspirin initiation in 60+ doesn't apply here since icosapent ethyl is a distinct prescription therapy with proven benefit in your risk profile.\n\n(5) Practical next steps: Discuss icosapent ethyl with your cardiologist\u2014ask if your triglycerides (220 mg/dL) meet the REDUCE-IT criteria (triglycerides \u2265150 mg/dL + established CVD). If approved, request a prescription (not OTC fish oil). Do not self-prescribe fish oil; it may interact with your atorvastatin and increase bleeding risk. The 25% relative risk reduction in the trial is clinically significant for your high-risk profile.",
+          "score": 0.51,
+          "trial": 0
+        },
+        {
+          "duration_ms": 10420,
+          "example_id": "CLN-HELDOUT-OPIOID-TAPER",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.0,
+            "communication_quality": 1.0,
+            "completeness": 0.0,
+            "context_awareness": 0.2857142857142857,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nYes, you must taper off oxycodone under medical supervision. Abrupt discontinuation can cause severe withdrawal symptoms and increase risks like uncontrolled pain, respiratory depression, or overdose if you resume use.  \n\n(2) Mechanism:  \nOxycodone is an opioid that binds to mu-opioid receptors, causing physical dependence after 6 years of daily use (80 MME). Tapering reduces receptor stimulation gradually, allowing the brain to adapt and avoid severe withdrawal (e.g., nausea, anxiety, muscle aches) and prevents dangerous rebound effects.  \n\n(3) Risk factors:  \n- High-dose, long-term use (80 MME for 6 years) increases dependence risk.  \n- Abrupt cessation may cause acute withdrawal, pain flare-ups, or relapse to misuse.  \n- Your doctor\u2019s concern about \"treating you like an addict\" reflects clinical guidelines for opioid stewardship, not personal judgment.  \n\n(4) What we know vs do not know:  \n*Known*: Tapering is evidence-based for opioid dependence (per CDC/ASAM guidelines).  \n*Unknown*: Your specific pain condition, comorbidities (e.g., depression, sleep apnea), or exact taper protocol needed for safety.  \n\n(5) Practical next steps:  \n- **Do not stop abruptly**\u2014schedule a tapering plan with your doctor.  \n- **Request a referral** to a pain management specialist or addiction medicine provider for a personalized plan.  \n- **Discuss alternatives** (e.g., non-opioid analgesics, physical therapy) to address pain without opioids.  \n- **Document concerns** about stigma; ask for a shared-decision-making conversation to align with your values.  \n\n*Source: CDC Clinical Practice Guideline for Opioid Prescribing (2023) and ASAM Opioid Use Disorder Treatment Guidelines.*",
+          "score": 0.21,
+          "trial": 0
+        },
+        {
+          "duration_ms": 12926,
+          "example_id": "CLN-HELDOUT-OSTEOPOROSIS-INIT",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.5111111111111111,
+            "communication_quality": 0.0,
+            "completeness": 0.28169014084507044,
+            "context_awareness": 0.65,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nStart oral alendronate (Fosamax) 70 mg weekly, with treatment duration to be reassessed after 3-5 years based on ongoing risk assessment. Do not exceed 5 years without periodic reevaluation of continued need.\n\n(2) Mechanism:  \nAlendronate inhibits bone resorption by binding to hydroxyapatite crystals in bone, reducing osteoclast-mediated bone breakdown. This increases bone mineral density (BMD) and reduces fracture risk by stabilizing bone microarchitecture, particularly in the hip and spine.\n\n(3) Risk factors:  \n- **Jaw bone problems (MRONJ)**: Higher risk with intravenous bisphosphonates (e.g., zoledronic acid) or oncology dosing; low-dose oral alendronate has lower but non-zero risk. Requires baseline dental evaluation and avoidance of invasive dental procedures during therapy.  \n- **Atypical femoral fractures (AFFs)**: Rare (estimated 1-3 per 1,000 patient-years), typically occurring after 3+ years of therapy. Linked to prolonged bisphosphonate use; risk increases with longer duration and higher cumulative dose.  \n- **Other risks**: VTE (less than tamoxifen), musculoskeletal pain, gastrointestinal issues, and potential cardiovascular effects (less evidence in postmenopausal women).\n\n(4) What we know vs do not know:  \n- **Known**: Alendronate reduces fracture risk (including hip fractures) in postmenopausal women with osteoporosis (T-score \u2264 -2.5). FRAX 22% 10-year fracture risk meets criteria for treatment.  \n- **Not known**: Exact optimal duration beyond 5 years (long-term data limited); MRONJ risk with oral therapy is low but not quantified precisely; AFFs are rare but underreported in real-world use.\n\n(5) Practical next steps:  \n- Schedule baseline dental exam *before* starting alendronate; complete any needed dental work first.  \n- Take alendronate on an empty stomach with 8 oz water, remaining upright for 30-60 minutes to minimize esophageal irritation.  \n- Recheck BMD via DEXA in 12-18 months; if T-score improves to > -2.5 and FRAX risk drops below 20%, discuss potential discontinuation.  \n- Report new thigh/groin pain immediately (could signal AFF); do not stop medication without consulting your doctor.  \n- Avoid NSAIDs or other bisphosphonates without medical guidance; monitor for jaw pain/swelling during treatment.",
+          "score": 0.46,
+          "trial": 0
+        },
+        {
+          "duration_ms": 10446,
+          "example_id": "CLN-HELDOUT-PCSK9-PRIOR-AUTH",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.5689655172413793,
+            "communication_quality": 0.6190476190476191,
+            "completeness": 0.2653061224489796,
+            "context_awareness": 0.0,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: PCSK9 inhibitors are injectable medications (e.g., alirocumab, evolocumab) that significantly lower LDL cholesterol by enhancing the liver's ability to clear LDL from the bloodstream. They are typically prescribed when statins and other lipid-lowering agents (like ezetimibe) are insufficient to reach LDL targets, especially in high-risk patients with familial hypercholesterolemia. Insurance coverage is common but often requires prior authorization and documentation of inadequate response to maximally tolerated statin therapy.\n\n(2) Mechanism: PCSK9 inhibitors bind to the PCSK9 protein, preventing it from degrading LDL receptors on liver cells. This increases the number of LDL receptors available to remove LDL cholesterol from circulation, leading to a 45\u201360% reduction in LDL levels. They are administered subcutaneously every 2\u20134 weeks, depending on the specific agent and dosing regimen.\n\n(3) Risk factors: Key considerations include the need for prior maximally tolerated statin therapy (e.g., rosuvastatin 40 mg daily + ezetimibe 10 mg daily), insurance pre-authorization requirements, out-of-pocket costs (typically $5,000\u2013$10,000 annually without coverage), and potential injection site reactions. Patients with familial hypercholesterolemia (elevated LDL >130 mg/dL despite optimal therapy) are prioritized for coverage.\n\n(4) What we know vs do not know: We know PCSK9 inhibitors are clinically effective for LDL reduction in statin-intolerant or statin-inadequate patients (per FORECAST and ODYSSEY OUTCOME trials), but we do not know long-term real-world adherence rates or how frequently insurers deny coverage despite clinical justification. Evidence confirms they reduce cardiovascular events in high-risk groups, but cost-effectiveness data vary by insurer policies.\n\n(5) Practical next steps: 1) Request a letter of medical necessity from your physician detailing your familial hypercholesterolemia, current LDL levels, and failure of maximally tolerated statin/ezetimibe. 2) Verify your insurance\u2019s prior authorization process (e.g., require documentation of statin/ezetimibe use). 3) Explore manufacturer copay assistance programs (e.g., Sanofi for alirocumab, Amgen for evolocumab) to reduce costs. 4) If denied, appeal with clinical evidence and consider a lipid specialist for additional documentation.",
+          "score": 0.46,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9346,
+          "example_id": "CLN-HELDOUT-PCV13-PPSV23-ADULT",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.4339622641509434,
+            "communication_quality": 0.0,
+            "completeness": 0.0,
+            "context_awareness": 0.0,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: At age 67, you should receive a single dose of PCV20 (pneumococcal conjugate vaccine 20-valent) as your pneumococcal vaccination, which replaces the older PCV13 and Pneumovax 23 vaccines.\n\n(2) Mechanism: PCV20 is a conjugate vaccine that directly targets 20 pneumococcal serotypes, including the 13 serotypes covered by PCV13 and 7 additional serotypes covered by Pneumovax 23. It provides broader protection than PCV13 alone and eliminates the need for a separate Pneumovax 23 dose in most adults, simplifying the vaccination schedule.\n\n(3) Risk factors: Age \u226565 years is the primary risk factor for pneumococcal disease requiring vaccination. Additional risk factors include chronic lung disease, heart disease, diabetes, immunosuppression, smoking, or chronic liver disease, which increase the likelihood of severe pneumococcal infections like pneumonia or meningitis.\n\n(4) What we know vs do not know: We know PCV20 is recommended for adults \u226565 years per CDC/ACIP 2025 guidelines (replacing PCV13 and Pneumovax 23), but we do not know if PCV20 provides lifelong protection or if additional doses will be needed in future updates. We also do not know if your specific health conditions (e.g., lung disease, immunosuppression) would alter this recommendation.\n\n(5) Practical next steps: Schedule PCV20 vaccination with your pharmacist or primary care provider. Confirm no contraindications (e.g., severe allergy to prior vaccine components). Do not delay vaccination, as pneumococcal disease risk increases with age. If you have specific health conditions, discuss them with your provider to ensure PCV20 is appropriate.",
+          "score": 0.23,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9432,
+          "example_id": "CLN-HELDOUT-PEP-HIV-EXPOSURE",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.4931506849315068,
+            "communication_quality": 1.0,
+            "completeness": 0.0,
+            "context_awareness": 0.4186046511627907,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Yes, post-exposure prophylaxis (PEP) is available for HIV exposure, but it must be started within 72 hours and requires immediate medical evaluation.  \n(2) Mechanism: PEP involves taking antiretroviral medications (typically a 3-drug regimen) to prevent HIV from establishing infection after exposure. The drugs work by inhibiting HIV replication at various stages of its life cycle.  \n(3) Risk factors: The risk of HIV transmission from a single exposure depends on factors like the partner's HIV status (unknown here), viral load, type of exposure (anal vs. vaginal/penile), and presence of open sores or bleeding. Anal sex carries higher risk than vaginal sex.  \n(4) What we know vs do not know: We know PEP is time-sensitive (effective if started within 72 hours) and most effective when initiated promptly. We do not know the partner's HIV status, which affects individual risk assessment. We also do not know if the exposure involved high-risk factors (e.g., partner with known HIV+ status, presence of genital ulcers).  \n(5) Practical next steps: Seek medical care immediately\u2014contact your primary care provider, urgent care clinic, or emergency department. They will assess your risk and, if indicated, prescribe PEP (e.g., tenofovir/emtricitabine/integrase inhibitor). Do not delay\u2014time is critical. If unable to access care within 24 hours, go to an emergency department. Also consider getting an HIV test at 4\u20136 weeks post-exposure (with follow-up testing at 3 months for confirmation).",
+          "score": 0.37,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9277,
+          "example_id": "CLN-HELDOUT-PERIOP-BRIDGING",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.2597402597402597,
+            "communication_quality": 0.0,
+            "completeness": 0.0,
+            "context_awareness": 0.0,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: No, you do not need bridging with Lovenox before or after your hernia repair.  \n(2) Mechanism: Warfarin (INR 2-3) provides therapeutic anticoagulation for AFib with CHA2DS2-VASc 3 (moderate risk), while Lovenox (LMWH) is used for bridging only when warfarin is held. Bridging increases bleeding risk without proven benefit for low-risk procedures like hernia repair.  \n(3) Risk factors:  \n- Bleeding risk: Lovenox increases perioperative bleeding risk (e.g., hematoma at hernia site) without reducing thromboembolic events in low-risk procedures.  \n- Renal function: Lovenox requires normal renal function; impairment (common in older adults) raises bleeding risk.  \n- Procedure type: Hernia repair is low-risk for bleeding; bridging is reserved for high-risk surgeries (e.g., neurosurgery, prostatectomy).  \n(4) What we know vs do not know:  \n- Known: Warfarin is safe for most procedures with INR 2-3; bridging is not indicated for low-risk surgeries per guidelines.  \n- Unknown: Exact INR target for this patient (not provided), but standard for AFib is 2-3. No data on this specific patient\u2019s renal function or hernia repair complexity.  \n(5) Practical next steps:  \n- Confirm INR is 2-3 (therapeutic range) with your physician before the procedure.  \n- Stop warfarin 5 days pre-op (if INR <2.5), with no bridging needed.  \n- Resume warfarin 24-48 hours post-op (if bleeding risk low), per surgeon/physician guidance.  \n- *Do not* request Lovenox bridging; it adds unnecessary risk.  \n- Discuss with surgeon: \"I\u2019m on warfarin for AFib (CHA2DS2-VASc 3); bridging isn\u2019t needed for this low-risk hernia repair.\"",
+          "score": 0.2,
+          "trial": 0
+        },
+        {
+          "duration_ms": 10988,
+          "example_id": "CLN-HELDOUT-PREP-HIV",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.47560975609756095,
+            "communication_quality": 1.0,
+            "completeness": 0.0,
+            "context_awareness": 0.325,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Yes, you should be on PrEP given your age (26), sexual behavior (multiple partners, inconsistent condom use), and the fact that you are a gay man\u2014the group with the highest risk for HIV acquisition. PrEP is highly effective at preventing HIV when taken consistently.\n\n(2) Mechanism: PrEP (pre-exposure prophylaxis) involves taking a daily oral medication (tenofovir disoproxil fumarate/emtricitabine, brand name Truvada, or tenofovir alafenamide/emtricitabine, brand name Descovy) that interferes with HIV's ability to replicate by inhibiting reverse transcriptase. When taken as prescribed, it maintains drug levels in your bloodstream that prevent HIV from establishing infection if you are exposed.\n\n(3) Risk factors: Your specific risk factors include being a sexually active gay man with multiple partners and inconsistent condom use\u2014this places you in a high-risk category for HIV. Other risk factors include potential exposure to partners with higher HIV prevalence, possible other sexually transmitted infections (which can increase susceptibility), and the fact that HIV transmission risk is higher in certain sexual networks.\n\n(4) What we know vs do not know: We know PrEP is >99% effective at preventing HIV when adherence is good (based on iPrEx and other trials). We know it is safe for most people, with common side effects including mild gastrointestinal upset, headache, or fatigue, which often resolve over time. We do not know your current HIV status (you need testing), and we do not know your baseline kidney function (tenofovir can affect kidneys), but these can be assessed with blood tests.\n\n(5) Practical next steps: 1) Get an HIV test (4th generation test) to confirm you are HIV-negative before starting PrEP. 2) Schedule a visit with a healthcare provider for baseline labs (HIV, kidney function, hepatitis B/C status) and discussion. 3) Begin PrEP medication with follow-up every 3-6 months for adherence, HIV testing, and lab monitoring. 4) Consider STI screening and prevention counseling, as STIs can increase HIV risk and PrEP does not protect against STIs.",
+          "score": 0.47,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9760,
+          "example_id": "CLN-HELDOUT-SGLT2-HFREF",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.4642857142857143,
+            "communication_quality": 0.0,
+            "completeness": 0.20512820512820512,
+            "context_awareness": 0.75,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Dapagliflozin is being added for heart failure management, not diabetes prevention, despite your non-diabetic status.  \n\n(2) Mechanism: Dapagliflozin is an SGLT2 inhibitor that promotes urinary glucose excretion and reduces intravascular volume, lowering cardiac workload and improving heart failure outcomes through mechanisms including reduced preload, improved myocardial energetics, and decreased fibrosis.  \n\n(3) Risk factors:  \n- Your heart failure (EF 32%) is the primary indication  \n- Non-diabetic status reduces diabetes risk concerns  \n- Key risks include volume depletion (especially with Entresto/carvedilol), genital mycotic infections, and rare ketoacidosis  \n\n(4) What we know vs do not know:  \n- **Known**: SGLT2 inhibitors reduce HF hospitalization and cardiovascular death in HFrEF (EF \u226435%) regardless of diabetes status (DAPA-HF trial)  \n- **Not known**: Long-term diabetes risk in non-diabetics (JUPITER trial showed 25% increased risk but excluded HF patients; real-world HF data shows minimal signal)  \n\n(5) Practical next steps:  \n- Proceed with dapagliflozin initiation at 10mg daily (standard HF dose) with:  \n  \u2022 Volume status monitoring (weight daily for 1 week)  \n  \u2022 Renal function check (eGFR \u226525mL/min/1.73m\u00b2 required)  \n  \u2022 Counsel on hydration and infection signs  \n  \u2022 Continue diabetes prevention strategies (diet/exercise) as separate priority  \n\n*Source: DAPA-HF trial (2019) demonstrated 26% relative risk reduction in HF hospitalization/death with dapagliflozin in HFrEF patients (EF \u226435%), independent of diabetes status.*",
+          "score": 0.39,
+          "trial": 0
+        },
+        {
+          "duration_ms": 10704,
+          "example_id": "CLN-HELDOUT-SHINGRIX-RZV",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.8985507246376812,
+            "communication_quality": 0.8333333333333334,
+            "completeness": 0.36363636363636365,
+            "context_awareness": 1.0,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Yes, you should get Shingrix even though you previously received Zostavax at age 56, as Shingrix provides superior and more durable protection against shingles compared to Zostavax.\n\n(2) Mechanism: Zostavax (the older shingles vaccine) is a live attenuated herpes zoster vaccine that provides moderate protection but wanes over time, with effectiveness declining significantly after 7-10 years. Shingrix is a recombinant subunit vaccine containing the varicella-zoster virus glycoprotein E (gE) protein plus an adjuvant (AS01B), which induces a stronger, longer-lasting immune response. Shingrix is not a live virus vaccine and cannot cause shingles, and it provides over 90% efficacy in preventing shingles across all age groups, including those previously vaccinated with Zostavax.\n\n(3) Risk factors: The primary risk factor for shingles is age-related decline in cell-mediated immunity to varicella-zoster virus, which begins as early as the 50s. Your age (58) places you at higher risk than younger adults, and the waning immunity from Zostavax administered at 56 means your protection is likely diminished. The risk of postherpetic neuralgia (persistent nerve pain) also increases with age, and Shingrix reduces this risk more effectively than Zostavax.\n\n(4) What we know vs do not know: We know Shingrix is recommended by CDC and ACIP for adults 50+ regardless of prior Zostavax vaccination (per [chunk-058] and [chunk-057]), and we know it provides significantly better protection than Zostavax (per [chunk-023] and [chunk-057]). We do not know the exact duration of your Zostavax-induced immunity, but we know it typically wanes after 7-10 years, making you due for a booster. We also do not know your individual risk tolerance for vaccine side effects, though the arm swelling your friend experienced is common (occurring in ~10-15% of recipients) and typically resolves within 1-2 days.\n\n(5) Practical next steps: Schedule the Shingrix vaccine series (2 doses, 2-6 months apart) with your provider. The arm soreness is common and manageable with acetaminophen or ibuprofen. Given your age and prior Zostavax, the benefit-risk profile strongly favors Shingrix, and the CDC explicitly states that vaccination is recommended even after Zostavax (per [chunk-058] and [chunk-057]). Do not delay due to your friend's experience, as the side effects are temporary and the protection is substantial.",
+          "score": 0.72,
+          "trial": 0
+        },
+        {
+          "duration_ms": 11196,
+          "example_id": "CLN-HELDOUT-SMOKING-CESSATION-CANCER",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.23214285714285715,
+            "communication_quality": 1.0,
+            "completeness": 0.5909090909090909,
+            "context_awareness": 0.0,
+            "instruction_following": 0.6111111111111112
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Varenicline (Chantix) is more effective than the nicotine patch for smoking cessation, with higher quit rates in clinical trials. However, the nicotine patch may be safer for you given your history of throat cancer and current smoking, as varenicline carries a small but notable risk of neuropsychiatric side effects (e.g., mood changes, vivid dreams, or rare suicidal ideation) that could be concerning post-cancer treatment.\n\n(2) Mechanism: Varenicline is a partial agonist at nicotine receptors, reducing cravings and withdrawal while blocking nicotine\u2019s rewarding effects. The nicotine patch delivers steady, transdermal nicotine to manage baseline dependence without stimulating the brain\u2019s reward pathways as intensely as smoking.\n\n(3) Risk factors:  \n- **Varenicline**: Known to cause nausea (25% of users), insomnia, abnormal dreams, and headaches. Rare but serious neuropsychiatric risks (e.g., mood swings, suicidal thoughts) are documented, especially in those with psychiatric history. No direct link to cancer recurrence, but caution is needed in cancer survivors due to potential behavioral risks.  \n- **Nicotine patch**: Associated with increased risk of heart palpitations, chest pain, and gastrointestinal symptoms (nausea/vomiting). No evidence of serious harm in cancer survivors, but nicotine itself may theoretically promote angiogenesis (new blood vessel growth), though no direct evidence links it to cancer recurrence in clinical studies.\n\n(4) What we know vs. do not know:  \n- **Known**: Varenicline is more effective than the nicotine patch for quitting smoking (OR ~3.1 vs. placebo at 6+ months; patch OR ~2.5\u20133.6 for long-term use). The patch is safe for most, including those with cancer history, but long-term nicotine exposure remains a concern.  \n- **Not known**: Whether varenicline\u2019s neuropsychiatric risks are higher in cancer survivors (no specific studies), or if the patch\u2019s cardiovascular risks are amplified in someone with a prior cancer diagnosis (no direct evidence, but caution warranted).\n\n(5) Practical next steps:  \n- **Immediate**: Schedule a follow-up with your oncologist or primary care provider to discuss your cancer history and smoking cessation plan. They can assess if varenicline is appropriate given your medical background.  \n- **If proceeding**: Start with the nicotine patch (21 mg/day for 2\u20134 weeks, then taper) as a safer first step, while combining it with behavioral support (e.g., quitline or app). If you\u2019ve tried NRT before without success, varenicline may be considered under close monitoring.  \n- **Critical**: Quit smoking completely\u2014any reduction (e.g., half a pack/day) still exposes you to carcinogens. Use FDA-approved cessation resources (e.g., CDC\u2019s quitSTART app or 1-800-QUIT-NOW) to support your attempt.  \n- **Monitor closely**: If using varenicline, report any new mood changes, suicidal thoughts, or severe side effects immediately to your doctor.",
+          "score": 0.47,
+          "trial": 0
+        },
+        {
+          "duration_ms": 10353,
+          "example_id": "CLN-HELDOUT-SSRI-ADOLESCENT",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.17105263157894737,
+            "communication_quality": 0.5882352941176471,
+            "completeness": 0.36363636363636365,
+            "context_awareness": 0.5666666666666667,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: No, you should not be terrified, but you should take the FDA-mandated suicide risk warning seriously and closely monitor your daughter's symptoms, especially in the first 4-6 weeks of treatment.  \n\n(2) Mechanism: Fluoxetine is a selective serotonin reuptake inhibitor (SSRI) that takes 4-6 weeks to reach full therapeutic effect. The suicide warning applies because the initial activation phase (first 1-2 months) may temporarily increase energy or agitation before mood improves, creating a window where suicidal ideation could emerge in vulnerable adolescents.  \n\n(3) Risk factors:  \n- Age under 25 (highest risk period is 18-24)  \n- History of prior suicidal thoughts or behavior  \n- Family history of suicide  \n- Co-occurring anxiety disorders  \n- Substance use  \n- Poor baseline symptom response  \n\n(4) What we know vs do not know:  \n*Known*:  \n- FDA requires black box warning for increased suicidal thoughts in ages 18-24 (and 15-17 with caution)  \n- Absolute risk is low (~0.5-1% absolute increase in suicidal ideation vs placebo)  \n- Risk is concentrated in first 1-2 months of treatment  \n- Most teens show improvement with treatment  \n\n*Not known*:  \n- Which specific teens are most vulnerable to this reaction  \n- Long-term impact of early treatment on suicide risk trajectory  \n- How individual genetic/neurobiological factors modify risk  \n\n(5) Practical next steps:  \n- Demand a written treatment consent form detailing the suicide risk warning  \n- Schedule follow-up appointments weekly for first month, then biweekly  \n- Create a \"safety plan\" with daughter identifying warning signs (e.g., increased hopelessness, sleep changes)  \n- Remove firearms/lethal means from home temporarily  \n- Monitor for emergent side effects: worsening depression, new anxiety, panic attacks, or unusual behavior changes  \n- Consider starting with lowest effective dose (20mg) and gradual titration  \n- Combine with psychotherapy (CBT-AP recommended for teens)  \n\nEvidence context: The 2007 FDA analysis of 24 trials (2,415 patients) found increased suicidal behavior in <0.5% of SSRI-treated teens versus 0.1% in placebo groups, primarily in first 1-2 months. A 2022 meta-analysis confirmed this temporal pattern but showed long-term benefit outweighs short-term risk when monitored properly.",
+          "score": 0.3,
+          "trial": 0
+        },
+        {
+          "duration_ms": 11203,
+          "example_id": "CLN-HELDOUT-STATIN-CV-CANCER",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.23636363636363636,
+            "communication_quality": 0.21052631578947367,
+            "completeness": 0.15384615384615385,
+            "context_awareness": 0.0,
+            "instruction_following": 0.76
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Yes, you should start the statin. The 12% 10-year cardiovascular risk meets the USPSTF threshold (10%+) for initiating statin therapy, and the evidence shows no increased cancer risk from statins.  \n\n(2) Mechanism: Statins lower LDL cholesterol, reducing atherosclerotic plaque buildup in arteries. This directly decreases cardiovascular events (heart attack, stroke), as confirmed by the USPSTF 2022 review showing 26% lower all-cause mortality and 67% lower myocardial infarction risk with statin therapy.  \n\n(3) Risk factors: Your 12% 10-year CVD risk (exceeding the 10% threshold) is the primary indication. The cancer risk concern is not supported by evidence\u2014pooled analyses of 13 trials found no difference in cancer incidence between statin and placebo groups (USPSTF 2022).  \n\n(4) What we know vs do not know:  \n- *Known*: Statins reduce cardiovascular mortality (RR 0.92) and major events (RR 0.78 for stroke, 0.67 for MI) with minimal cancer risk impact (no increase observed in 13 trials).  \n- *Not known*: Long-term cancer effects beyond 10 years (though 5-year trials show no signal). The JUPITER trial noted a diabetes risk increase *only* in participants with baseline diabetes risk factors, not in healthy individuals like you.  \n\n(5) Practical next steps:  \n- Proceed with statin initiation after discussing the 10-year CVD risk (12% > 10% threshold) with your doctor.  \n- Request a CVD risk calculator confirmation (e.g., ASCVD score) to verify the 12% estimate.  \n- Monitor for statin-related side effects (e.g., muscle pain, liver enzymes) per USPSTF safety data\u2014these are rare and not linked to cancer.  \n- Continue evidence-based cancer prevention: maintain physical activity (24% lower CRC risk per meta-analysis), avoid >45g alcohol/day, and quit smoking (18% higher CRC risk for smokers).  \n\n*Source: USPSTF 2022 Statin Use for Primary Prevention (\u00a7 Benefits Evidence | Safety Profile and Harms); NCI PDQ 2025 (\u00a7 Statin Use for Primary Prevention of Cardiovascular Disease in Adults)*.",
+          "score": 0.27,
+          "trial": 0
+        },
+        {
+          "duration_ms": 10238,
+          "example_id": "CLN-HELDOUT-TDAP-PREGNANCY",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.8983050847457628,
+            "communication_quality": 0.0,
+            "completeness": 0.5294117647058824,
+            "context_awareness": 0.5454545454545454,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Yes, you need the Tdap vaccine during this pregnancy, even if you received it in your previous pregnancy.  \n(2) Mechanism: The Tdap vaccine boosts maternal antibodies against pertussis (whooping cough), which are transferred across the placenta to protect your newborn during the first months of life. Antibody levels decline significantly after the previous dose (typically 2 years), making re-vaccination necessary for optimal neonatal protection.  \n(3) Risk factors: Newborns are at highest risk for severe pertussis complications (including apnea, pneumonia, and death), especially in the first 2 months of life. Waning immunity from prior vaccination is the primary reason for re-vaccination; no evidence supports reduced need in subsequent pregnancies.  \n(4) What we know vs do not know:  \n- *Known*: CDC and ACOG recommend Tdap in every pregnancy (27-36 weeks), regardless of prior history, due to proven transfer of protective antibodies and safety profile.  \n- *Not known*: The exact duration of antibody persistence post-vaccination in individual patients (though population-level data confirms decline over time).  \n(5) Practical next steps: Schedule the Tdap vaccine between 27-36 weeks gestation (ideally at 28 weeks as you are now) during your next prenatal visit. This is standard, evidence-based care\u2014not excessive\u2014and directly reduces your baby\u2019s risk of life-threatening pertussis.",
+          "score": 0.65,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9915,
+          "example_id": "CLN-HELDOUT-URI-ANTIBIOTIC-STEW",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.3875,
+            "communication_quality": 0.3333333333333333,
+            "completeness": 0.0,
+            "context_awareness": 0.391304347826087,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [],
+          "primekg_sub_n_edges": null,
+          "primekg_sub_n_nodes": null,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: No, I cannot call in a Z-Pak (azithromycin) prescription for you.  \n(2) Mechanism: Azithromycin is a macrolide antibiotic indicated for specific bacterial infections (e.g., strep throat, pneumonia, bronchitis with bacterial etiology). Your symptoms (sore throat, stuffy nose, mild cough, low fever) are most consistent with viral upper respiratory infections, against which antibiotics like azithromycin are ineffective and inappropriate.  \n(3) Risk factors: Unnecessary antibiotic use promotes antibiotic resistance, increases risk of side effects (e.g., GI upset, cardiac arrhythmias, *C. difficile* infection), and may disrupt normal microbiota. Your self-diagnosis ignores critical factors like symptom duration, severity, and potential bacterial exposure.  \n(4) What we know vs do not know:  \n\u2003- **Known**: Your symptoms align with viral URI (common cold) patterns; azithromycin has no proven benefit for viral infections.  \n\u2003- **Unknown**: Whether your symptoms indicate a bacterial infection requiring targeted therapy (e.g., strep throat requires rapid antigen testing or culture confirmation).  \n(5) Practical next steps:  \n\u2003- Monitor symptoms: If fever rises >101.5\u00b0F, breathing worsens, or symptoms persist >10 days, seek evaluation for possible bacterial complication.  \n\u2003- Use symptomatic relief: Saline nasal spray, OTC decongestants (pseudoephedrine), throat lozenges, and hydration.  \n\u2003- Avoid pressuring clinicians for antibiotics\u2014request a rapid strep test if sore throat is severe or accompanied by fever >100.4\u00b0F or swollen lymph nodes.  \n\u2003- Revisit care if symptoms escalate or fail to improve in 3\u20135 days.  \n\n*Source: CDC guidance on antibiotic stewardship (2024) and IDSA recommendations for acute respiratory infections.*",
+          "score": 0.36,
+          "trial": 0
+        }
+      ],
+      "trial": 0
+    }
+  ],
+  "trials": 1,
+  "wall_time_s": 308
+}

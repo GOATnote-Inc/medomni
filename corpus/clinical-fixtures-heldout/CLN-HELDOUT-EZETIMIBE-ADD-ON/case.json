@@ -1,0 +1,49 @@
+{
+  "id": "CLN-HELDOUT-EZETIMIBE-ADD-ON",
+  "case_kind": "patient_lipid_management_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 64-year-old with established ASCVD (prior MI 18 months ago) on maximally tolerated atorvastatin 80 mg has an LDL of 92 mg/dL and asks about ezetimibe as an add-on. The held-out answer must reflect the AHA/ACC 2018 cholesterol guideline recommendation of an LDL goal <70 mg/dL (or <55 mg/dL for very-high-risk per ESC 2019 / 2022 update considerations the patient may have read about), the IMPROVE-IT trial finding (modest absolute risk reduction over simvastatin alone), and ezetimibe's strong tolerability/safety profile.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I had a heart attack about a year and a half ago. I'm on atorvastatin 80 mg, my LDL last month was 92. My cardiologist mentioned adding ezetimibe. Is that worth it, or am I already where I need to be?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "evidence-grounded, non-paternalistic, shared-decision-making",
+    "do_NOT": [
+      "claim LDL 92 is 'at goal' for someone with established ASCVD on max-tolerated statin",
+      "describe ezetimibe as ineffective",
+      "describe ezetimibe as more potent than a high-intensity statin",
+      "skip the residual-cardiovascular-risk concept",
+      "issue prescriptive directives without acknowledging shared decision making"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:established_ascvd_post_mi",
+      "drug:high_intensity_statin_atorvastatin80",
+      "drug:ezetimibe",
+      "biomarker:ldl_c_92",
+      "target:ldl_lt_70_or_lt_55_very_high_risk",
+      "trial:improve_it",
+      "concept:residual_cardiovascular_risk"
+    ],
+    "edges_required_for_correct_answer": [
+      "patient:established_ascvd_post_mi --aha_acc_2018--> target:ldl_lt_70 (very-high-risk subset; <55 per ESC update)",
+      "biomarker:ldl_c_92 --above_goal--> intensification_warranted",
+      "drug:ezetimibe --on_top_of_statin--> additional_ldl_reduction (~15-20% relative)",
+      "drug:ezetimibe --improve_it_2015--> modest_absolute_event_reduction (~2% over 7 yr)",
+      "drug:ezetimibe --tolerability--> excellent (rare myopathy, mostly GI)",
+      "target:ldl_lt_70 --next_step_if_unmet--> ezetimibe_then_pcsk9_consideration"
+    ]
+  },
+  "expected_sources_referenced": [
+    "AHA/ACC/multisociety 2018 Cholesterol Guideline — Grundy et al., J Am Coll Cardiol 2019",
+    "IMPROVE-IT trial — Cannon et al., NEJM 2015",
+    "ESC/EAS 2019 dyslipidaemia guideline (Mach et al., Eur Heart J 2020) and 2021 CV-prevention update — for very-high-risk LDL <55 framing"
+  ]
+}

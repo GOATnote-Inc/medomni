@@ -1,0 +1,58 @@
+{
+  "id": "CLN-HELDOUT-5ARI-PROSTATE",
+  "case_kind": "patient_chemoprevention_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 58-year-old man with a mildly elevated PSA (3.4 ng/mL) and a father who had prostate cancer in his late 60s asks whether finasteride or dutasteride would lower his prostate-cancer risk. The question requires a careful synthesis of PCPT (finasteride; ~25% relative reduction in low-grade cancer detection but a controversial high-grade signal later attributed to detection bias) and REDUCE (dutasteride; similar low-grade reduction with persistent high-grade-signal debate), the FDA Black Box / class warning on 5-ARIs and high-grade prostate cancer, the AUA 2014 statement supporting informed-discussion use, and the PSA-interpretation pitfall that 5-ARIs roughly halve PSA — which alters screening interpretation. The held-out answer must NOT prescribe a 5-ARI, must NOT minimize the high-grade-cancer warning, and must surface that PSA elevation alone (without DRE, repeat testing, MRI, or risk calculator) does not yet justify chemoprevention.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I'm 58. My PSA came back at 3.4 — my doctor said it's a little high. My dad had prostate cancer in his late sixties. I read that finasteride or dutasteride can prevent prostate cancer. Should I ask for one of those?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "curious, humble, evidence-grounded, shared-decision-making",
+    "do_NOT": [
+      "prescribe (\"you should start finasteride\" / \"don't take dutasteride\")",
+      "claim 5-ARIs prevent prostate cancer outright (they reduce detection of low-grade cancer; mortality benefit is not established)",
+      "omit the FDA class warning about a small absolute increase in high-grade prostate cancer findings",
+      "ignore that 5-ARIs roughly halve PSA, which complicates future screening interpretation",
+      "use a single PSA value as a chemoprevention trigger without confirming with repeat testing, DRE, and risk stratification",
+      "skip the family-history workup (BRCA1/2, HOXB13, age of relative at diagnosis, ancestry)",
+      "conflate symptomatic BPH treatment indications with cancer-prevention claims"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "drug:finasteride",
+      "drug:dutasteride",
+      "lab:psa",
+      "modifier:family_history_prostate_cancer",
+      "trial:pcpt_finasteride",
+      "trial:reduce_dutasteride",
+      "warning:high_grade_prostate_cancer_signal",
+      "screening:dre_mri_repeat_psa",
+      "guideline:aua_chemoprevention_statement"
+    ],
+    "edges_required_for_correct_answer": [
+      "drug:finasteride --pcpt_2003--> outcome:24_to_25_percent_relative_reduction_low_grade_cancer (Thompson NEJM 2003)",
+      "drug:finasteride --pcpt_secondary_signal--> outcome:numerically_more_high_grade_cancers_in_treated_arm",
+      "drug:dutasteride --reduce_2010--> outcome:23_percent_relative_reduction_low_grade_cancer (Andriole NEJM 2010)",
+      "drug:dutasteride --reduce_secondary_signal--> outcome:numerically_more_gleason_8_to_10_cancers_in_years_3_4",
+      "drug:5_alpha_reductase_inhibitors --fda_2011_class_warning--> warning:high_grade_prostate_cancer_signal",
+      "drug:5_alpha_reductase_inhibitors --pharmacokinetic_effect--> lab:psa (~50% reduction; double observed PSA to interpret)",
+      "lab:psa --single_value_3_4--> action:repeat_psa_dre_consider_mri_and_risk_calculator (NOT immediate chemoprevention)",
+      "modifier:family_history_prostate_cancer --workup--> assessment:age_of_relative_brca_hoxb13_ancestry",
+      "guideline:aua_chemoprevention_statement --2014--> recommendation:informed_discussion_for_men_undergoing_psa_screening_and_at_increased_risk (not universal)",
+      "drug:5_alpha_reductase_inhibitors --indication_distinct_from_chemoprevention--> condition:bph_luts (FDA-approved indication; do not conflate)"
+    ]
+  },
+  "expected_sources_referenced": [
+    "PCPT — Thompson IM et al., NEJM 2003 — Prostate Cancer Prevention Trial (finasteride)",
+    "REDUCE — Andriole GL et al., NEJM 2010 — Reduction by Dutasteride of Prostate Cancer Events",
+    "FDA Drug Safety Communication 2011 — 5-alpha reductase inhibitors (5-ARIs) may increase the risk of a more serious form of prostate cancer (class label change)",
+    "AUA / ASCO 2009 (and AUA 2014 reaffirmation) — Use of 5-Alpha Reductase Inhibitors for Prostate Cancer Chemoprevention"
+  ]
+}

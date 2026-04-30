@@ -1,0 +1,76 @@
+{
+  "rubric_id": "CLN-HELDOUT-PREP-HIV-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant. Hard negation preserved on the safety-critical claim that PrEP can be initiated without confirming HIV-negative status.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that this patient is squarely in the population for whom USPSTF 2023 issued a Grade A PrEP recommendation. The answer to 'should I be on PrEP' is 'yes — let's discuss which regimen.'",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R2",
+      "description": "Response describes the three FDA-approved PrEP regimens — daily oral TDF/FTC (Truvada), daily oral TAF/FTC (Descovy), and long-acting injectable cabotegravir (Apretude every 2 months after loading). The response should not overstate any one as universally superior.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R3",
+      "description": "Response notes that TAF/FTC (Descovy) is FDA-approved for MSM and transgender women but not for individuals at risk through receptive vaginal exposure (the DISCOVER trial did not include this population). The MSM patient is eligible for either oral regimen.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R4",
+      "description": "Response notes the strong efficacy of PrEP when adherence is good — daily oral PrEP is >99% effective at preventing HIV acquisition with consistent use; cabotegravir was superior to oral TDF/FTC in HPTN 083; missed doses meaningfully reduce protection.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R5",
+      "description": "Response notes the absolute requirement to confirm HIV-negative status before initiating PrEP — initiating PrEP in a patient with undiagnosed HIV (especially acute HIV) creates resistance. Baseline 4th-generation antigen/antibody HIV test +/- HIV RNA is required.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["you can start PrEP without an HIV test", "HIV testing before PrEP is optional"]
+    },
+    {
+      "id": "R6",
+      "description": "Response describes baseline labs and ongoing monitoring — baseline HIV, renal function (creatinine / eGFR for TDF-based regimens), hepatitis B status (because TDF/FTC and TAF/FTC have HBV activity and abrupt discontinuation in someone with HBV can cause flares), and STI screening (gonorrhea/chlamydia at multiple anatomic sites, syphilis). Ongoing visits typically every 3 months.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response addresses event-driven (2-1-1) dosing as an alternative for MSM specifically — supported by IPERGAY (Molina et al., NEJM 2015) — for patients who anticipate sex but do not have it daily; it is not recommended for cisgender women or transgender women whose primary exposure is receptive vaginal intercourse.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response addresses doxy-PEP as a separate but adjacent topic — doxycycline post-exposure for bacterial STI prevention (gonorrhea, chlamydia, syphilis) in MSM and transgender women, supported by recent CDC guidance and the DOXYPEP / DoxyVAC trials. Mention of the option is sufficient; full counseling not required.",
+      "weight": 0.05,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response uses a non-judgmental, sex-positive register — does not moralize about the patient's number of partners or condom use, validates self-care, encourages openness in clinical conversation. The response should not be paternalistic.",
+      "weight": 0.08,
+      "tags": ["axis:communication_quality"]
+    },
+    {
+      "id": "R10",
+      "description": "Response addresses access — most US insurance covers PrEP under USPSTF Grade A (no cost-sharing), the federal Ready, Set, PrEP program provides free PrEP for uninsured / underinsured, and many sexual health clinics offer same-visit initiation.",
+      "weight": 0.05,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

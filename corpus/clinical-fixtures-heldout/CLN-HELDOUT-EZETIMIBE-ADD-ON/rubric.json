@@ -1,0 +1,77 @@
+{
+  "rubric_id": "CLN-HELDOUT-EZETIMIBE-ADD-ON-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant. Hard negation preserved on the safety-critical claim that LDL 92 is 'at goal' in established ASCVD on maximally tolerated statin.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that for a patient with established ASCVD (post-MI) on maximally tolerated high-intensity statin, an LDL of 92 mg/dL is above the AHA/ACC 2018 threshold (<70 mg/dL for very-high-risk) at which non-statin therapy intensification (e.g., ezetimibe) is reasonably considered. Equivalent phrasings ('still above the recommended target,' 'guidelines suggest pushing LDL lower in your situation') should pass.",
+      "weight": 0.18,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["LDL 92 is at goal for you", "you do not need any further LDL lowering"]
+    },
+    {
+      "id": "R2",
+      "description": "Response notes that some guidelines (notably ESC/EAS 2019) cite an even lower target — LDL <55 mg/dL — for very-high-risk patients, and that there is genuine inter-society heterogeneity here. Mentioning the lower target is sufficient; full citation detail is not required.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R3",
+      "description": "Response represents IMPROVE-IT (Cannon et al., NEJM 2015) accurately — adding ezetimibe to a statin in post-ACS patients produced a modest but statistically significant reduction in cardiovascular events compared with statin alone. The response should not overstate the magnitude (it is modest in absolute terms) nor dismiss the trial.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R4",
+      "description": "Response correctly conveys ezetimibe's mechanism — it inhibits intestinal cholesterol absorption (NPC1L1) — and that it provides roughly an additional 15-20% LDL reduction on top of a statin. Mechanism description does not need to use the gene name; 'blocks cholesterol absorption in the gut' is fine.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response surfaces the residual-cardiovascular-risk concept — even on a high-intensity statin, post-MI patients carry meaningful ongoing risk, and further LDL reduction is associated with further event reduction. The response should make it clear that the goal is risk reduction, not just hitting a number.",
+      "weight": 0.10,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response addresses ezetimibe's tolerability accurately — generally well-tolerated, with low rates of muscle symptoms or hepatic abnormalities, occasional GI side effects. It should not portray ezetimibe as having statin-equivalent side-effect risk (it does not) nor portray it as side-effect-free.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response notes the typical sequence of escalation when LDL remains above goal on max-tolerated high-intensity statin: add ezetimibe; if still above goal, consider a PCSK9 inhibitor (or bempedoic acid / inclisiran depending on availability). The response should not jump immediately to PCSK9 or skip ezetimibe.",
+      "weight": 0.08,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response touches on adherence and lifestyle as concurrent levers — Mediterranean-style dietary pattern, physical activity, smoking cessation if relevant, weight management — without framing them as substitutes for pharmacologic LDL lowering in this risk profile.",
+      "weight": 0.07,
+      "tags": ["axis:completeness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response uses a non-prescriptive shared-decision-making register — frames adding ezetimibe as a discussion to have with the cardiologist, lays out the evidence and trade-offs, does not issue commands.",
+      "weight": 0.10,
+      "tags": ["axis:communication_quality"],
+      "must_NOT_state": ["I recommend you start ezetimibe", "you must add ezetimibe"]
+    },
+    {
+      "id": "R10",
+      "description": "Response acknowledges honest uncertainty — for instance, that the absolute event reduction with ezetimibe is modest and that the right answer for any individual patient depends on tolerability of further LDL lowering, life expectancy, and competing risks; reasonable patients can choose differently.",
+      "weight": 0.07,
+      "tags": ["axis:communication_quality", "axis:completeness"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

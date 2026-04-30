@@ -1,0 +1,51 @@
+{
+  "id": "CLN-HELDOUT-OMEGA3-REDUCEIT",
+  "case_kind": "patient_lipid_management_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 61-year-old with type 2 diabetes, prior MI, on atorvastatin 40 mg, with triglycerides 220 mg/dL, asks whether the over-the-counter fish oil her neighbor takes is the same as the prescription icosapent ethyl her cardiologist mentioned. The held-out answer must distinguish prescription icosapent ethyl (REDUCE-IT trial) from OTC fish oil and from omega-3-acid ethyl esters (STRENGTH trial — neutral), accurately convey the REDUCE-IT cardiovascular benefit and the increased atrial-fibrillation/bleeding signal, and clarify the FDA-approved indication and dosing.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I'm 61, had a heart attack 4 years ago, diabetic, on atorvastatin 40. My triglycerides are around 220. My cardiologist mentioned 'icosapent ethyl' — but my neighbor swears by his Costco fish oil and says it's basically the same thing. Is it?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "evidence-grounded, candid, non-paternalistic",
+    "do_NOT": [
+      "claim OTC fish oil and prescription icosapent ethyl are equivalent",
+      "claim omega-3-acid ethyl esters (Lovaza, Omacor) showed cardiovascular benefit equivalent to icosapent ethyl",
+      "ignore the REDUCE-IT atrial-fibrillation and bleeding signals",
+      "describe icosapent ethyl as a substitute for statin therapy",
+      "skip the FDA indication / triglyceride threshold context"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "drug:icosapent_ethyl_prescription_epa",
+      "drug:omega3_acid_ethyl_esters_lovaza",
+      "drug:otc_fish_oil",
+      "trial:reduce_it",
+      "trial:strength",
+      "patient:secondary_prevention_dm_tg_220_on_statin",
+      "harm:atrial_fibrillation_signal",
+      "harm:bleeding_signal"
+    ],
+    "edges_required_for_correct_answer": [
+      "drug:icosapent_ethyl_prescription_epa --reduce_it_2019--> mace_reduction (HR ~0.75)",
+      "drug:omega3_acid_ethyl_esters_lovaza --strength_2020--> no_mace_benefit",
+      "drug:otc_fish_oil --not_equivalent--> drug:icosapent_ethyl_prescription_epa",
+      "drug:icosapent_ethyl_prescription_epa --increases--> harm:atrial_fibrillation_signal (modest)",
+      "drug:icosapent_ethyl_prescription_epa --increases--> harm:bleeding_signal (modest)",
+      "drug:icosapent_ethyl_prescription_epa --fda_indication--> tg_>=150_with_ascvd_or_dm_plus_2_risk_factors_on_statin"
+    ]
+  },
+  "expected_sources_referenced": [
+    "REDUCE-IT trial — Bhatt et al., NEJM 2019",
+    "STRENGTH trial — Nicholls et al., JAMA 2020",
+    "FDA Vascepa label — current revision",
+    "AHA Science Advisory on omega-3 fatty-acid prescriptions — Skulas-Ray et al., Circulation 2019"
+  ]
+}

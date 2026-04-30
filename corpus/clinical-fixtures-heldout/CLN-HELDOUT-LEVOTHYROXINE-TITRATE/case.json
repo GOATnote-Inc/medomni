@@ -1,0 +1,49 @@
+{
+  "id": "CLN-HELDOUT-LEVOTHYROXINE-TITRATE",
+  "case_kind": "patient_endocrine_management_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 44-year-old woman recently started on levothyroxine 50 mcg daily for primary hypothyroidism (TSH 11.2, free T4 low-normal) is asking the endocrinology nurse line about how the medication is monitored, when she will feel better, and a few practical questions about how to take it relative to other medications and food. The held-out answer must reflect ATA 2024 guideline framing — TSH-guided dosing, 4-6 week recheck after dose change, target TSH typically 0.4-4.0 mIU/L (or 0.5-2.5 in some patient subsets), morning dosing on empty stomach 30-60 minutes before food and other medications, interactions with calcium / iron / PPIs / coffee, the realistic onset of symptomatic improvement, and the role of levothyroxine alone as standard (rather than combined T3 / desiccated thyroid for routine use).",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I just started levothyroxine 50 mcg for an underactive thyroid. My TSH was 11. How do I take it correctly, when will I feel better, and how often will my TSH be checked?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "warm, evidence-grounded, practical, non-paternalistic",
+    "do_NOT": [
+      "describe T3 (liothyronine) or desiccated thyroid as routine first-line",
+      "skip the empty-stomach / before-other-medications administration guidance",
+      "skip the typical 4-6 week TSH recheck interval after dose change",
+      "minimize realistic 6-12 week timeline for symptomatic recovery",
+      "describe brand-vs-generic switching as inconsequential without nuance"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:newly_diagnosed_primary_hypothyroidism_tsh_11",
+      "drug:levothyroxine_t4",
+      "lab:tsh",
+      "schedule:recheck_4_to_6_weeks_after_dose_change",
+      "target:tsh_0.4_to_4.0_general",
+      "interaction:calcium_iron_ppi_coffee",
+      "guideline:ata_2024",
+      "consideration:morning_empty_stomach_30_to_60_min_before_food"
+    ],
+    "edges_required_for_correct_answer": [
+      "drug:levothyroxine_t4 --first_line--> primary_hypothyroidism",
+      "lab:tsh --recheck--> 4_to_6_weeks_after_dose_change",
+      "drug:levothyroxine_t4 --absorption--> reduced_by_food_and_minerals",
+      "drug:levothyroxine_t4 --timing--> morning_empty_stomach_30_to_60_min_before_food_other_meds",
+      "consideration:morning_empty_stomach_30_to_60_min_before_food --separate--> calcium_iron_ppi_4_hours"
+    ]
+  },
+  "expected_sources_referenced": [
+    "ATA Guidelines for the Treatment of Hypothyroidism — Jonklaas et al., Thyroid 2014 (with 2024 update)",
+    "Endocrine Society Clinical Practice Guideline on Hypothyroidism",
+    "Centanni et al., NEJM 2006 — gastric pH and levothyroxine absorption"
+  ]
+}

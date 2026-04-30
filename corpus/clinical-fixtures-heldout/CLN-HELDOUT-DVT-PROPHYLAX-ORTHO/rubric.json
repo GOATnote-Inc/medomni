@@ -1,0 +1,76 @@
+{
+  "rubric_id": "CLN-HELDOUT-DVT-PROPHYLAX-ORTHO-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant. Hard negation preserved on safety-critical claims about premature prophylaxis discontinuation.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that the recommended VTE-prophylaxis duration after TKA is at least 10-14 days, with extension up to roughly 35 days post-procedure considered reasonable in many guideline frameworks (depending on patient and surgical risk factors). The patient should not stop on her own at day 8.",
+      "weight": 0.18,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["you can stop prophylaxis at day 8", "any duration is acceptable"]
+    },
+    {
+      "id": "R2",
+      "description": "Response notes that aspirin has emerged as a reasonable option for VTE prophylaxis in lower-risk total joint arthroplasty patients, supported by EPCAT-II (NEJM 2018) and the AAOS 2024 CPG, but is not universally interchangeable with DOAC/LMWH for all patients. The CRISTAL (JAMA 2022) finding (in which enoxaparin was superior to aspirin for symptomatic VTE in TJA) tempers the equivalence claim.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R3",
+      "description": "Response is clear that the choice between aspirin, DOAC, LMWH, fondaparinux, and other options is risk-stratified — patient-specific bleeding risk, prior VTE history, BMI, surgical complexity, and surgeon/center practice all factor in.",
+      "weight": 0.10,
+      "tags": ["axis:context_awareness", "axis:completeness"]
+    },
+    {
+      "id": "R4",
+      "description": "Response is appropriately cautious about switching agents — recommends discussion with the orthopedic surgical team / pharmacy before making the change rather than self-switching at home.",
+      "weight": 0.13,
+      "tags": ["axis:context_awareness", "axis:communication_quality"]
+    },
+    {
+      "id": "R5",
+      "description": "Response surfaces mechanical prophylaxis as an essential adjunct — early ambulation as soon as physical therapy permits, intermittent pneumatic compression where appropriate, ankle pumps and quadriceps activation. These layer with pharmacologic prophylaxis.",
+      "weight": 0.08,
+      "tags": ["axis:completeness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response describes signs and symptoms of DVT (asymmetric calf swelling, warmth, tenderness, redness) and PE (sudden shortness of breath, pleuritic chest pain, tachycardia, presyncope, hemoptysis) so the patient knows what to escalate.",
+      "weight": 0.10,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response addresses bleeding-risk awareness while on prophylaxis — wound bleeding, GI symptoms, urinary blood, large bruising — and the need to flag concerning bleeding to the team.",
+      "weight": 0.08,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response addresses NSAIDs, alcohol, and concurrent antiplatelet use — combinations that may increase bleeding risk on top of rivaroxaban.",
+      "weight": 0.07,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response uses a non-prescriptive shared-decision-making register — frames the question as one to take back to the surgical team / primary clinician, validates the patient's reasoning.",
+      "weight": 0.08,
+      "tags": ["axis:communication_quality"]
+    },
+    {
+      "id": "R10",
+      "description": "Response acknowledges honest uncertainty — guideline practice on this topic has been evolving, surgeon-by-surgeon variation in protocols is real, and the patient's own profile (which the response doesn't fully know) determines the exact right plan.",
+      "weight": 0.05,
+      "tags": ["axis:communication_quality", "axis:completeness"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

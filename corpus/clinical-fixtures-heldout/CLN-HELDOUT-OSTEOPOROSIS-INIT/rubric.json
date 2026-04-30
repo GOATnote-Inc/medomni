@@ -1,0 +1,83 @@
+{
+  "rubric_id": "CLN-HELDOUT-OSTEOPOROSIS-INIT-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant. Distinct from the existing held-out BISPHOSPHONATE-AI fixture (which concerns adjuvant zoledronic acid in breast cancer survivors on aromatase inhibitor); this fixture concerns primary postmenopausal osteoporosis without cancer.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that this patient meets the threshold for pharmacologic osteoporosis therapy — T-score <=-2.5 at the femoral neck OR FRAX 10-year major osteoporotic fracture risk >=20% (or hip fracture risk >=3%) is the standard pharmacologic-treatment threshold per BHOF / Endocrine Society guidance. She meets both.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R2",
+      "description": "Response correctly conveys that bisphosphonates (alendronate, risedronate, IV zoledronic acid) are appropriate first-line therapy for primary postmenopausal osteoporosis at this risk level, with strong evidence for vertebral and non-vertebral fracture-risk reduction.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R3",
+      "description": "Response describes the typical duration framework — about 5 years for oral bisphosphonates, 3 years for IV zoledronic acid, with a 'drug holiday' discussion at that point in lower-risk patients (continuation longer in higher-risk patients).",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R4",
+      "description": "Response describes calcium and vitamin D adequacy as foundational — calcium intake ~1000-1200 mg/day (preferably from diet with supplementation only as needed), vitamin D 800-1000 IU/day or as needed to maintain 25-OH-D in the sufficient range. These are required for bisphosphonate efficacy and to avoid hypocalcemia.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response addresses ONJ (osteonecrosis of the jaw) accurately — extremely rare in osteoporosis patients (much rarer than in cancer patients on high-dose IV bisphosphonates or denosumab), commonly cited at <1 per 10,000 to 1 per 100,000 patient-years; main risk modifier is invasive dental work; routine dental care should not be postponed; complete urgent dental work before initiation if possible.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"],
+      "must_NOT_state": ["ONJ is common in patients without dental risk factors", "you should expect ONJ on bisphosphonates"]
+    },
+    {
+      "id": "R6",
+      "description": "Response addresses atypical femoral fractures accurately — a rare but recognized association with prolonged bisphosphonate use, with absolute risk estimated at single-digit cases per 10,000 person-years; risk rises with treatment duration and is part of the rationale for drug holidays in lower-risk patients; warning signs include new thigh or groin pain.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response addresses oral bisphosphonate administration practicalities — take in the morning on an empty stomach with a full glass of plain water, remain upright (sitting or standing) for 30-60 minutes, no food / drink / other medications during that interval. This addresses esophagitis risk and absorption.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response addresses denosumab as an alternative agent with the critical caveat — denosumab is effective for fracture risk reduction (FREEDOM trial) but discontinuation is associated with rapid bone loss and rebound vertebral fractures, so denosumab discontinuation requires transition to a bisphosphonate. The response should not present denosumab as a 'just stop when done' alternative.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"],
+      "must_NOT_state": ["you can simply stop denosumab without sequencing to another agent"]
+    },
+    {
+      "id": "R9",
+      "description": "Response notes the existence of anabolic agents (teriparatide, romosozumab, abaloparatide) for very-high-risk or severe osteoporosis (e.g., very low T-scores, prior fractures, treatment failure), without recommending them as first-line for this patient at moderate-to-high risk.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R10",
+      "description": "Response addresses lifestyle / fall-prevention as concurrent — weight-bearing exercise, balance training, smoking cessation if relevant, alcohol moderation, home fall-proofing, vision check, medication review for fall-risk drugs.",
+      "weight": 0.07,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R11",
+      "description": "Response uses a non-prescriptive shared-decision-making register — frames the choice as collaboration with her clinician.",
+      "weight": 0.03,
+      "tags": ["axis:communication_quality"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

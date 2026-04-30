@@ -1,0 +1,34 @@
+# Normalize line endings
+* text=auto
+
+# Markdown / config — text
+*.md       text
+*.txt      text
+*.yaml     text
+*.yml      text
+*.toml     text
+*.json     text
+*.jsonl    text
+*.py       text
+*.sh       text
+*.cfg      text
+
+# Binary — DICOM, audio, image fixtures
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.dcm      binary
+*.wav      binary
+*.mp3      binary
+*.gpickle  binary
+*.faiss    binary
+*.index    binary
+*.engine   binary
+
+# LFS for anything > 5 MB; check `git lfs track` before adding new patterns
+# Demo fixtures are small; keep them in regular git.
+# Model weights NEVER live in git — pinned via HF revision SHA in MANIFEST.yaml only.
+
+# Linguist overrides for proper language detection on GitHub
+*.colang    linguist-language=Python
+corpus/medical-guidelines/chunks.jsonl  linguist-generated=true

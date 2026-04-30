@@ -1,0 +1,49 @@
+{
+  "id": "CLN-HELDOUT-NALOXONE-RX",
+  "case_kind": "patient_overdose_prevention_counseling",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 41-year-old man with chronic pancreatitis on long-term hydromorphone (~60 MME/day) is offered take-home naloxone by his primary clinician. He asks the office nurse why he needs it when he doesn't think he's at risk, and how to use it. The held-out answer must reflect FDA 2023 OTC approval of intranasal naloxone (Narcan), the CDC 2022 guideline recommendation for naloxone co-prescription at >=50 MME/day or with co-prescribed benzodiazepines or other risk factors, the practical use steps, the importance of Good Samaritan laws, and the post-administration plan (call 911 even after naloxone reverses overdose; recurrence is possible especially with long-acting opioids and fentanyl).",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I take hydromorphone for my chronic pancreatitis. My doctor handed me a Narcan prescription today and told me to keep it at home. I don't really get why — I'm not abusing this stuff. How am I supposed to even use it?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "warm, validating, non-stigmatizing, evidence-grounded",
+    "do_NOT": [
+      "imply that being offered naloxone means the prescriber thinks he is misusing his medication",
+      "skip the recurrence-of-overdose warning after naloxone administration",
+      "skip the 'call 911' step",
+      "describe naloxone as effective without the call-emergency-services caveat",
+      "ignore the OTC availability of intranasal naloxone"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:long_term_opioid_60_mme_chronic_pancreatitis",
+      "drug:naloxone_intranasal_4mg",
+      "guideline:cdc_2022_naloxone_co_prescription",
+      "law:good_samaritan",
+      "concept:overdose_recognition",
+      "concept:overdose_recurrence_after_naloxone",
+      "step:call_911"
+    ],
+    "edges_required_for_correct_answer": [
+      "patient:long_term_opioid_60_mme_chronic_pancreatitis --cdc_2022--> naloxone_co_prescription_recommended (>=50 MME or risk factors)",
+      "drug:naloxone_intranasal_4mg --fda_otc_2023--> available_without_prescription",
+      "concept:overdose_recognition --signs--> unresponsive_slow_or_absent_breathing_blue_lips",
+      "step:naloxone_administration --then--> call_911_immediately",
+      "concept:overdose_recurrence_after_naloxone --requires--> ongoing_monitoring_and_repeat_dose_if_needed"
+    ]
+  },
+  "expected_sources_referenced": [
+    "CDC Clinical Practice Guideline for Prescribing Opioids for Pain — Dowell et al., MMWR Recomm Rep 2022",
+    "FDA Approval of OTC Narcan Nasal Spray — March 2023 announcement",
+    "SAMHSA Opioid Overdose Prevention Toolkit — current edition",
+    "Good Samaritan overdose-prevention laws — state-level summaries (NLM / SAMHSA)"
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "id": "CLN-HELDOUT-PREP-HIV",
+  "case_kind": "patient_hiv_prevention_counseling",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 26-year-old man who has sex with men (MSM) presenting to a sexual health clinic asks about HIV pre-exposure prophylaxis (PrEP). He has had multiple male sexual partners in the last 6 months and inconsistent condom use. The held-out answer must reflect USPSTF 2023 PrEP Grade A recommendation, the three approved PrEP regimens (TDF/FTC oral daily, TAF/FTC oral daily, cabotegravir long-acting injectable), HIV-negative-at-baseline confirmation requirements, baseline labs (renal function for TDF, HBV, STIs), every-3-month follow-up, the role of doxy-PEP for STI prevention as a separate but adjacent topic, and on-demand (event-driven) dosing as an alternative for select MSM patients (2-1-1 regimen).",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I'm 26, gay, and the last six months I've had multiple partners and not always used a condom. A friend told me I should be on PrEP. Should I be? And what's actually involved?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "warm, non-judgmental, sex-positive, evidence-grounded",
+    "do_NOT": [
+      "moralize about the patient's sexual practices",
+      "describe PrEP as having no side effects or no required monitoring",
+      "skip the requirement to confirm HIV-negative status before initiating",
+      "skip baseline renal / HBV testing for TDF-based regimens",
+      "describe one PrEP regimen as universally superior without context"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:msm_age_26_inconsistent_condom",
+      "regimen:tdf_ftc_oral_daily",
+      "regimen:taf_ftc_oral_daily",
+      "regimen:cabotegravir_long_acting_im",
+      "regimen:event_driven_2_1_1",
+      "guideline:uspstf_2023_prep_grade_a",
+      "lab:hiv_test_baseline",
+      "lab:renal_function_baseline",
+      "lab:hbv_screening",
+      "lab:sti_screening",
+      "schedule:every_3_months_followup",
+      "adjunct:doxy_pep"
+    ],
+    "edges_required_for_correct_answer": [
+      "patient:msm_age_26_inconsistent_condom --uspstf_2023--> prep_strongly_recommended_grade_a",
+      "regimen:tdf_ftc_oral_daily --efficacy--> >99_pct_when_taken_correctly",
+      "regimen:taf_ftc_oral_daily --indicated--> msm_and_transgender_women (not yet validated for receptive vaginal exposure)",
+      "regimen:cabotegravir_long_acting_im --hptn_083--> superior_to_tdf_ftc_oral",
+      "regimen:event_driven_2_1_1 --efficacy_msm--> noninferior_to_daily (IPERGAY)",
+      "lab:hiv_test_baseline --required--> prevent_resistance_in_acute_hiv",
+      "schedule:every_3_months_followup --tests--> hiv_status_renal_sti"
+    ]
+  },
+  "expected_sources_referenced": [
+    "USPSTF 2023 Recommendation — Preexposure Prophylaxis to Prevent Acquisition of HIV (Grade A) — JAMA 2023",
+    "iPrEx — Grant et al., NEJM 2010 (TDF/FTC in MSM)",
+    "DISCOVER — Mayer et al., Lancet 2020 (TAF/FTC vs TDF/FTC)",
+    "HPTN 083 — Landovitz et al., NEJM 2021 (cabotegravir LA)",
+    "IPERGAY — Molina et al., NEJM 2015 (on-demand 2-1-1 dosing in MSM)",
+    "CDC PrEP Clinical Practice Guideline — current edition"
+  ]
+}

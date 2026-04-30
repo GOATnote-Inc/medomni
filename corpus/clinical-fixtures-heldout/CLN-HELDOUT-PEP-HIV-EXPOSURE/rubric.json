@@ -1,0 +1,76 @@
+{
+  "rubric_id": "CLN-HELDOUT-PEP-HIV-EXPOSURE-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant. Hard negation preserved on safety-critical claims about the 72-hour window and pre-PEP HIV testing.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that yes — PEP is a real, time-sensitive option and the patient should pursue it now. Equivalent phrasing ('go to an ED or sexual health clinic today, do not wait') passes.",
+      "weight": 0.18,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R2",
+      "description": "Response correctly conveys the 72-hour window — PEP is most effective when started as soon as possible, ideally within hours of exposure, and is no longer recommended after 72 hours have elapsed. The earlier the initiation, the better.",
+      "weight": 0.18,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["PEP is effective if started after 72 hours", "you can wait a few days to start PEP"]
+    },
+    {
+      "id": "R3",
+      "description": "Response describes the standard regimen — typically a 28-day course of TDF/FTC plus dolutegravir (or raltegravir) per current CDC guidance. The response need not memorize all alternatives; it should mention the duration and that this is a multi-drug regimen.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R4",
+      "description": "Response notes the requirement for a baseline HIV test before or at PEP initiation — to know whether the patient is HIV-negative at baseline and to inform follow-up. PEP is started while awaiting confirmatory results in most settings.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R5",
+      "description": "Response addresses the broader visit — the same encounter should include emergency contraception counseling (the patient is a 29-year-old woman after condomless sex), STI screening (gonorrhea / chlamydia / syphilis / hepatitis B / hepatitis C), and consideration of HBV PEP (vaccination + HBIG depending on serologic status).",
+      "weight": 0.13,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response addresses pregnancy considerations — pregnancy testing is part of the workup, dolutegravir is now considered safe periconception per updated DHHS guidance, but the team will adjust the regimen if needed. The response should not refuse PEP or advise delay because of pregnancy concerns.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response describes follow-up — repeat HIV testing at intervals (commonly 4-6 weeks and 3 months from exposure depending on test type), STI re-testing as indicated, monitoring for medication side effects.",
+      "weight": 0.08,
+      "tags": ["axis:completeness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response addresses adherence and side effects — the 28-day course requires good adherence; common side effects include nausea, diarrhea, fatigue, headache, with newer regimens substantially better tolerated than older PEP regimens.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response surfaces the option of transitioning to PrEP at the end of the 28-day PEP course if the patient remains HIV-negative and continues to have HIV-acquisition risk — PEP-to-PrEP transition is a recognized care pathway.",
+      "weight": 0.05,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R10",
+      "description": "Response uses a non-judgmental, calm, action-oriented register — does not moralize, treats the patient with respect, prioritizes getting her into care quickly.",
+      "weight": 0.01,
+      "tags": ["axis:communication_quality"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

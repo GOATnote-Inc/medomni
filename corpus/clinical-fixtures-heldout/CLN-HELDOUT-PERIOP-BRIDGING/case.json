@@ -1,0 +1,49 @@
+{
+  "id": "CLN-HELDOUT-PERIOP-BRIDGING",
+  "case_kind": "patient_anticoagulation_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 66-year-old on warfarin for non-valvular atrial fibrillation (CHA2DS2-VASc 3) with an upcoming elective inguinal hernia repair asks her primary-care nurse whether she needs LMWH bridging perioperatively. The held-out answer must reflect the BRIDGE trial finding (no benefit + increased bleeding from heparin bridging in non-valvular AFib of moderate stroke risk), the CHEST 2022 antithrombotic guideline framing of bridging in selective high-stroke-risk subsets only (e.g., recent stroke/TIA <3 months, mechanical mitral valve, CHA2DS2-VASc >=7), the standard 5-day pre-procedure warfarin hold, and the procedure-specific bleeding-risk classification.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I take warfarin for AFib. I'm having a hernia repair next month. The surgeon's office asked if I'm 'getting bridged' with Lovenox before and after. My CHA2DS2-VASc is 3. Do I need that?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "evidence-grounded, candid, non-paternalistic",
+    "do_NOT": [
+      "recommend routine LMWH bridging for non-valvular AFib at moderate stroke risk",
+      "ignore the BRIDGE trial findings",
+      "describe bridging as low-risk in this scenario",
+      "skip the procedure-specific bleeding-risk classification",
+      "give specific perioperative dosing without referencing the surgical / anesthesia team"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:warfarin_nonvalvular_afib_chads_vasc_3",
+      "procedure:inguinal_hernia_repair",
+      "drug:warfarin",
+      "drug:enoxaparin_lmwh",
+      "trial:bridge_2015",
+      "guideline:chest_2022_antithrombotic",
+      "concept:procedure_bleeding_risk",
+      "concept:perioperative_thromboembolic_risk"
+    ],
+    "edges_required_for_correct_answer": [
+      "trial:bridge_2015 --finding--> no_thromboembolic_benefit_and_increased_bleeding_with_lmwh_bridging (in nonvalvular AFib without recent stroke/TIA)",
+      "guideline:chest_2022_antithrombotic --recommends--> no_routine_bridging_for_moderate_risk_nonvalvular_afib",
+      "guideline:chest_2022_antithrombotic --recommends_bridging--> selective_high_thromboembolic_risk_only (mechanical mitral valve, recent stroke/TIA, CHA2DS2-VASc >=7-9)",
+      "drug:warfarin --typical_hold--> 5_days_pre_procedure",
+      "procedure:inguinal_hernia_repair --bleeding_risk--> low_to_moderate"
+    ]
+  },
+  "expected_sources_referenced": [
+    "BRIDGE trial — Douketis et al., NEJM 2015",
+    "CHEST 2022 antithrombotic guideline (Perioperative Management) — Douketis et al., Chest 2022",
+    "PAUSE study — Douketis et al., JAMA Intern Med 2019 (DOAC perioperative management; relevant context)"
+  ]
+}

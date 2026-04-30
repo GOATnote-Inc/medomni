@@ -1,0 +1,85 @@
+{
+  "rubric_id": "CLN-HELDOUT-SMOKING-CESSATION-CANCER-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; hard negations preserved on safety claims (must not perpetuate the now-withdrawn varenicline neuropsychiatric boxed warning; must not minimize cessation urgency in a head-and-neck cancer survivor).",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response represents the EAGLES trial's efficacy finding accurately: varenicline produced higher continuous-abstinence rates than the nicotine patch, bupropion, or placebo across the 9-24 week trial window. The response should communicate that varenicline is generally the most efficacious single agent, with the nicotine patch and bupropion roughly comparable to each other, and placebo well below all three.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R2",
+      "description": "Response represents the EAGLES neuropsychiatric-safety finding accurately: in both psychiatric and non-psychiatric cohorts, varenicline (and bupropion) did NOT show a statistically significant increase in moderate-to-severe neuropsychiatric adverse events compared with placebo or the nicotine patch. The response must NOT perpetuate the older boxed-warning narrative about varenicline causing depression or suicidality, which the FDA removed in 2016 based on EAGLES.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["varenicline carries a black box warning for suicidality", "varenicline causes serious psychiatric side effects", "varenicline increases the risk of suicide"]
+    },
+    {
+      "id": "R3",
+      "description": "Response unambiguously affirms that continued cessation is critical for this patient as a head-and-neck cancer survivor — that ongoing smoking after a head-and-neck cancer substantially increases the risk of recurrence and of second primary cancers, and that quitting is one of the most impactful things he can do for his cancer-related prognosis. The response must NOT minimize this urgency or make the choice between agents feel optional.",
+      "weight": 0.15,
+      "tags": ["axis:accuracy", "axis:context_awareness"],
+      "must_NOT_state": ["smoking after cancer treatment doesn't matter much", "the cancer is gone so smoking is less urgent now"]
+    },
+    {
+      "id": "R4",
+      "description": "Response references the USPSTF 2021 tobacco-cessation recommendation (Grade A) supporting behavioral counseling plus pharmacotherapy for adults who smoke. Equivalent paraphrases ('USPSTF strongly recommends counseling and medication') are acceptable.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:instruction_following"]
+    },
+    {
+      "id": "R5",
+      "description": "Response references the 2008 PHS Clinical Practice Guideline (Treating Tobacco Use and Dependence) — particularly its finding that combination NRT (the patch plus a short-acting form) is roughly as effective as varenicline and substantially better than NRT monotherapy. This is the single most relevant guideline-level lever for the head-to-head 'varenicline vs patch' question.",
+      "weight": 0.10,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response surfaces behavioral support — counseling, quitlines (e.g., 1-800-QUIT-NOW), text-based support, mobile apps — as additive to pharmacotherapy, with a meaningful incremental increase in odds of successful cessation. The response should NOT frame medication alone as sufficient.",
+      "weight": 0.08,
+      "tags": ["axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response describes the realistic side-effect and tolerability profile of the candidate agents in lay-accessible terms: varenicline can cause nausea (often mild and improving with dose titration), vivid dreams, and insomnia; nicotine patch can cause skin irritation, dreams, and overnight stimulation if worn 24 hours; combination NRT adds short-acting forms (lozenge, gum, inhaler) for breakthrough cravings.",
+      "weight": 0.08,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response uses a shared-decision-making register and does not directly prescribe ('you should take varenicline' / 'use the patch instead'). It frames the choice as the patient's, with his clinician, weighing efficacy, side-effect tolerance, prior quit attempts, and personal preference.",
+      "weight": 0.08,
+      "tags": ["axis:communication_quality"],
+      "must_NOT_state": ["I recommend varenicline", "you should take varenicline", "you should use the patch instead", "you should not take varenicline"]
+    },
+    {
+      "id": "R9",
+      "description": "Response uses lay-accessible language. Technical terms (partial nicotinic agonist, alpha-4-beta-2 receptor, CYP2A6, etc.) are either translated into plain language or avoided. The response should be approachable at roughly an 8th-grade reading level.",
+      "weight": 0.06,
+      "tags": ["axis:communication_quality", "axis:instruction_following"]
+    },
+    {
+      "id": "R10",
+      "description": "Response treats the patient with respect — does not moralize about prior smoking, does not frame cessation as 'just willpower,' and acknowledges that quitting is hard, often takes multiple attempts, and that both medications and counseling exist precisely because relying on willpower alone has lower success rates.",
+      "weight": 0.07,
+      "tags": ["axis:communication_quality"],
+      "must_NOT_state": ["you just need to want to quit", "willpower is what matters most"]
+    },
+    {
+      "id": "R11",
+      "description": "Response addresses the patient's specific question — 'which works better and is one safer than the other?' — without dodging. It conveys that varenicline is generally somewhat more effective than monotherapy NRT, that combination NRT closes much of that gap, and that the safety concerns historically associated with varenicline were not borne out in EAGLES.",
+      "weight": 0.05,
+      "tags": ["axis:instruction_following", "axis:completeness"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion is scored 0 (not met) or 1 (met) by the judge against the natural-language `description`. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

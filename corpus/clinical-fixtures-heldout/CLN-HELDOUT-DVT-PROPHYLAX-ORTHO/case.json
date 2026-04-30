@@ -1,0 +1,52 @@
+{
+  "id": "CLN-HELDOUT-DVT-PROPHYLAX-ORTHO",
+  "case_kind": "patient_anticoagulation_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 64-year-old woman recovering from elective total knee arthroplasty (TKA) one week ago is on rivaroxaban 10 mg daily for VTE prophylaxis and asks how long she actually needs to stay on it and whether aspirin would be reasonable to switch to. The held-out answer must reflect ASH 2019 / CHEST 2022 / AAOS guidance on extended VTE prophylaxis after TKA (typically at least 10-14 days, with extension to 35 days reasonable in certain patients), the CRISTAL / EPCAT-II evidence comparing aspirin to anticoagulants in lower-risk THA/TKA, and current practice patterns where DOAC, LMWH, fondaparinux, or in select lower-risk patients aspirin are options.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I had my right knee replaced 8 days ago. They put me on rivaroxaban 10 mg once a day. How long do I need to be on it? My friend who had her knee done said she just took aspirin. Can I switch?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "evidence-grounded, candid, non-paternalistic",
+    "do_NOT": [
+      "describe aspirin as universally equivalent to DOAC for TKA VTE prophylaxis without risk stratification",
+      "shorten prophylaxis below the minimum guideline-recommended duration",
+      "give a specific switch protocol without referring to the surgical team",
+      "minimize the postoperative VTE risk window",
+      "ignore the importance of mechanical prophylaxis (early ambulation, ICDs, TED hose where indicated)"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:tka_postop_day_8_on_rivaroxaban_10mg",
+      "drug:rivaroxaban_doac",
+      "drug:aspirin",
+      "drug:enoxaparin_lmwh",
+      "trial:epcat_ii",
+      "trial:cristal",
+      "guideline:ash_2019_chest_2022_aaos_2024",
+      "concept:extended_vte_prophylaxis_duration",
+      "intervention:mechanical_prophylaxis"
+    ],
+    "edges_required_for_correct_answer": [
+      "patient:tka_postop_day_8_on_rivaroxaban_10mg --guideline_recommended--> minimum_10_to_14_days_total_prophylaxis (some guidelines extend to 35 days)",
+      "drug:aspirin --epcat_ii_2018--> noninferior_to_rivaroxaban_after_initial_5_days_in_select_lower_risk_TJA",
+      "drug:aspirin --cristal_2022--> mixed_findings_aspirin_vs_enoxaparin",
+      "intervention:mechanical_prophylaxis --adjunct--> early_ambulation_ICDs_compression",
+      "decision:switch_to_aspirin --requires--> shared_decision_with_surgical_team_risk_stratified"
+    ]
+  },
+  "expected_sources_referenced": [
+    "ASH 2019 VTE prophylaxis after major orthopedic surgery — Anderson et al., Blood Adv 2019",
+    "CHEST 2022 Antithrombotic Therapy guideline (orthopedic VTE prophylaxis section)",
+    "AAOS 2024 Clinical Practice Guideline on VTE Prophylaxis in Elective Hip and Knee Arthroplasty",
+    "EPCAT-II trial — Anderson et al., NEJM 2018",
+    "CRISTAL trial — Sidhu et al., JAMA 2022"
+  ]
+}

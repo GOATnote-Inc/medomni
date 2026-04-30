@@ -1,0 +1,78 @@
+{
+  "rubric_id": "CLN-HELDOUT-ASPIRIN-CRC-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; no `must_mention_keywords` on paraphraseable concepts. Hard negations preserved on safety-critical claims (e.g., must NOT recommend aspirin as a substitute for colonoscopy).",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that the USPSTF updated its position in 2022 such that aspirin is no longer recommended primarily for colorectal cancer prevention in average-risk adults, and that the prior 2016 recommendation was retired in light of newer evidence on harms (notably bleeding) and weaker net benefit. Equivalent phrasings such as 'guidelines have moved away from aspirin for cancer prevention' or 'the USPSTF rolled back its earlier CRC-prevention recommendation' should pass.",
+      "weight": 0.15,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R2",
+      "description": "Response distinguishes the average-risk population from hereditary-CRC syndromes (especially Lynch syndrome) and notes that the strongest aspirin-for-CRC-prevention evidence comes from CAPP2 in Lynch-syndrome carriers, not from average-risk cohorts. The response should not conflate the two populations or apply Lynch-syndrome trial results to this patient without first establishing whether she has Lynch syndrome.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R3",
+      "description": "Response represents the ASPREE trial accurately — daily low-dose aspirin in healthy older adults (largely age 70+) did not reduce cardiovascular events or cancer mortality and was associated with increased major hemorrhage and increased all-cause mortality. The response must NOT cite ASPREE as evidence supporting aspirin for cancer prevention.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["ASPREE supports aspirin for cancer prevention", "ASPREE showed aspirin reduced cancer"]
+    },
+    {
+      "id": "R4",
+      "description": "Response treats screening colonoscopy — not aspirin — as the dominant risk-reduction intervention for someone with two first-degree relatives with colorectal cancer. It should communicate that this patient warrants earlier and more frequent colonoscopy than the average-risk schedule (commonly described as starting at age 40 or 10 years before the youngest affected relative's diagnosis, repeated approximately every 5 years), per the US Multi-Society Task Force.",
+      "weight": 0.15,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response surfaces genetic evaluation / referral to genetic counseling for Lynch syndrome (and consideration of familial adenomatous polyposis depending on additional family-history details) as appropriate given two first-degree relatives with colorectal cancer, ideally before any chemoprevention decision. Equivalent phrasings about 'hereditary cancer evaluation' or 'Lynch syndrome workup' should pass.",
+      "weight": 0.12,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response quantifies or otherwise meaningfully communicates the bleeding harms of daily aspirin: increased risk of major gastrointestinal bleeding (often described as roughly a 50-60% relative increase) and a smaller absolute increase in intracranial / hemorrhagic-stroke risk. Magnitude does not need to be exact, but the harm category must be present and not minimized.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response uses a shared-decision-making register — curious, evidence-grounded, non-paternalistic. It does not directly prescribe ('you should start aspirin' / 'don't take aspirin') and instead frames the discussion around the patient's specific risk profile, the genetic workup that should come first, and the trade-offs the patient and her physician would weigh together.",
+      "weight": 0.08,
+      "tags": ["axis:communication_quality"],
+      "must_NOT_state": ["I recommend you start aspirin", "you should start aspirin", "you should not take aspirin"]
+    },
+    {
+      "id": "R8",
+      "description": "Response explicitly does NOT present aspirin as a substitute for colonoscopy or for genetic evaluation. The framing should make clear that even if aspirin ultimately had some role, it would be additive to — not in place of — appropriate screening and hereditary-cancer assessment.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:context_awareness"],
+      "must_NOT_state": ["aspirin can replace colonoscopy", "you can skip colonoscopy if you take aspirin"]
+    },
+    {
+      "id": "R9",
+      "description": "Response notes that any aspirin decision should incorporate cardiovascular risk balance — specifically that aspirin's net benefit (or harm) depends on the individual's baseline cardiovascular risk, bleeding risk factors (NSAID use, prior GI bleed, anticoagulants, age), and that this calculation has shifted toward harm at older ages. Mention of patient-specific bleeding-risk assessment should pass even without naming a calculator.",
+      "weight": 0.05,
+      "tags": ["axis:completeness"]
+    },
+    {
+      "id": "R10",
+      "description": "Response acknowledges the limits of current evidence honestly — for example, that CAPP2's dose was 600 mg/day (substantially higher than 'baby aspirin') and that translation of trial findings to a 52-year-old patient with familial-but-not-yet-confirmed-syndromic risk is not direct. Honest uncertainty framing satisfies this criterion.",
+      "weight": 0.05,
+      "tags": ["axis:accuracy", "axis:communication_quality"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion is scored 0 (not met) or 1 (met) by the judge against the natural-language `description`. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

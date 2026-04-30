@@ -1,0 +1,45 @@
+{
+  "directed": false,
+  "edge_types_top15": {
+    "associated with": 167482,
+    "contraindication": 61350,
+    "enzyme": 10634,
+    "expression absent": 39774,
+    "expression present": 3036406,
+    "indication": 18776,
+    "interacts with": 686550,
+    "off-label use": 5136,
+    "parent-child": 281744,
+    "phenotype present": 300634,
+    "ppi": 642150,
+    "side effect": 129568,
+    "synergistic interaction": 2672628,
+    "target": 32760,
+    "transporter": 6184
+  },
+  "kg_csv_bytes": 981751236,
+  "n_edge_types_total": 18,
+  "n_edges": 4049642,
+  "n_nodes": 129375,
+  "name_index_size": 128550,
+  "node_types": {
+    "anatomy": 14035,
+    "biological_process": 28642,
+    "cellular_component": 4176,
+    "disease": 17080,
+    "drug": 7957,
+    "effect/phenotype": 15311,
+    "exposure": 818,
+    "gene/protein": 27671,
+    "molecular_function": 11169,
+    "pathway": 2516
+  },
+  "nodeid_index_size": 90067,
+  "nodes_tab_bytes": 8893757,
+  "rapids_versions": {
+    "cudf": "26.04.000",
+    "cugraph": "26.04.000",
+    "networkx": "3.6.1"
+  },
+  "total_load_seconds": 22.41
+}

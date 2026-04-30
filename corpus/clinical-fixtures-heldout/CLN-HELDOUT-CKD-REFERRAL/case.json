@@ -1,0 +1,52 @@
+{
+  "id": "CLN-HELDOUT-CKD-REFERRAL",
+  "case_kind": "patient_renal_management_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 62-year-old woman with type 2 diabetes (15 years), hypertension, and a recent eGFR of 38 mL/min/1.73m^2 with UACR 350 mg/g asks her primary care nurse whether she really needs a nephrology referral or whether her primary clinician can manage this. The held-out answer must reflect KDIGO 2024 CKD guideline staging (G3b A3 in this case), the referral thresholds (eGFR <30 / G4 generally referred; earlier referral if rapid decline, severe albuminuria like A3, refractory hypertension, suspected non-DM cause, or anemia/mineral-bone-disease), the role of ACEi/ARB titration for albuminuria, the role of SGLT2 inhibitors and finerenone in slowing CKD progression in DM (CREDENCE / DAPA-CKD / EMPA-KIDNEY / FIDELIO-DKD), and the importance of avoiding nephrotoxins.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I'm 62, diabetic for 15 years, blood pressure runs high. My latest labs showed an eGFR of 38 and protein in the urine — they said the ratio was 350. My primary care said maybe a kidney doctor referral. Is that necessary, or can my primary doctor handle this?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "evidence-grounded, candid, non-paternalistic",
+    "do_NOT": [
+      "describe eGFR 38 with UACR 350 as not warranting nephrology involvement",
+      "describe ACEi/ARB as optional in this profile",
+      "ignore the SGLT2 inhibitor / finerenone evidence for slowing CKD progression in DM",
+      "describe nephrology referral as a sign of failure",
+      "skip the avoid-nephrotoxin / vaccine / lifestyle recommendations"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:dm2_15y_htn_egfr_38_uacr_350",
+      "stage:kdigo_g3b_a3",
+      "guideline:kdigo_2024_ckd",
+      "intervention:acei_or_arb_titration",
+      "drug:sglt2_inhibitor",
+      "drug:finerenone_mra",
+      "concept:nephrotoxin_avoidance",
+      "decision:nephrology_referral_threshold"
+    ],
+    "edges_required_for_correct_answer": [
+      "patient:dm2_15y_htn_egfr_38_uacr_350 --kdigo_2024--> stage_g3b_a3_high_risk",
+      "stage:kdigo_g3b_a3 --referral--> nephrology_referral_warranted",
+      "intervention:acei_or_arb_titration --reduces--> albuminuria_and_progression",
+      "drug:sglt2_inhibitor --credence_dapa_ckd_empa_kidney--> reduces_ckd_progression_in_dm_and_non_dm",
+      "drug:finerenone_mra --fidelio_dkd--> reduces_ckd_progression_and_cv_events_in_dm_ckd",
+      "concept:nephrotoxin_avoidance --includes--> NSAIDs_iv_contrast_certain_supplements"
+    ]
+  },
+  "expected_sources_referenced": [
+    "KDIGO 2024 Clinical Practice Guideline for the Evaluation and Management of CKD — Kidney Int 2024",
+    "CREDENCE — Perkovic et al., NEJM 2019 (canagliflozin)",
+    "DAPA-CKD — Heerspink et al., NEJM 2020 (dapagliflozin)",
+    "EMPA-KIDNEY — Herrington et al., NEJM 2023 (empagliflozin)",
+    "FIDELIO-DKD — Bakris et al., NEJM 2020 (finerenone)"
+  ]
+}

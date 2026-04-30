@@ -1,0 +1,49 @@
+{
+  "id": "CLN-HELDOUT-URI-ANTIBIOTIC-STEW",
+  "case_kind": "patient_antibiotic_stewardship_counseling",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 38-year-old man calls the urgent care nurse line on day 3 of an upper respiratory illness — sore throat, runny nose, mild cough, low-grade fever — and asks for a Z-Pak (azithromycin), citing that it always works for him. The held-out answer must reflect IDSA / CDC stewardship guidance — most acute URIs are viral, antibiotics do not benefit viral pharyngitis or the common cold and incur real harm (rash, GI side effects, C. difficile, microbiome disruption, resistance), the Centor / McIsaac criteria for streptococcal pharyngitis with rapid testing for confirmation, and clear red-flags that DO warrant evaluation (severe / persistent symptoms, dyspnea, peritonsillar abscess signs, prolonged high fever, high-risk comorbidities).",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I've had a sore throat, stuffy nose, and a little cough for 3 days. Low fever. I called for a Z-Pak — azithromycin always knocks this out for me. Can you call it in?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "warm, validating frustration, evidence-grounded, non-paternalistic",
+    "do_NOT": [
+      "agree to call in azithromycin without an evaluation for a viral URI presentation",
+      "describe azithromycin as harmless",
+      "attribute prior 'azithromycin worked' anecdote to azithromycin without questioning self-resolution / placebo",
+      "skip the red flags that DO warrant evaluation",
+      "moralize about the patient"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:adult_uri_day_3_viral_pattern",
+      "drug:azithromycin",
+      "concept:viral_vs_bacterial_uri",
+      "criteria:centor_mcisaac_strep",
+      "test:rapid_strep_throat",
+      "harm:antibiotic_side_effects_resistance_microbiome",
+      "red_flag:severe_or_persistent_or_high_risk"
+    ],
+    "edges_required_for_correct_answer": [
+      "patient:adult_uri_day_3_viral_pattern --idsa_cdc--> antibiotic_not_indicated_for_viral_uri",
+      "criteria:centor_mcisaac_strep --threshold--> rapid_strep_test_or_culture (not empiric Z-pak)",
+      "drug:azithromycin --harm--> rash_gi_qt_microbiome_resistance",
+      "concept:viral_vs_bacterial_uri --average_duration--> 7_to_10_days_self_limited",
+      "red_flag:severe_or_persistent_or_high_risk --warrants--> in_person_evaluation"
+    ]
+  },
+  "expected_sources_referenced": [
+    "IDSA Practice Guideline for Group A Streptococcal Pharyngitis — Shulman et al., Clin Infect Dis 2012 (still authoritative)",
+    "CDC Be Antibiotics Aware — current materials on adult URI",
+    "Harris et al., JAMA 2016 — appropriate antibiotic prescribing for adult acute respiratory tract infection (ACP / CDC guidance)",
+    "ACEP Clinical Policy on Adult Pharyngitis — 2018"
+  ]
+}

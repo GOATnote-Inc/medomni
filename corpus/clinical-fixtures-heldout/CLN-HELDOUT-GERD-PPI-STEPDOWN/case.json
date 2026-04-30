@@ -1,0 +1,49 @@
+{
+  "id": "CLN-HELDOUT-GERD-PPI-STEPDOWN",
+  "case_kind": "patient_gi_management_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 54-year-old woman on omeprazole 20 mg daily for 8 years for GERD asks her primary nurse practitioner whether she can stop the PPI given recent media stories about long-term PPI risks. She has not had any GI workup beyond initial empirical treatment 8 years ago. The held-out answer must reflect ACG 2022 GERD guideline framing — long-term PPI use is generally appropriate for clear indications (erosive esophagitis, Barrett's esophagus, GERD with confirmed reflux, prevention of ulcer in chronic NSAID use) but should be reviewed for ongoing indication and dose; the rebound-acid hypersecretion phenomenon when stopping abruptly; the importance of step-down vs abrupt discontinuation; the realistic interpretation of long-term PPI risk associations (kidney disease, dementia, fracture, micronutrient deficiency — most associations are modest and from observational data with confounding); and the option of further GI evaluation (upper endoscopy / pH monitoring) if discontinuation is desired without losing symptom control.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I've been on omeprazole 20 mg every day for 8 years for heartburn. I keep seeing scary news stories about long-term PPI use and dementia, kidney problems, broken bones. Can I just stop it?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "evidence-grounded, candid, non-paternalistic",
+    "do_NOT": [
+      "advise abrupt PPI discontinuation without addressing rebound hyperacidity",
+      "describe long-term PPI risks as established causal in the way news stories often imply",
+      "describe long-term PPI risks as nonexistent or trivial",
+      "skip the stepwise taper / on-demand framing",
+      "skip the option of GI re-evaluation"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:long_term_ppi_no_recent_workup",
+      "drug:omeprazole_ppi",
+      "concept:rebound_acid_hypersecretion",
+      "concept:long_term_ppi_associations",
+      "intervention:step_down_taper",
+      "intervention:h2_blocker_alginate_otc",
+      "evaluation:upper_endoscopy_or_ph_study",
+      "guideline:acg_2022_gerd"
+    ],
+    "edges_required_for_correct_answer": [
+      "drug:omeprazole_ppi --abrupt_stop--> rebound_acid_hypersecretion",
+      "intervention:step_down_taper --over_weeks--> minimizes_rebound",
+      "concept:long_term_ppi_associations --quality_of_evidence--> mostly_observational_modest_associations",
+      "guideline:acg_2022_gerd --recommends--> review_indication_and_use_lowest_effective_dose",
+      "evaluation:upper_endoscopy_or_ph_study --indicated--> if_persistent_symptoms_or_alarm_features"
+    ]
+  },
+  "expected_sources_referenced": [
+    "ACG Clinical Guideline for the Diagnosis and Management of Gastroesophageal Reflux Disease — Katz et al., Am J Gastroenterol 2022",
+    "AGA Clinical Practice Update on De-prescribing PPI — Targownik et al., Gastroenterology 2022",
+    "COMPASS PPI substudy — Moayyedi et al., Gastroenterology 2019 (largest RCT-level safety data on long-term pantoprazole)"
+  ]
+}

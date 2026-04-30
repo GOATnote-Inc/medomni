@@ -1,0 +1,77 @@
+{
+  "rubric_id": "CLN-HELDOUT-SHINGRIX-RZV-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; no `must_mention_keywords` on paraphraseable concepts. Hard negations preserved on the safety-critical claims that prior Zostavax does not substitute for RZV and that dose 2 should not be skipped due to dose 1 reactogenicity.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that RZV (Shingrix) is now the preferred shingles vaccine per ACIP (2018), and that a previously-vaccinated Zostavax recipient should still receive RZV. Equivalent phrasings ('the new vaccine has replaced the older one,' 'even people who got Zostavax should now get Shingrix') should pass.",
+      "weight": 0.18,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["Zostavax provides equivalent protection", "you do not need Shingrix because you had Zostavax"]
+    },
+    {
+      "id": "R2",
+      "description": "Response correctly conveys the two-dose RZV schedule — two doses, with the second dose 2 to 6 months after the first. Equivalent phrasings about 'a second shot a few months later' that match this interval should pass.",
+      "weight": 0.12,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R3",
+      "description": "Response notes the interval between prior Zostavax and RZV — at least 2 months should have elapsed before giving RZV. Approximate phrasing ('at least a couple of months after the old one') is fine.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R4",
+      "description": "Response represents Shingrix efficacy accurately — high efficacy (commonly cited as >=90%) against herpes zoster and against postherpetic neuralgia in adults aged 50+, with substantial efficacy maintained in the 70+ age group. Exact percentages are not required; the magnitude / direction must be correct.",
+      "weight": 0.12,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response validates the friend's reactogenicity story — yes, dose 2 in particular is often associated with a strong local reaction (sore swollen arm) and systemic symptoms (fatigue, myalgia, low-grade fever, headache) lasting roughly 1-3 days — without dismissing it. The response should acknowledge this is a known and expected reactogenicity profile, not a sign of harm.",
+      "weight": 0.12,
+      "tags": ["axis:accuracy", "axis:context_awareness", "axis:communication_quality"]
+    },
+    {
+      "id": "R6",
+      "description": "Response does not advise skipping or discontinuing dose 2 because dose 1 was uncomfortable. Reactogenicity is acknowledged as a reason to plan around the dose (timing relative to work, hydration, scheduling) but not as a reason to drop it.",
+      "weight": 0.08,
+      "tags": ["axis:accuracy", "axis:communication_quality"],
+      "must_NOT_state": ["you can skip the second dose", "stopping after one dose is fine if you reacted"]
+    },
+    {
+      "id": "R7",
+      "description": "Response explains briefly what shingles is and why prevention matters — reactivation of varicella-zoster virus, painful dermatomal rash, risk of postherpetic neuralgia (long-lasting nerve pain) that disproportionately affects older adults. Brief is fine.",
+      "weight": 0.08,
+      "tags": ["axis:completeness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response addresses practical scheduling — recommend planning the second dose so that any reactogenicity is tolerable around work / caregiving / travel; co-administration with most other adult vaccines is generally acceptable.",
+      "weight": 0.06,
+      "tags": ["axis:completeness", "axis:communication_quality"]
+    },
+    {
+      "id": "R9",
+      "description": "Response uses a non-prescriptive shared-decision-making register — validates the patient's hesitation, lays out the evidence and trade-offs, and recommends discussing scheduling with her clinician or pharmacist. Does not issue commands.",
+      "weight": 0.10,
+      "tags": ["axis:communication_quality"]
+    },
+    {
+      "id": "R10",
+      "description": "Response acknowledges contraindications / scope limits honestly — RZV is generally contraindicated in those with known severe allergic reactions to a vaccine component, and current acute illness might delay timing. Brief mention is enough; specific anaphylaxis-management detail not required.",
+      "weight": 0.07,
+      "tags": ["axis:completeness"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge against natural-language `description`. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

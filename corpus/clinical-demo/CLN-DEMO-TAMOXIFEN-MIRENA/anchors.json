@@ -1,0 +1,68 @@
+{
+  "anchor_set_id": "CLN-DEMO-TAMOXIFEN-MIRENA-anchors-v1",
+  "produced_by": "hand-curated rubric-aligned anchor set; deterministic stand-in for the slot a graph-RAG retrieval step (NV-Embed-v2 + nx-cugraph subgraph slice) will fill in v1.",
+  "compatible_with_rubric": "CLN-DEMO-TAMOXIFEN-MIRENA-v1",
+  "case_id": "CLN-DEMO-TAMOXIFEN-MIRENA",
+  "facts": [
+    {
+      "id": "F1-mirena-local-action",
+      "supports": ["R1"],
+      "fact": "Mirena (levonorgestrel-releasing IUD) acts locally in the uterus. Systemic absorption of levonorgestrel from Mirena is minimal — serum LNG levels are roughly 1/10 to 1/30 of those seen with oral progestin contraception. Mirena does not measurably reduce tamoxifen's breast-tissue anti-estrogen effect.",
+      "citation": "Apter D et al. Pharmacokinetics of the levonorgestrel-releasing intrauterine system. Hum Reprod. 2014; FDA Mirena label, Section 12.3 Pharmacokinetics."
+    },
+    {
+      "id": "F2-cochrane-mirena-tamoxifen",
+      "supports": ["R2"],
+      "fact": "Cochrane review (Romero et al. 2020, 'Levonorgestrel-releasing intrauterine system for women on tamoxifen') concludes Mirena reduces benign endometrial pathology — polyps and hyperplasia — in women on tamoxifen. There is NO clear evidence that Mirena prevents endometrial cancer in this population. Number of cancer events in the included trials is too small to draw a conclusion.",
+      "citation": "Cochrane Database Syst Rev 2020 — Romero SAD, Young K, Hickey M, Su HI."
+    },
+    {
+      "id": "F3-tamoxifen-endometrial-by-menopausal-status",
+      "supports": ["R3"],
+      "fact": "Tamoxifen's endometrial cancer risk is highly dependent on menopausal status. Premenopausal women: no consistently established increased risk of endometrial cancer from tamoxifen. Postmenopausal women: relative risk approximately 2-fold to 7-fold, concentrated after >2 years of use, primarily endometrioid (type I) histology. Absolute incidence remains low (~1-2 per 1000 woman-years in postmenopausal patients).",
+      "citation": "Fisher B et al. NSABP P-1; Iqbal J et al. JNCI 2012; Davies C et al. Lancet 2013 (ATLAS)."
+    },
+    {
+      "id": "F4-gail-1.7-and-models",
+      "supports": ["R4"],
+      "fact": "USPSTF and NCCN recommend offering risk-reducing tamoxifen to women with a 5-year breast cancer risk ≥1.7% by the Gail (BCRAT) model and no contraindications. Tyrer-Cuzick (IBIS) is preferred over Gail when there is significant family history because Gail under-weights second-degree relatives, age at relative's diagnosis, and bilateral disease. Both models are recalibrated by NCI for race/ethnicity.",
+      "citation": "USPSTF 2019 Recommendation Statement on Medication Use to Reduce Breast Cancer Risk; NCCN Guidelines Breast Cancer Risk Reduction v2.2024; Gail MH et al. JNCI 1989; Tyrer J et al. Stat Med 2004."
+    },
+    {
+      "id": "F5-nulliparity-and-fhx",
+      "supports": ["R5"],
+      "fact": "Nulliparity carries a hazard ratio for breast cancer of approximately 1.27-1.38 versus parous women. Family history: one first-degree relative roughly 2-fold increased risk; two first-degree relatives roughly 5-fold; risk also depends on age at diagnosis (under 50 > over 50) and laterality. These are inputs to a formal risk calculator (Gail / Tyrer-Cuzick) — they are NOT, on their own, an indication for tamoxifen.",
+      "citation": "Collaborative Group on Hormonal Factors in Breast Cancer. Lancet 2001 (parity); Pharoah PD et al. Int J Cancer 1997 (family history meta-analysis)."
+    },
+    {
+      "id": "F6-shared-decision-register",
+      "supports": ["R6"],
+      "fact": "Communication register for chemoprevention counseling: present evidence, frame trade-offs, calculate the patient's specific 5-year and lifetime risk, and elicit values. Avoid prescriptive directives ('you should take it' / 'you should not take it'). Use phrasing like 'here is the evidence,' 'let us calculate your numbers,' 'this depends on what you weigh more heavily.'",
+      "citation": "AHRQ SHARE Approach; NCCN Survivorship guidelines on shared decision-making."
+    },
+    {
+      "id": "F7-brca-genetic-counseling",
+      "supports": ["R7"],
+      "fact": "When a patient mentions familial breast cancer, BRCA1/2 testing and genetic counseling are a prerequisite consideration before chemoprevention. Triggers include any first-degree relative diagnosed under age 50, multiple first-degree or second-degree relatives, male breast cancer in family, ovarian/fallopian/peritoneal cancer in family, Ashkenazi Jewish ancestry, or known pathogenic variant in family. Carriers may pursue risk-reducing surgery alongside or instead of tamoxifen.",
+      "citation": "USPSTF 2019 BRCA1/2 Risk Assessment; NCCN Genetic/Familial High-Risk Assessment: Breast, Ovarian, Pancreatic v3.2024."
+    },
+    {
+      "id": "F8-baseline-tvus",
+      "supports": ["R8"],
+      "fact": "ACOG recommends a baseline pretreatment endometrial assessment in postmenopausal women before starting tamoxifen — typically transvaginal ultrasound or office hysteroscopy — to rule out pre-existing endometrial pathology. Premenopausal women do not require routine baseline endometrial imaging.",
+      "citation": "ACOG Committee Opinion No. 601 (reaffirmed 2024) — Tamoxifen and Uterine Cancer."
+    },
+    {
+      "id": "F9-monitoring-strategy",
+      "supports": ["R9"],
+      "fact": "Tamoxifen surveillance: in PREmenopausal patients, routine gynecologic care is sufficient; no enhanced screening. In POSTmenopausal patients, monitoring is symptom-based — patients are counseled to report any vaginal bleeding immediately, which then triggers endometrial biopsy or imaging. Routine surveillance transvaginal ultrasound in asymptomatic postmenopausal women on tamoxifen is NOT evidence-based and is NOT recommended (false-positive rate too high).",
+      "citation": "ACOG Committee Opinion No. 601; SGO 2014 Clinical Practice Statement on tamoxifen surveillance."
+    },
+    {
+      "id": "F10-aromatase-inhibitor-alternative",
+      "supports": ["R10"],
+      "fact": "For POSTmenopausal women, aromatase inhibitors (anastrozole, exemestane) are evidence-based alternatives for breast cancer risk reduction with substantially lower endometrial cancer risk than tamoxifen and no thromboembolism signal — but with higher rates of musculoskeletal symptoms and accelerated bone loss. Anastrozole IBIS-II showed ~50% relative reduction in breast cancer incidence over 5 years. AIs are NOT used in premenopausal patients (ovarian estrogen production overrides peripheral aromatization).",
+      "citation": "Cuzick J et al. IBIS-II Lancet 2014 (anastrozole); Goss PE et al. NEJM 2011 (MAP.3 exemestane); NCCN Breast Cancer Risk Reduction v2.2024."
+    }
+  ]
+}

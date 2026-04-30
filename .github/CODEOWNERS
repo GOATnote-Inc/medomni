@@ -1,0 +1,31 @@
+# MedOmni CODEOWNERS — owners that must approve PRs touching critical paths.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+
+# Default owner — every file requires review unless overridden below
+*                                       @bGOATnote
+
+# Charter + isolation contract — the durable doctrine
+/CLAUDE.md                              @bGOATnote
+/SECURITY.md                            @bGOATnote
+/LICENSE                                @bGOATnote
+/.github/                               @bGOATnote
+
+# Architecture spec + methodology — north-star docs
+/findings/research/                     @bGOATnote
+
+# Bench harness + scoring — every change requires owner sign-off
+/scripts/sovereign_bench.py             @bGOATnote
+/scripts/write_card.py                  @bGOATnote
+/scripts/compare_cards.py               @bGOATnote
+/scripts/emit_manifest.py               @bGOATnote
+/scripts/freeze_snapshot.py             @bGOATnote
+/mla/judges/                            @bGOATnote
+
+# Pod serve scripts — affects live inference + cost
+/scripts/serve_*.sh                     @bGOATnote
+/scripts/_runpod_ssh.sh                 @bGOATnote
+/scripts/health_check_all_pods.sh       @bGOATnote
+
+# Rubrics + fixtures — methodology integrity
+/corpus/clinical-demo/                  @bGOATnote
+/corpus/clinical-fixtures-heldout/      @bGOATnote

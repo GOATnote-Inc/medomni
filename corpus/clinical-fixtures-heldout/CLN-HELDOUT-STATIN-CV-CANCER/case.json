@@ -1,0 +1,52 @@
+{
+  "id": "CLN-HELDOUT-STATIN-CV-CANCER",
+  "case_kind": "patient_chemoprevention_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 55-year-old patient with a 12% 10-year ASCVD risk has been recommended a statin for primary cardiovascular prevention. He is reluctant because he has read online that statins might cause cancer. The question requires (a) re-anchoring the cardiovascular benefit per USPSTF 2022 statin recommendation and the 2018 AHA/ACC cholesterol guideline, citing JUPITER as supportive primary-prevention evidence, and (b) clearly debunking the cancer-risk concern using the CTT meta-analyses' published cancer-incidence and cancer-mortality findings — which have not shown an increase. The held-out answer must NOT prescribe, must not minimize the patient's concern, and must distinguish a chemoprevention-counseling task (debunking misinformation about statin-cancer risk) from a cardiovascular-prevention task.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "My doctor said my 10-year heart-attack risk is 12% and wants me to start a statin. I've been reading online that statins can increase cancer risk, especially after a few years. I'm 55 and otherwise healthy. Is the cancer risk real? Should I start a statin?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "curious, humble, evidence-grounded, shared-decision-making",
+    "do_NOT": [
+      "prescribe (\"you should start a statin\" / \"don't start a statin\")",
+      "dismiss the patient's cancer concern as silly or ignorant",
+      "claim statins definitely cause cancer or definitely cause zero harm of any kind",
+      "skip the 12% 10-year ASCVD framing and the USPSTF / AHA-ACC statin thresholds",
+      "conflate the well-studied (and not signal-positive) cancer question with rhabdomyolysis or hepatotoxicity (those are different harms with different evidence)",
+      "use medical jargon (HMG-CoA reductase, LDL-C, etc.) without lay translation",
+      "promise statins are 'completely safe' (any drug has side effects)"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "drug:statin_class",
+      "modifier:10_year_ascvd_risk_12_percent",
+      "guideline:uspstf_2022_statin",
+      "guideline:aha_acc_2018_cholesterol",
+      "trial:jupiter_rosuvastatin",
+      "evidence:ctt_meta_analyses_cancer",
+      "concern:patient_cancer_risk_misconception"
+    ],
+    "edges_required_for_correct_answer": [
+      "modifier:10_year_ascvd_risk_12_percent --crosses--> threshold:uspstf_2022_initiate_statin (>=10% with one or more risk factors, ages 40-75, primary prevention; Grade B)",
+      "modifier:10_year_ascvd_risk_12_percent --crosses--> threshold:aha_acc_2018_intermediate_to_high_risk (>=7.5% intermediate; consider risk-enhancers)",
+      "trial:jupiter_rosuvastatin --primary_prevention_outcome--> reduced_mace (Ridker NEJM 2008; ~44% relative risk reduction in trial population with elevated hsCRP)",
+      "evidence:ctt_meta_analyses_cancer --finding--> no_increase_in_cancer_incidence_or_cancer_mortality (Cholesterol Treatment Trialists' Collaboration; Lancet 2010 / 2012)",
+      "drug:statin_class --known_harms--> myalgia_rhabdomyolysis_hepatotoxicity_new_onset_diabetes (these are real, distinct from cancer claim)",
+      "concern:patient_cancer_risk_misconception --counter_evidence--> evidence:ctt_meta_analyses_cancer (acknowledge concern, then provide the data)"
+    ]
+  },
+  "expected_sources_referenced": [
+    "USPSTF 2022 — Statin Use for the Primary Prevention of Cardiovascular Disease in Adults: Preventive Medication (JAMA recommendation statement)",
+    "JUPITER trial — Ridker PM et al., NEJM 2008 — Rosuvastatin to Prevent Vascular Events in Men and Women with Elevated C-Reactive Protein",
+    "2018 AHA/ACC/Multisociety Guideline on the Management of Blood Cholesterol — Grundy SM et al., Circulation / J Am Coll Cardiol 2019",
+    "Cholesterol Treatment Trialists' (CTT) Collaboration — Lancet 2010 / 2012 — meta-analyses examining cancer incidence and cancer mortality on statin therapy"
+  ]
+}

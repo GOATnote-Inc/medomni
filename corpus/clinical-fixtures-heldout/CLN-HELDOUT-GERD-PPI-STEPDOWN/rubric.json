@@ -1,0 +1,82 @@
+{
+  "rubric_id": "CLN-HELDOUT-GERD-PPI-STEPDOWN-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant. Hard negation preserved on the safety-critical claim that abrupt discontinuation is ideal.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that the right move is generally NOT to stop omeprazole abruptly — abrupt discontinuation can cause rebound acid hypersecretion (a transient surge in acid production) that often makes reflux feel worse for a few weeks, leading patients to restart the PPI.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["just stop the PPI tomorrow", "abrupt discontinuation is the right approach"]
+    },
+    {
+      "id": "R2",
+      "description": "Response describes a stepwise taper / step-down approach — for example, halving the dose to 10 mg daily for several weeks (or moving to alternate-day dosing), then transitioning to on-demand use, possibly with H2 blocker (famotidine) bridging during the transition. Equivalent phrasings pass.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R3",
+      "description": "Response addresses the long-term PPI associations honestly — yes, observational data have suggested associations with chronic kidney disease, dementia, hip fracture, vitamin B12 deficiency, magnesium deficiency, C. difficile, and pneumonia. But these are largely observational with significant confounding; the largest RCT-level safety data (COMPASS pantoprazole substudy) found no significant difference between PPI and placebo for most of these endpoints over 3 years aside from a small enteric-infection signal. The response should not catastrophize and should not dismiss.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R4",
+      "description": "Response addresses ACG 2022 / AGA de-prescribing guidance — long-term PPI use should be reviewed periodically for ongoing indication, with use of the lowest effective dose. Specific indications with strong long-term-PPI rationale: severe erosive esophagitis (LA grade C/D), Barrett's esophagus, ulcer prevention in chronic NSAID/aspirin use. Without a confirmed indication, de-prescribing is reasonable to attempt.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response notes that the patient has not had a recent GI workup — and that if symptoms persist or recur during step-down, an upper endoscopy (with biopsies as indicated) or pH monitoring may be warranted both to confirm an indication for ongoing therapy and to look for Barrett's esophagus given 8 years of GERD. Alarm features (dysphagia, odynophagia, weight loss, GI bleeding, anemia, persistent vomiting) should prompt prompt evaluation regardless.",
+      "weight": 0.13,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response addresses lifestyle measures during taper / discontinuation — weight reduction if relevant, head-of-bed elevation, avoiding late meals, avoiding trigger foods, smoking cessation, alcohol moderation. These are evidence-based and underused.",
+      "weight": 0.10,
+      "tags": ["axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response addresses on-demand or as-needed use after step-down — many patients can manage residual symptoms with as-needed antacids (calcium carbonate), alginate (Gaviscon), or H2 blockers (famotidine) for breakthrough symptoms.",
+      "weight": 0.08,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response notes when continuing the PPI is the right answer — if she has a clear indication (e.g., known erosive esophagitis, Barrett's esophagus, chronic NSAID with ulcer history), if step-down repeatedly fails despite optimization, or if alarm features emerge.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response uses a non-prescriptive shared-decision-making register — frames the conversation as a step-down trial in collaboration with her clinician, validates her concern.",
+      "weight": 0.08,
+      "tags": ["axis:communication_quality"]
+    },
+    {
+      "id": "R10",
+      "description": "Response acknowledges honest uncertainty — not all observational risk associations have been ruled out; reasonable patients may choose to taper aggressively or to remain on the PPI.",
+      "weight": 0.03,
+      "tags": ["axis:communication_quality", "axis:completeness"]
+    },
+    {
+      "id": "R11",
+      "description": "Response notes that switching to an H2 blocker (famotidine) for ongoing acid suppression is a defensible alternative for some patients — H2 blockers don't carry the same set of long-term observational concerns and are often a reasonable maintenance option.",
+      "weight": 0.02,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

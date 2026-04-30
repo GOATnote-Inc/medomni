@@ -1,0 +1,50 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt 2>/dev/null || pip install -e . 2>/dev/null || true
+          pip install pytest pytest-asyncio httpx pyyaml rank_bm25
+
+      - name: Run unit tests
+        run: |
+          pytest -m "not integration and not gpu and not h100 and not h200 and not training" -q
+
+  manifest-determinism:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install minimal deps
+        run: pip install pyyaml
+
+      - name: Verify manifest emitter byte-determinism
+        run: |
+          # Find a checked-in artifact (results/ may be gitignored; use a fixture if present)
+          ARTIFACT=$(find results -name 'heldout.json' 2>/dev/null | head -1)
+          if [ -z "$ARTIFACT" ]; then
+            echo "No checked-in heldout artifact; skipping (this is expected for early commits)"
+            exit 0
+          fi
+          python scripts/emit_manifest.py --artifact "$ARTIFACT" --out /tmp/m1.yaml
+          python scripts/emit_manifest.py --artifact "$ARTIFACT" --out /tmp/m2.yaml
+          diff /tmp/m1.yaml /tmp/m2.yaml && echo "manifest emitter byte-deterministic" || (echo "FAIL: emitter non-deterministic"; exit 1)

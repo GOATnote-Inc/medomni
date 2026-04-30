@@ -1,0 +1,53 @@
+{
+  "id": "CLN-HELDOUT-GLP1-DM2-INIT",
+  "case_kind": "patient_diabetes_management_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 55-year-old with type 2 diabetes (A1c 8.3% on metformin), BMI 34, and known coronary artery disease asks about starting semaglutide versus continuing to push metformin alone. The held-out answer must reflect the ADA Standards of Care recommendation that GLP-1 receptor agonists are preferred when ASCVD is present (regardless of A1c), the LEADER (liraglutide) and SUSTAIN-6 (semaglutide) cardiovascular-outcomes data, the obesity / weight benefit, the typical GI side-effect pattern and titration, and the contraindications (personal/family history of medullary thyroid carcinoma or MEN2, history of pancreatitis as relative contraindication).",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I'm 55, type 2 diabetes for 6 years. A1c is 8.3 on metformin. BMI 34. I had a stent placed 2 years ago. My doctor brought up Ozempic. Is that a good fit for me, or should we just up the metformin?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "evidence-grounded, candid, non-paternalistic",
+    "do_NOT": [
+      "describe metformin uptitration as adequate when A1c remains 8.3% with established ASCVD",
+      "ignore the cardiovascular-outcomes case for GLP-1 RA in established ASCVD",
+      "minimize GI side effects or describe them as exceptionally rare",
+      "recommend without addressing thyroid / pancreatitis contraindications",
+      "describe semaglutide as a weight-loss drug only"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:dm2_a1c_83_with_ascvd_bmi_34",
+      "drug:semaglutide_glp1_ra",
+      "drug:metformin",
+      "trial:leader_liraglutide",
+      "trial:sustain_6_semaglutide",
+      "guideline:ada_soc_2024_2025",
+      "harm:gi_nausea_vomiting",
+      "contraindication:mtc_men2",
+      "consideration:pancreatitis_history"
+    ],
+    "edges_required_for_correct_answer": [
+      "patient:dm2_a1c_83_with_ascvd_bmi_34 --ada_soc--> prefer_glp1_ra_or_sglt2_for_ascvd",
+      "drug:semaglutide_glp1_ra --sustain_6--> mace_reduction",
+      "drug:liraglutide --leader--> mace_reduction",
+      "drug:semaglutide_glp1_ra --weight_reduction--> ~10_to_15_pct_body_weight",
+      "drug:semaglutide_glp1_ra --gi_se--> nausea_vomiting_mitigated_by_titration",
+      "drug:semaglutide_glp1_ra --boxed_warning--> mtc_men2_contraindication"
+    ]
+  },
+  "expected_sources_referenced": [
+    "ADA Standards of Care in Diabetes 2025 — Diabetes Care 2025 Suppl 1",
+    "LEADER trial — Marso et al., NEJM 2016 (liraglutide)",
+    "SUSTAIN-6 trial — Marso et al., NEJM 2016 (semaglutide)",
+    "STEP-1 trial — Wilding et al., NEJM 2021 (semaglutide weight outcomes)",
+    "Novo Nordisk Ozempic prescribing information"
+  ]
+}

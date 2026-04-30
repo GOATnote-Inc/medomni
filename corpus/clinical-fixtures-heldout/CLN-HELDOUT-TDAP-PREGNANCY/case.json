@@ -1,0 +1,47 @@
+{
+  "id": "CLN-HELDOUT-TDAP-PREGNANCY",
+  "case_kind": "patient_vaccine_counseling",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 32-year-old at 28 weeks of pregnancy asks whether she really needs a Tdap vaccine in this pregnancy when she already got one during her prior pregnancy two years ago. The held-out answer must reflect ACIP recommending Tdap during EVERY pregnancy, optimal timing 27-36 weeks (preferably earlier in that window), the goal of transplacental pertussis-antibody transfer to protect the newborn, and cocooning of household contacts.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I'm 28 weeks pregnant with my second baby. My OB wants me to get the Tdap shot again — but I had one in my last pregnancy two years ago. Do I really need it every time? It feels excessive."
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "warm, evidence-grounded, validating concerns",
+    "do_NOT": [
+      "tell the patient that prior-pregnancy Tdap is sufficient for this pregnancy's newborn",
+      "describe the per-pregnancy Tdap dose as optional",
+      "miss the 27-36 week window (or describe Tdap as best given postpartum)",
+      "advocate giving Tdap only after delivery as the primary strategy",
+      "skip cocooning of household contacts"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "vaccine:tdap",
+      "context:pregnancy",
+      "schedule:every_pregnancy_27_to_36_weeks",
+      "outcome:transplacental_pertussis_antibody_transfer",
+      "population:newborn_pertussis_morbidity",
+      "strategy:cocooning_household_contacts"
+    ],
+    "edges_required_for_correct_answer": [
+      "context:pregnancy --acip_recommendation--> tdap_every_pregnancy",
+      "schedule:every_pregnancy_27_to_36_weeks --maximizes--> transplacental_pertussis_antibody_transfer",
+      "transplacental_pertussis_antibody_transfer --protects--> population:newborn_pertussis_morbidity (first 2 months before infant DTaP)",
+      "strategy:cocooning_household_contacts --supplements--> maternal_vaccination",
+      "vaccine:tdap --does_not_replace--> infant_dtap_series"
+    ]
+  },
+  "expected_sources_referenced": [
+    "ACIP recommendations for Tdap in pregnant women — Liang et al., MMWR Recomm Rep 2018",
+    "ACOG Committee Opinion on maternal immunization (current edition)",
+    "MMWR Surveillance — pertussis-attributable infant morbidity / mortality"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "rubric_id": "CLN-HELDOUT-STATIN-CV-CANCER-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; hard negations preserved on the cancer-risk claim (response must not assert that statins cause cancer; must not dismiss the patient's concern paternalistically).",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response addresses the patient's cancer-risk concern directly, accurately, and without dismissiveness. It conveys that the Cholesterol Treatment Trialists' (CTT) meta-analyses (Lancet 2010 and 2012, pooling tens of thousands of patient-years across the major statin RCTs) found NO increase in cancer incidence and NO increase in cancer mortality with statin therapy. Equivalent paraphrases ('large pooled analyses,' 'meta-analyses of statin trials') are acceptable; the substantive claim — no increased cancer signal — must be present.",
+      "weight": 0.18,
+      "tags": ["axis:accuracy", "axis:context_awareness"],
+      "must_NOT_state": ["statins increase cancer risk", "statins cause cancer", "the cancer concern is real"]
+    },
+    {
+      "id": "R2",
+      "description": "Response validates the patient's concern respectfully before correcting it. It treats the question as a reasonable thing to ask given internet misinformation, rather than as an ignorant question. The register should be 'great that you're asking, here's what the data show' rather than 'that's wrong.'",
+      "weight": 0.08,
+      "tags": ["axis:communication_quality"]
+    },
+    {
+      "id": "R3",
+      "description": "Response correctly anchors the cardiovascular indication: a 10-year ASCVD risk of 12% is in the range where the USPSTF 2022 recommendation supports initiating a statin for primary prevention in adults aged 40-75 with at least one cardiovascular risk factor (Grade B), and where the 2018 AHA/ACC/Multisociety cholesterol guideline places the patient in an intermediate-to-high-risk band warranting risk-enhancer review and statin discussion.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:instruction_following"]
+    },
+    {
+      "id": "R4",
+      "description": "Response references the JUPITER trial (Ridker, NEJM 2008) as primary-prevention evidence supporting statin benefit in patients without established cardiovascular disease, including a meaningful relative risk reduction in major cardiovascular events. Quoting an exact percentage is not required; conveying that high-quality primary-prevention RCT evidence supports the indication is required.",
+      "weight": 0.08,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response distinguishes the (well-studied, not signal-positive) cancer question from real, established statin harms — myalgia, rare rhabdomyolysis, mild reversible transaminase elevations, and a small increase in new-onset type 2 diabetes. The response should NOT promise statins are 'completely safe' and should NOT conflate these distinct harms with a cancer claim.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"],
+      "must_NOT_state": ["statins are completely safe", "statins have no side effects"]
+    },
+    {
+      "id": "R6",
+      "description": "Response uses a shared-decision-making register and does not directly prescribe ('you should start a statin' / 'do not start a statin'). It frames the decision as the patient's to make with his clinician, weighing absolute risk reduction, his values, and the realistic side-effect profile.",
+      "weight": 0.10,
+      "tags": ["axis:communication_quality"],
+      "must_NOT_state": ["I recommend you start a statin", "you should start a statin", "you should not start a statin"]
+    },
+    {
+      "id": "R7",
+      "description": "Response communicates the decision in absolute-risk terms, not just relative-risk terms — for example, that a 12% 10-year risk reduced by roughly a quarter to a third translates to roughly a 3-4 percentage-point absolute reduction in 10-year cardiovascular events for someone like him. Numeric specifics may vary; the absolute-vs-relative framing is what the criterion targets.",
+      "weight": 0.08,
+      "tags": ["axis:completeness", "axis:communication_quality"]
+    },
+    {
+      "id": "R8",
+      "description": "Response uses lay translation for technical terms (HMG-CoA reductase, LDL-C, hsCRP, etc.) when they appear, or avoids them entirely in favor of plain-language equivalents. The response should be approachable at roughly an 8th-grade reading level without losing accuracy.",
+      "weight": 0.06,
+      "tags": ["axis:communication_quality", "axis:instruction_following"]
+    },
+    {
+      "id": "R9",
+      "description": "Response surfaces risk-enhancing factors and lifestyle co-interventions — diet, exercise, smoking status, blood pressure, family history — as part of the broader cardiovascular-risk plan, framing the statin as one tool among several rather than a standalone fix.",
+      "weight": 0.07,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R10",
+      "description": "Response acknowledges honest uncertainty where it exists — for example, that no individual is guaranteed benefit from a statin, that the benefit is probabilistic across the population, and that the patient's specific 10-year and lifetime risk numbers (and any risk-enhancer clarifications) are worth confirming with his clinician before committing.",
+      "weight": 0.06,
+      "tags": ["axis:communication_quality", "axis:accuracy"]
+    },
+    {
+      "id": "R11",
+      "description": "Response addresses both questions the patient asked: (a) is the cancer risk real, and (b) should I start a statin. It does not skip either, and it does not let the cancer-debunking displace the cardiovascular-decision discussion.",
+      "weight": 0.06,
+      "tags": ["axis:instruction_following", "axis:completeness"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion is scored 0 (not met) or 1 (met) by the judge against the natural-language `description`. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

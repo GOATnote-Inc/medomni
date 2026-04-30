@@ -1,0 +1,51 @@
+{
+  "id": "CLN-HELDOUT-SSRI-ADOLESCENT",
+  "case_kind": "parent_adolescent_mental_health_decision",
+  "user_persona": "parent",
+  "framing": "shared_decision_making",
+  "summary": "A mother of a 15-year-old daughter recently diagnosed with moderate-severity major depressive disorder asks the school nurse / nurse practitioner about starting fluoxetine. The held-out answer must reflect USPSTF 2022 Grade B recommendation for adolescent depression screening and treatment, the FDA-approved use of fluoxetine for pediatric MDD (and escitalopram in adolescents 12+), the evidence base from TADS and broader meta-analyses, the FDA black-box warning regarding suicidality in young people and how to think about it (small absolute increase in suicidal ideation in trials, no increase in completed suicide; close early monitoring), and the importance of combining SSRI with psychotherapy (CBT) when feasible.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "My daughter is 15. Her psychiatrist diagnosed her with moderate depression and is recommending fluoxetine. I keep reading scary things online about the suicide warning on antidepressants for teenagers. Should I be terrified?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "warm, validating fear, evidence-grounded, non-paternalistic",
+    "do_NOT": [
+      "dismiss the parent's fear",
+      "describe the FDA black-box warning as fabricated or trivial",
+      "minimize the actual risk of suicidality during early SSRI treatment",
+      "advise the family to skip the SSRI without addressing untreated depression's risks",
+      "fail to mention the importance of combining medication with psychotherapy / CBT"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:adolescent_age_15_moderate_mdd",
+      "drug:fluoxetine_ssri_pediatric_indication",
+      "drug:escitalopram_adolescent_12+",
+      "trial:tads",
+      "guideline:uspstf_2022_adolescent_depression",
+      "warning:fda_black_box_pediatric_suicidality",
+      "intervention:cbt_psychotherapy",
+      "concept:untreated_depression_risk"
+    ],
+    "edges_required_for_correct_answer": [
+      "patient:adolescent_age_15_moderate_mdd --uspstf_2022--> screening_and_treatment_grade_b",
+      "drug:fluoxetine_ssri_pediatric_indication --fda_approved--> children_age_8+_for_mdd",
+      "drug:fluoxetine_ssri_pediatric_indication --tads--> superior_to_placebo_better_when_combined_with_cbt",
+      "warning:fda_black_box_pediatric_suicidality --absolute_increase--> small_in_suicidal_ideation_no_increase_in_completed_suicide",
+      "intervention:cbt_psychotherapy --combined_with_ssri--> superior_outcomes",
+      "concept:untreated_depression_risk --includes--> suicidality_academic_failure_substance_use"
+    ]
+  },
+  "expected_sources_referenced": [
+    "USPSTF 2022 — Screening for Depression and Suicide Risk in Children and Adolescents — JAMA 2022",
+    "TADS (Treatment for Adolescents with Depression Study) — March et al., JAMA 2004 and follow-up papers",
+    "AACAP Practice Parameter for the Assessment and Treatment of Children and Adolescents with Depressive Disorders",
+    "FDA Pediatric Antidepressant Labeling — Hammad et al., Arch Gen Psychiatry 2006 (meta-analysis)"
+  ]
+}

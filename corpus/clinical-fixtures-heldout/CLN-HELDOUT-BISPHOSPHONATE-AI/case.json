@@ -1,0 +1,61 @@
+{
+  "id": "CLN-HELDOUT-BISPHOSPHONATE-AI",
+  "case_kind": "patient_chemoprevention_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 64-year-old postmenopausal patient with hormone-receptor-positive, HER2-negative early-stage breast cancer (lumpectomy + radiation, currently 8 months into 5-year anastrozole) asks whether she should also be on zoledronic acid for breast-cancer recurrence prevention — separately from any bone-density indication. The question requires a synthesis of the EBCTCG 2015 individual-patient-data meta-analysis (Lancet) showing reduced bone recurrence and breast-cancer mortality from adjuvant bisphosphonates specifically in postmenopausal women, the Z-FAST and ZO-FAST trials of upfront zoledronic acid alongside aromatase inhibitors, and the ASCO 2017 Bone-Modifying-Agents guideline (which supports adjuvant bisphosphonates in postmenopausal patients). The held-out answer must NOT prescribe, must distinguish bone-density-protection vs recurrence-prevention indications, must accurately convey the postmenopausal-only signal in EBCTCG, must surface ONJ and atypical-femur-fracture risks honestly, and must mention denosumab / ABCSG-18 as an alternative bone-protection agent (with the caveat that denosumab's recurrence-prevention evidence is weaker than zoledronic acid's).",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I'm 64. I had early-stage hormone-positive breast cancer last year — lumpectomy and radiation, no chemo. I've been on anastrozole for about eight months. My oncologist mentioned zoledronic acid as an option, not just for bones but to lower the chance of the cancer coming back. I'm a little confused — is that really a thing, or is it just for bone density? And is it safe?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "curious, humble, evidence-grounded, shared-decision-making, supportive",
+    "do_NOT": [
+      "prescribe (\"you should start zoledronic acid\" / \"don't take it\")",
+      "conflate bone-density-protection (which AI users commonly need) with recurrence-prevention (a distinct, evidence-based indication in postmenopausal women)",
+      "claim recurrence-prevention benefit applies to premenopausal women on adjuvant bisphosphonates (EBCTCG did not show that)",
+      "omit ONJ (osteonecrosis of the jaw) or atypical-femur-fracture risk",
+      "skip the dental-evaluation prerequisite before initiating bisphosphonate",
+      "claim denosumab and zoledronic acid have equivalent recurrence-prevention evidence",
+      "imply this overlaps with the tamoxifen/Mirena chemoprevention question (different drug, different stage of care, distinct evidence base)"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "drug:zoledronic_acid",
+      "drug:denosumab",
+      "drug:anastrozole_aromatase_inhibitor",
+      "modifier:postmenopausal_status",
+      "modifier:hormone_receptor_positive_early_breast_cancer",
+      "evidence:ebctcg_2015_ipd_meta_analysis",
+      "trial:z_fast_zo_fast",
+      "trial:abcsg_18_denosumab",
+      "guideline:asco_2017_bone_modifying_agents",
+      "harm:osteonecrosis_of_jaw",
+      "harm:atypical_femur_fracture"
+    ],
+    "edges_required_for_correct_answer": [
+      "evidence:ebctcg_2015_ipd_meta_analysis --finding--> postmenopausal_only_reduction_in_bone_recurrence_and_breast_cancer_mortality (Lancet 2015; ~18,766 women; 36% reduction in bone recurrence; ~3% absolute reduction in 10-year breast-cancer mortality)",
+      "evidence:ebctcg_2015_ipd_meta_analysis --null_finding--> premenopausal_no_benefit",
+      "trial:z_fast_zo_fast --upfront_vs_delayed_zoledronic_acid_with_AI--> reduced_bone_loss_and_some_disease_free_survival_signal_postmenopausal",
+      "guideline:asco_2017_bone_modifying_agents --recommendation--> consider_adjuvant_bisphosphonate_in_postmenopausal_high_risk_early_breast_cancer (zoledronic acid 4 mg q6mo x 3-5y or oral clodronate)",
+      "drug:zoledronic_acid --route_dose--> iv_4mg_every_6_months_x_3_to_5_years (adjuvant cancer setting; differs from osteoporosis dosing)",
+      "drug:zoledronic_acid --harms--> osteonecrosis_of_jaw_atypical_femur_fracture_acute_phase_reaction_renal",
+      "drug:denosumab --abcsg_18--> reduced_clinical_fractures_in_postmenopausal_AI_users (Gnant Lancet 2015) but recurrence-prevention evidence weaker than bisphosphonates",
+      "drug:zoledronic_acid --prerequisite--> dental_evaluation_before_initiation (asco_2017)",
+      "drug:zoledronic_acid --indication_split--> bone_density_protection_vs_recurrence_prevention (distinct but overlapping indications)",
+      "modifier:hormone_receptor_positive_early_breast_cancer --on_aromatase_inhibitor--> increased_bone_turnover_and_fracture_risk (separate indication for bone-modifying agent)"
+    ]
+  },
+  "expected_sources_referenced": [
+    "EBCTCG — Early Breast Cancer Trialists' Collaborative Group, Lancet 2015;386:1353-1361 — Adjuvant bisphosphonate treatment in early breast cancer: meta-analyses of individual patient data from randomised trials",
+    "Z-FAST — Brufsky AM et al., J Clin Oncol 2007 / 5-year follow-up — upfront vs delayed zoledronic acid in postmenopausal women on letrozole",
+    "ZO-FAST — Coleman R et al., Ann Oncol 2013 — companion trial in postmenopausal women on letrozole, 5-year follow-up",
+    "ASCO Clinical Practice Guideline — Dhesy-Thind S et al., J Clin Oncol 2017;35:2062-2081 — Use of Adjuvant Bisphosphonates and Other Bone-Modifying Agents in Breast Cancer",
+    "ABCSG-18 — Gnant M et al., Lancet 2015;386:433-443 — Adjuvant denosumab in breast cancer (postmenopausal women on AI; bone-fracture endpoint)"
+  ]
+}

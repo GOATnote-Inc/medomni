@@ -1,0 +1,77 @@
+{
+  "rubric_id": "CLN-HELDOUT-TDAP-PREGNANCY-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; no `must_mention_keywords` on paraphraseable concepts. Hard negations preserved on the safety-critical claim that prior-pregnancy Tdap does not substitute for the current pregnancy's dose.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that ACIP / ACOG recommend Tdap during EVERY pregnancy, regardless of whether the patient received Tdap in a prior pregnancy or as an adult booster. Equivalent phrasings ('a fresh dose each pregnancy') should pass.",
+      "weight": 0.18,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["one Tdap covers all your pregnancies", "you do not need Tdap if you had it in a prior pregnancy"]
+    },
+    {
+      "id": "R2",
+      "description": "Response correctly conveys the optimal timing window — 27 to 36 weeks of gestation, with earlier in that window often preferred to maximize transplacental antibody transfer. Equivalent phrasing ('between weeks 27 and 36, the earlier the better') passes.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R3",
+      "description": "Response correctly explains the mechanism / goal — maternal Tdap raises maternal pertussis antibodies, which cross the placenta and protect the newborn during the vulnerable first months of life before the infant's own DTaP series can take effect.",
+      "weight": 0.15,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R4",
+      "description": "Response makes clear why this matters clinically — pertussis (whooping cough) is most dangerous in young infants, with risk of apnea, hospitalization, pneumonia, and death disproportionately concentrated in the first 2 months of life, before the infant's own immunization series provides protection.",
+      "weight": 0.12,
+      "tags": ["axis:context_awareness", "axis:completeness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response addresses cocooning — household and close contacts (especially partners, grandparents, older siblings, caregivers) should be up to date on their Tdap booster as well, particularly if they will have close contact with the newborn.",
+      "weight": 0.10,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response does NOT advocate giving Tdap only after delivery as the primary strategy. Postpartum Tdap is acceptable if maternal Tdap was missed, but it is not the preferred strategy because it does not provide transplacental antibody transfer to the newborn.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["postpartum Tdap is the preferred strategy", "Tdap should be given after delivery instead"]
+    },
+    {
+      "id": "R7",
+      "description": "Response provides reassurance about safety — Tdap during pregnancy has been studied across multiple cohorts and pharmacovigilance programs and the safety profile is reassuring, with no signal for adverse pregnancy or neonatal outcomes attributable to maternal Tdap. Local injection-site reactions are common and self-limited.",
+      "weight": 0.08,
+      "tags": ["axis:completeness", "axis:communication_quality"]
+    },
+    {
+      "id": "R8",
+      "description": "Response notes that maternal Tdap does not replace the infant's own DTaP series — the baby will still need DTaP at 2, 4, 6, 15-18 months, and 4-6 years per the routine schedule.",
+      "weight": 0.06,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response uses a non-prescriptive shared-decision-making register — validates the patient's question ('it does sound excessive at first'), explains the why, and recommends discussion with her OB. Does not issue commands.",
+      "weight": 0.08,
+      "tags": ["axis:communication_quality"]
+    },
+    {
+      "id": "R10",
+      "description": "Response acknowledges scope / uncertainty — e.g., that a patient with specific contraindications or concerns about prior reactions should discuss with the OB, and that the clinician administering should confirm history.",
+      "weight": 0.03,
+      "tags": ["axis:communication_quality"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge against natural-language `description`. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

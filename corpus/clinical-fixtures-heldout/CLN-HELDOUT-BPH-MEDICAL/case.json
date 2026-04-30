@@ -1,0 +1,52 @@
+{
+  "id": "CLN-HELDOUT-BPH-MEDICAL",
+  "case_kind": "patient_urology_management_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 67-year-old man with moderate-to-bothersome lower urinary tract symptoms (LUTS) — nocturia 3x, weak stream, hesitancy, IPSS ~14 — and a normal PSA of 1.6 asks his urologist's nurse about medical management options for BPH. The held-out answer must reflect the AUA 2024 BPH guideline framework — alpha-blockers (tamsulosin, alfuzosin, silodosin) as first-line for symptomatic BPH with rapid onset, 5-alpha-reductase inhibitors (finasteride, dutasteride) for men with prostate >30-40 cc with delayed onset (3-6 months), combination therapy supported by MTOPS / CombAT, the role of phosphodiesterase-5 inhibitors (tadalafil 5 mg daily), and the side-effect profiles (orthostasis with alpha-blockers, sexual side effects with 5-ARI).",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I'm 67, and I'm up to pee 3 times a night, with a weak stream and lots of starting and stopping. PSA is 1.6, my urologist says no cancer signs. He brought up tamsulosin or finasteride. Which should I take, or both?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "evidence-grounded, candid, non-paternalistic",
+    "do_NOT": [
+      "describe finasteride as having immediate symptom relief",
+      "describe alpha-blockers as having no side effects",
+      "skip the prostate-volume context for 5-ARI choice",
+      "skip the orthostasis / first-dose effect for alpha-blockers",
+      "describe medical therapy as superior to lifestyle / surgical referral for all patients without context"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:bph_luts_ipss_14_psa_1.6_age_67",
+      "drug:tamsulosin_alpha_blocker",
+      "drug:finasteride_5ari",
+      "drug:dutasteride_5ari",
+      "drug:tadalafil_pde5",
+      "guideline:aua_2024_bph",
+      "trial:mtops",
+      "trial:combat",
+      "consideration:prostate_volume_threshold"
+    ],
+    "edges_required_for_correct_answer": [
+      "drug:tamsulosin_alpha_blocker --aua_2024--> first_line_for_symptomatic_bph",
+      "drug:finasteride_5ari --benefit_dependent--> larger_prostate_volume (>30-40cc)",
+      "drug:finasteride_5ari --onset--> 3_to_6_months_delayed",
+      "trial:mtops --finding--> combination_alpha_blocker_plus_5ari_reduces_clinical_progression",
+      "trial:combat --finding--> dutasteride_plus_tamsulosin_combo_superior_for_progression_in_larger_glands",
+      "drug:tadalafil_pde5 --aua_option--> 5mg_daily_for_luts_with_or_without_ed"
+    ]
+  },
+  "expected_sources_referenced": [
+    "AUA / Urology Care Foundation Guideline on Management of Benign Prostatic Hyperplasia — Sandhu et al., J Urol 2024",
+    "MTOPS — McConnell et al., NEJM 2003 (doxazosin + finasteride combination)",
+    "CombAT — Roehrborn et al., Eur Urol 2010 (dutasteride + tamsulosin)",
+    "Porst et al., J Urol 2013 — tadalafil for LUTS"
+  ]
+}

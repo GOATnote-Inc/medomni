@@ -1,0 +1,76 @@
+{
+  "rubric_id": "CLN-HELDOUT-GLP1-DM2-INIT-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant. Hard negation preserved on safety-critical contraindications.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response correctly conveys that current ADA Standards of Care recommend a GLP-1 receptor agonist (or an SGLT2 inhibitor) preferentially in patients with established atherosclerotic cardiovascular disease, independent of further A1c targeting on metformin alone. Equivalent phrasings ('the guidelines now favor adding a GLP-1 RA when you've had a heart event') should pass.",
+      "weight": 0.15,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R2",
+      "description": "Response cites the cardiovascular outcome trial evidence — at least one of LEADER (liraglutide) or SUSTAIN-6 (semaglutide) — accurately, conveying that GLP-1 RAs reduced major adverse cardiovascular events in DM2 patients with high cardiovascular risk.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R3",
+      "description": "Response notes the weight-loss benefit — semaglutide typically produces meaningful weight reduction (commonly 10-15% of body weight at higher doses for obesity, somewhat less at standard DM2 doses). The patient's BMI 34 makes this highly relevant.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:context_awareness"]
+    },
+    {
+      "id": "R4",
+      "description": "Response addresses the typical GI side-effect pattern — nausea is common, especially during dose escalation, often improving with continued use; vomiting and constipation also occur. Slow titration mitigates side effects. The response should not minimize this.",
+      "weight": 0.12,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response addresses the boxed warning — personal or family history of medullary thyroid carcinoma (MTC) or multiple endocrine neoplasia type 2 (MEN2) is a contraindication to GLP-1 RA therapy. Equivalent phrasing about 'a specific thyroid cancer history' is acceptable.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["GLP-1 RAs have no contraindications", "thyroid cancer history is not a concern"]
+    },
+    {
+      "id": "R6",
+      "description": "Response addresses pancreatitis history as a clinically relevant consideration — prior acute pancreatitis is at minimum a relative contraindication and warrants discussion, given case reports / signal of acute pancreatitis on GLP-1 therapy.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response notes that the metformin should generally be continued — GLP-1 RA is added on top of metformin in this scenario, not in place of it.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response acknowledges access realities — GLP-1 RAs are expensive and may require prior authorization; supply has been intermittent for some agents; the response should be candid about this without being despondent.",
+      "weight": 0.08,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response addresses lifestyle and dietary measures as concurrent levers without framing them as substitutes for pharmacologic therapy in a patient with A1c 8.3% and established ASCVD.",
+      "weight": 0.08,
+      "tags": ["axis:completeness"]
+    },
+    {
+      "id": "R10",
+      "description": "Response uses a non-prescriptive shared-decision-making register — frames the decision as a discussion with the clinician, lays out trade-offs.",
+      "weight": 0.10,
+      "tags": ["axis:communication_quality"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

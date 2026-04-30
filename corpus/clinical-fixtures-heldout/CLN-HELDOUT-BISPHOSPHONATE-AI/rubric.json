@@ -1,0 +1,85 @@
+{
+  "rubric_id": "CLN-HELDOUT-BISPHOSPHONATE-AI-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; hard negations preserved on safety claims (must not omit ONJ / atypical-femur-fracture risk; must not claim recurrence-prevention benefit in premenopausal women per EBCTCG).",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response represents the EBCTCG 2015 individual-patient-data meta-analysis accurately: adjuvant bisphosphonates reduced bone recurrence and breast-cancer mortality SPECIFICALLY in postmenopausal women, with roughly a 3 percentage-point absolute reduction in 10-year breast-cancer mortality and a meaningful reduction in bone recurrence. The benefit was NOT seen in premenopausal women. Equivalent paraphrases are acceptable as long as the menopausal-status restriction is clear.",
+      "weight": 0.16,
+      "tags": ["axis:accuracy", "axis:context_awareness"],
+      "must_NOT_state": ["adjuvant bisphosphonates reduce recurrence in premenopausal women", "the EBCTCG benefit applies regardless of menopausal status"]
+    },
+    {
+      "id": "R2",
+      "description": "Response distinguishes the two overlapping but distinct indications for a bone-modifying agent in this setting: (a) bone-density protection / fracture prevention in a postmenopausal patient on an aromatase inhibitor, and (b) breast-cancer recurrence prevention specifically in postmenopausal early breast cancer. The patient should leave understanding that these are evidence-supported for different reasons and that one drug can serve both purposes.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R3",
+      "description": "Response references the ASCO 2017 Bone-Modifying-Agents guideline (Dhesy-Thind et al.) supporting consideration of adjuvant bisphosphonate therapy — typically zoledronic acid 4 mg IV every 6 months for 3-5 years, or oral clodronate — in postmenopausal women with early breast cancer who are candidates for adjuvant systemic therapy. Paraphrases of the ASCO recommendation are acceptable.",
+      "weight": 0.12,
+      "tags": ["axis:accuracy", "axis:instruction_following"]
+    },
+    {
+      "id": "R4",
+      "description": "Response references Z-FAST and/or ZO-FAST as the primary trials establishing the role of upfront zoledronic acid alongside aromatase inhibitor therapy in postmenopausal women, including their bone-density and disease-related outcomes. Mention of either trial by name (or as 'the upfront-vs-delayed zoledronic acid trials') is sufficient.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response surfaces the principal harms of intravenous zoledronic acid clearly and without minimization: osteonecrosis of the jaw (ONJ), atypical femoral fractures, acute-phase reactions (flu-like symptoms with first infusion), and renal considerations. The response must not omit ONJ or the atypical-femur-fracture risk.",
+      "weight": 0.12,
+      "tags": ["axis:accuracy", "axis:completeness"],
+      "must_NOT_state": ["zoledronic acid has no significant side effects", "ONJ does not occur with the cancer-prevention dose"]
+    },
+    {
+      "id": "R6",
+      "description": "Response specifies that a baseline dental evaluation (and any needed dental work) should be completed BEFORE initiating zoledronic acid, consistent with ASCO 2017 guidance, to reduce ONJ risk. Equivalent phrasings ('see your dentist first,' 'baseline dental clearance') are acceptable.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R7",
+      "description": "Response notes denosumab as an alternative bone-modifying agent — anchoring it in ABCSG-18 (Gnant, Lancet 2015), which demonstrated reduced clinical fractures in postmenopausal women on aromatase inhibitor therapy — while making clear that denosumab's evidence specifically for breast-cancer recurrence prevention is weaker than the bisphosphonate evidence in EBCTCG.",
+      "weight": 0.08,
+      "tags": ["axis:accuracy", "axis:completeness"],
+      "must_NOT_state": ["denosumab and zoledronic acid have equivalent recurrence-prevention evidence", "denosumab prevents breast cancer recurrence as well as zoledronic acid"]
+    },
+    {
+      "id": "R8",
+      "description": "Response uses a shared-decision-making register: it does not directly prescribe ('you should start zoledronic acid' / 'don't take it'), and frames the decision as the patient's, with her oncologist and primary clinician, weighing benefits, harms, prior dental health, baseline bone density, and personal preferences.",
+      "weight": 0.08,
+      "tags": ["axis:communication_quality"],
+      "must_NOT_state": ["I recommend you start zoledronic acid", "you should start zoledronic acid", "you should not start zoledronic acid"]
+    },
+    {
+      "id": "R9",
+      "description": "Response uses lay-accessible language. Technical terms (RANKL, osteoclast, IPD meta-analysis, etc.) are translated into plain language or avoided. ONJ should be described in plain terms ('a rare but serious problem with the jawbone, sometimes after dental procedures').",
+      "weight": 0.06,
+      "tags": ["axis:communication_quality", "axis:instruction_following"]
+    },
+    {
+      "id": "R10",
+      "description": "Response answers the patient's two specific questions: (a) is zoledronic acid 'really a thing' for recurrence prevention or just for bone density, and (b) is it safe. Both questions are addressed substantively without dodging or being deferred entirely to the oncologist.",
+      "weight": 0.06,
+      "tags": ["axis:instruction_following", "axis:completeness"]
+    },
+    {
+      "id": "R11",
+      "description": "Response acknowledges baseline bone-density assessment (DEXA) and ongoing monitoring as part of the broader plan, given that aromatase inhibitor therapy itself accelerates bone loss in postmenopausal women.",
+      "weight": 0.05,
+      "tags": ["axis:completeness"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion is scored 0 (not met) or 1 (met) by the judge against the natural-language `description`. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}

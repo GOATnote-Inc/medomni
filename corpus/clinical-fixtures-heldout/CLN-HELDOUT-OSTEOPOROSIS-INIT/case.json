@@ -1,0 +1,55 @@
+{
+  "id": "CLN-HELDOUT-OSTEOPOROSIS-INIT",
+  "case_kind": "patient_endocrine_management_decision",
+  "user_persona": "patient",
+  "framing": "shared_decision_making",
+  "summary": "A 67-year-old postmenopausal woman with a recent DXA showing a femoral neck T-score of -2.6 and a 10-year FRAX major osteoporotic fracture risk of 22% (no breast cancer history, no aromatase inhibitor) asks her primary care nurse practitioner about starting bisphosphonate therapy. The held-out answer must reflect Endocrine Society / Bone Health and Osteoporosis Foundation 2024 guidance on primary postmenopausal osteoporosis — bisphosphonates (oral alendronate / risedronate, IV zoledronic acid) as first-line, calcium and vitamin D adequacy, the typical bisphosphonate duration (5 years oral / 3 years IV with a drug-holiday discussion), the rare risks (osteonecrosis of the jaw, atypical femoral fracture), denosumab as alternative with the special caveat about rebound fracture risk on discontinuation, and anabolic options (teriparatide, romosozumab, abaloparatide) for very-high-risk patients.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I'm 67, post-menopausal, and my DXA showed a T-score of -2.6 in my hip. My FRAX score said I had a 22% chance of a major fracture in 10 years. My doctor wants to start me on a bisphosphonate. Which one, how long, and what should I know about the side effects I keep reading about — like jaw bone problems and weird thigh fractures?"
+    }
+  ],
+  "expected_persona_register": {
+    "register": "patient_facing",
+    "max_fkgl_grade_level": 8,
+    "tone": "evidence-grounded, candid, validating concern, non-paternalistic",
+    "do_NOT": [
+      "describe ONJ or atypical femoral fracture as common (they are rare)",
+      "skip the calcium and vitamin D adequacy requirement",
+      "describe denosumab as interchangeable with bisphosphonates without the rebound-fracture caveat upon discontinuation",
+      "describe anabolic agents (teriparatide, romosozumab) as first-line for moderate-risk patients (they are reserved for very-high-risk)",
+      "describe bisphosphonate-induced ONJ as common in patients without dental risk factors"
+    ]
+  },
+  "graph_walk_minimum_subgraph": {
+    "nodes": [
+      "patient:postmenopausal_t_minus_2.6_frax_22",
+      "drug:alendronate_oral_bisphosphonate",
+      "drug:risedronate_oral_bisphosphonate",
+      "drug:zoledronic_acid_iv_bisphosphonate",
+      "drug:denosumab_anti_rankl",
+      "drug:teriparatide_romosozumab_anabolic",
+      "guideline:endo_society_bhof_2024",
+      "concept:duration_5_years_oral_3_years_iv",
+      "harm:onj_atypical_femoral_fracture",
+      "concept:rebound_fracture_after_denosumab_discontinuation"
+    ],
+    "edges_required_for_correct_answer": [
+      "patient:postmenopausal_t_minus_2.6_frax_22 --bhof_2024--> bisphosphonate_first_line",
+      "drug:alendronate_oral_bisphosphonate --typical_duration--> 5_years_then_drug_holiday_discussion",
+      "drug:zoledronic_acid_iv_bisphosphonate --typical_duration--> 3_years_then_drug_holiday_discussion",
+      "harm:onj_atypical_femoral_fracture --absolute_rate--> very_low_per_year_of_treatment",
+      "drug:denosumab_anti_rankl --discontinuation--> rebound_fracture_risk_requires_transition",
+      "drug:teriparatide_romosozumab_anabolic --reserved--> very_high_risk_or_severe_osteoporosis"
+    ]
+  },
+  "expected_sources_referenced": [
+    "Endocrine Society Clinical Practice Guideline on Pharmacological Management of Osteoporosis in Postmenopausal Women — Eastell et al., J Clin Endocrinol Metab 2019 (with subsequent updates)",
+    "Bone Health and Osteoporosis Foundation Clinician's Guide — current edition",
+    "Black et al., NEJM 2007 — zoledronic acid (HORIZON-PFT)",
+    "Cummings et al., NEJM 2009 — denosumab (FREEDOM)",
+    "Khan et al., J Bone Miner Res 2015 — ONJ position paper",
+    "Shane et al., J Bone Miner Res 2014 — atypical femoral fracture position paper"
+  ]
+}

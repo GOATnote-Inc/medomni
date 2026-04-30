@@ -1,0 +1,150 @@
+{
+  "suites": {
+    "cpu": {
+      "khop_bfs_d2_sub5k": {
+        "name": "khop_bfs_d2_sub5k",
+        "min_s": 2.7909991331398487e-06,
+        "median_s": 4.2000028770416975e-06,
+        "max_s": 8.36900289868936e-06,
+        "runs": 3
+      },
+      "khop_bfs_d2_full": {
+        "name": "khop_bfs_d2_full",
+        "min_s": 0.02245182199840201,
+        "median_s": 0.022462439999799244,
+        "max_s": 0.022493990996736102,
+        "runs": 3
+      },
+      "pagerank_sub5k": {
+        "name": "pagerank_sub5k",
+        "min_s": 0.004740083000797313,
+        "median_s": 0.004943849002302159,
+        "max_s": 0.005946151999523863,
+        "runs": 3
+      },
+      "pagerank_full": {
+        "name": "pagerank_full",
+        "min_s": 2.856580806997954,
+        "median_s": 2.861129412005539,
+        "max_s": 2.861129412005539,
+        "runs": 2
+      },
+      "betweenness_sub5k_k50": {
+        "name": "betweenness_sub5k_k50",
+        "min_s": 0.8438625300041167,
+        "median_s": 1.2141608229940175,
+        "max_s": 1.2141608229940175,
+        "runs": 2
+      },
+      "connected_components_full": {
+        "name": "connected_components_full",
+        "min_s": 0.22603137999976752,
+        "median_s": 0.2263203260008595,
+        "max_s": 0.2263203260008595,
+        "runs": 2
+      },
+      "louvain_sub5k": {
+        "name": "louvain_sub5k",
+        "min_s": 0.5647657400040771,
+        "median_s": 1.0143337820045417,
+        "max_s": 1.0143337820045417,
+        "runs": 2
+      }
+    },
+    "cugraph": {
+      "khop_bfs_d2_sub5k": {
+        "name": "khop_bfs_d2_sub5k",
+        "min_s": 0.03196088499680627,
+        "median_s": 0.032833670993568376,
+        "max_s": 0.03289785999368178,
+        "runs": 3
+      },
+      "khop_bfs_d2_full": {
+        "name": "khop_bfs_d2_full",
+        "min_s": 0.0805365280029946,
+        "median_s": 0.08073191499715904,
+        "max_s": 0.08114855799794896,
+        "runs": 3
+      },
+      "pagerank_sub5k": {
+        "name": "pagerank_sub5k",
+        "min_s": 0.02552662100060843,
+        "median_s": 0.027427398999861907,
+        "max_s": 0.028010670001094695,
+        "runs": 3
+      },
+      "pagerank_full": {
+        "name": "pagerank_full",
+        "min_s": 0.021543957001995295,
+        "median_s": 1.3009016669966513,
+        "max_s": 1.3009016669966513,
+        "runs": 2
+      },
+      "betweenness_sub5k_k50": {
+        "name": "betweenness_sub5k_k50",
+        "min_s": 0.00944926399824908,
+        "median_s": 3.1042483589990297,
+        "max_s": 3.1042483589990297,
+        "runs": 2
+      },
+      "connected_components_full": {
+        "name": "connected_components_full",
+        "min_s": 0.04594686600466957,
+        "median_s": 1.5253585550017306,
+        "max_s": 1.5253585550017306,
+        "runs": 2
+      },
+      "louvain_sub5k": {
+        "name": "louvain_sub5k",
+        "min_s": 0.07565749700006563,
+        "median_s": 1.7318097250026767,
+        "max_s": 1.7318097250026767,
+        "runs": 2
+      }
+    }
+  },
+  "speedup_table": [
+    {
+      "algo": "betweenness_sub5k_k50",
+      "cpu_s": 1.2141608229940175,
+      "cugraph_s": 3.1042483589990297,
+      "speedup": 0.3911287637389702
+    },
+    {
+      "algo": "connected_components_full",
+      "cpu_s": 0.2263203260008595,
+      "cugraph_s": 1.5253585550017306,
+      "speedup": 0.14837188624192213
+    },
+    {
+      "algo": "khop_bfs_d2_full",
+      "cpu_s": 0.022462439999799244,
+      "cugraph_s": 0.08073191499715904,
+      "speedup": 0.27823494587722464
+    },
+    {
+      "algo": "khop_bfs_d2_sub5k",
+      "cpu_s": 4.2000028770416975e-06,
+      "cugraph_s": 0.032833670993568376,
+      "speedup": 0.00012791755383869245
+    },
+    {
+      "algo": "louvain_sub5k",
+      "cpu_s": 1.0143337820045417,
+      "cugraph_s": 1.7318097250026767,
+      "speedup": 0.5857074061660983
+    },
+    {
+      "algo": "pagerank_full",
+      "cpu_s": 2.861129412005539,
+      "cugraph_s": 1.3009016669966513,
+      "speedup": 2.199343335927099
+    },
+    {
+      "algo": "pagerank_sub5k",
+      "cpu_s": 0.004943849002302159,
+      "cugraph_s": 0.027427398999861907,
+      "speedup": 0.18025219971923148
+    }
+  ]
+}

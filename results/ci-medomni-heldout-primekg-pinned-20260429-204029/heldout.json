@@ -1,0 +1,525 @@
+{
+  "clinical_system_prompt": true,
+  "dense_backend": "numpy",
+  "dry_run": false,
+  "embed_model": "nvidia/llama-nemotron-embed-1b-v2",
+  "embed_url": "http://127.0.0.1:8001/v1",
+  "generated_at": "2026-04-30T03:43:25Z",
+  "graph_expand": false,
+  "graph_persona": null,
+  "guardrails_enabled": false,
+  "judge_host": null,
+  "judge_model": "Qwen/Qwen2.5-7B-Instruct",
+  "judge_url": "http://127.0.0.1:8003/v1",
+  "manifest_path": "/Users/kiteboard/prism42-nemotron-med/corpus/clinical-fixtures-heldout-phase24",
+  "n_anchors": 0,
+  "n_corpus_chunks": 107,
+  "n_per_trial": 6,
+  "primekg_enabled": true,
+  "primekg_max_hops": 2,
+  "primekg_max_nodes": 80,
+  "primekg_mode": "service",
+  "primekg_n_edges": 4049642,
+  "primekg_n_nodes": 129375,
+  "primekg_path": null,
+  "primekg_url": "http://127.0.0.1:8005",
+  "rerank_host": null,
+  "rerank_model": "nvidia/llama-3.2-nv-rerankqa-1b-v2",
+  "rerank_url": "http://127.0.0.1:8002/v1",
+  "retrieval_cuvs": false,
+  "retrieval_mode": "primekg-hybrid",
+  "retrieval_top_n": 8,
+  "run_id": "8b862823",
+  "seed": 42,
+  "serve_model": "nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4",
+  "serve_url": "http://127.0.0.1:8000/v1",
+  "sovereign": true,
+  "temperature": 0.0,
+  "trial_results": [
+    {
+      "aggregate": {
+        "n": 6,
+        "n_recused": 0,
+        "n_scored": 6,
+        "per_axis": {
+          "accuracy": 0.3365139779898816,
+          "communication_quality": 0.5066994409099672,
+          "completeness": 0.28326902982075397,
+          "context_awareness": 0.21889676910953507,
+          "instruction_following": 0.2562962962962963
+        },
+        "score": 0.35833333333333334
+      },
+      "per_example": [
+        {
+          "duration_ms": 10228,
+          "example_id": "CLN-HELDOUT-5ARI-PROSTATE",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.39759036144578314,
+            "communication_quality": 0.5,
+            "completeness": 0.3939393939393939,
+            "context_awareness": 0.0,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [
+            "prostate cancer",
+            "Finasteride",
+            "Dutasteride"
+          ],
+          "primekg_sub_n_edges": 2352,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nNo, you should not ask for finasteride or dutasteride for prostate cancer prevention based solely on your PSA of 3.4 ng/mL and family history, as these medications are not recommended for chemoprevention in men with average risk and carry significant side effects.\n\n(2) Mechanism:  \nFinasteride and dutasteride inhibit 5-alpha-reductase, reducing dihydrotestosterone (DHT) levels, which may lower prostate cancer incidence by 20-25% in high-risk men (PSA \u22652.5 ng/mL with prior negative biopsy). However, they do not reduce prostate cancer mortality and may increase high-grade cancer detection due to reduced prostate volume (detection bias), as seen in the Prostate Cancer Prevention Trial (PCPT).\n\n(3) Risk factors:  \n- Age 58 (above PCPT eligibility threshold of \u226555 years)  \n- PSA 3.4 ng/mL (slightly elevated; requires adjustment since finasteride halves PSA)  \n- Family history of prostate cancer (father diagnosed in late 60s)  \n- No prior negative biopsy (not specified in your case)  \n- Not meeting REDUCE trial criteria (PSA 2.5-10.0 ng/mL with prior negative biopsy)\n\n(4) What we know vs do not know:  \n*Known*: Finasteride reduces prostate cancer incidence by 24.8% in PCPT (18.4% vs 24.4% over 7 years) but increases high-grade cancer risk (6.4% vs 5.1% for Gleason 7-10). Dutasteride shows similar efficacy (19.9% vs 25.1% cancer incidence) but with higher discontinuation due to side effects (4.3% vs 2%).  \n*Unknown*: Whether your PSA of 3.4 ng/mL (without adjustment) reflects true risk; whether family history alone qualifies you for chemoprevention; long-term mortality impact of these drugs remains unproven.\n\n(5) Practical next steps:  \n- Request PSA adjustment (multiply 3.4 by 2 = 6.8 ng/mL estimated untreated-equivalent) to assess true risk.  \n- Discuss with your doctor whether you meet REDUCE trial criteria (PSA 2.5-10.0 ng/mL + prior negative biopsy) for chemoprevention.  \n- Consider shared decision-making: weigh 20-25% relative risk reduction against 4-10% risk of sexual dysfunction, gynecomastia, or erectile dysfunction.  \n- Avoid self-initiating treatment; require clinical evaluation to confirm eligibility and risk-benefit profile.",
+          "score": 0.4,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9055,
+          "example_id": "CLN-HELDOUT-ASPIRIN-CRC",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.2833333333333333,
+            "communication_quality": 0.6153846153846154,
+            "completeness": 0.0,
+            "context_awareness": 0.14893617021276598,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [
+            "Colon cancer",
+            "colon",
+            "cancer",
+            "Healthy",
+            "Aspirin"
+          ],
+          "primekg_sub_n_edges": 154,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: No, you should not start taking daily baby aspirin without first discussing it with your physician, as the potential bleeding risks may outweigh the benefits for your specific risk profile.  \n\n(2) Mechanism: Aspirin reduces colorectal cancer risk by irreversibly inhibiting platelet COX-1, decreasing thromboxane A2 production, which may interrupt tumor-promoting inflammatory pathways and platelet-mediated angiogenesis in pre-cancerous lesions.  \n\n(3) Risk factors: Your family history (two first-degree relatives with colon cancer, one diagnosed before age 60) significantly elevates your risk. However, aspirin carries major risks including gastrointestinal bleeding (14 additional events per 1,000 over 10 years at low doses) and hemorrhagic stroke (3.2 per 1,000), particularly concerning for individuals over 60 or with bleeding disorders.  \n\n(4) What we know vs do not know: We know aspirin reduces CRC risk by ~40% after 10-20 years of use in high-risk groups like Lynch syndrome (HR 0.60-0.65), but your family history suggests possible hereditary syndromes (e.g., Lynch or attenuated FAP). We do not know your specific genetic risk profile, exact family cancer history details (e.g., polyp history), or whether you have undiagnosed bleeding risks that would make aspirin harmful.  \n\n(5) Practical next steps: Schedule a visit with your doctor to review your full family history (including polyp history, Lynch syndrome testing eligibility), discuss aspirin's risk-benefit ratio for you, and consider guideline-recommended screening (e.g., colonoscopy starting at age 45-50 for average-risk, earlier for high-risk families). Do not self-prescribe aspirin without medical evaluation.",
+          "score": 0.25,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9547,
+          "example_id": "CLN-HELDOUT-BISPHOSPHONATE-AI",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.17333333333333334,
+            "communication_quality": 1.0,
+            "completeness": 0.3275862068965517,
+            "context_awareness": 0.0,
+            "instruction_following": 0.5
+          },
+          "primekg_seeds": [
+            "breast cancer",
+            "Zoledronic acid",
+            "breast",
+            "Anastrozole",
+            "cancer"
+          ],
+          "primekg_sub_n_edges": 1074,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Yes, zoledronic acid is used to reduce breast cancer recurrence risk in postmenopausal women with hormone receptor-positive early-stage breast cancer, beyond just treating bone density. It is considered safe when used as directed.\n\n(2) Mechanism: Zoledronic acid is a bisphosphonate that inhibits bone resorption by targeting osteoclasts. In breast cancer, it may reduce tumor growth and recurrence by altering the bone microenvironment, decreasing bone-derived growth factors that promote cancer cell survival and metastasis, particularly in hormone receptor-positive disease.\n\n(3) Risk factors: Key risk factors for zoledronic acid use include postmenopausal status (which you have at 64), prior chemotherapy (you had none), and high-risk features like large tumor size or positive nodes (not specified in your case). It is not routinely recommended for low-risk patients, and your oncologist likely considers your individual risk profile.\n\n(4) What we know vs do not know: We know zoledronic acid reduces recurrence risk in postmenopausal women with early-stage hormone-positive breast cancer (supported by trials like ABCSG 16 and meta-analyses), and it is safe with manageable side effects (e.g., flu-like symptoms, rare kidney or nerve issues). We do not know your specific recurrence risk profile (e.g., tumor size, node status, genomic testing results) to confirm if you qualify for this therapy, nor long-term real-world outcomes beyond clinical trial data.\n\n(5) Practical next steps: Discuss with your oncologist whether your specific tumor characteristics (e.g., tumor size, lymph node involvement, genomic assay results like Oncotype DX) support zoledronic acid use. Ask about the specific benefit-risk profile for your case, including how much it reduces recurrence risk in your subgroup, and confirm it\u2019s being used for bone health *and* recurrence prevention as part of your overall treatment plan.",
+          "score": 0.33,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9206,
+          "example_id": "CLN-HELDOUT-HPV-CATCHUP",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.36904761904761907,
+            "communication_quality": 0.0,
+            "completeness": 0.23333333333333336,
+            "context_awareness": 0.4444444444444444,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [
+            "cervical cancer",
+            "Papilloma",
+            "cancer"
+          ],
+          "primekg_sub_n_edges": 421,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Yes, it is worth getting the Gardasil-9 vaccine at age 35, as it can still provide meaningful protection against cervical cancer by preventing infection with HPV types 16, 18, and other high-risk strains you may not have encountered yet.  \n\n(2) Mechanism: The Gardasil-9 vaccine works by training your immune system to recognize and neutralize nine high-risk HPV types (including HPV-16, HPV-18, HPV-31, HPV-33, HPV-35, HPV-39, HPV-45, HPV-52, and HPV-58), which are responsible for ~90% of HPV-related cervical cancers. It does not treat existing infections or existing precancerous lesions.  \n\n(3) Risk factors: Your age (35) and lack of prior vaccination increase your risk of prior HPV exposure, but the vaccine still protects against HPV types you haven't contracted. Key risks include ongoing exposure to new HPV partners, cumulative risk from past unvaccinated years, and the fact that cervical cancer development is often preceded by asymptomatic HPV infections.  \n\n(4) What we know vs do not know:  \n- *Known*: CDC states vaccination is recommended up to age 45, with 3 doses for those starting at 15+ (0, 1-2, 6 months). Real-world data shows vaccinated women have 87% lower cervical cancer risk (England study) and 47 vs. 94 cases per 100,000 by age 30 (Swedish study).  \n- *Not known*: Your individual risk reduction depends on prior HPV exposure (unknown without testing), duration of protection (long-term data beyond age 45 is limited), and whether you've already been exposed to vaccine-covered HPV types.  \n\n(5) Practical next steps:  \n- Consult your provider to discuss vaccination, as it is FDA-approved for ages 9\u201345.  \n- Complete the 3-dose series (0, 1\u20132, 6 months) for optimal protection.  \n- Continue routine cervical cancer screening (Pap/HPV tests) as recommended, since vaccination does not replace screening.  \n- Note: Vaccination provides greater relative benefit for those with no prior HPV exposure, but still reduces risk for previously unvaccinated individuals.",
+          "score": 0.31,
+          "trial": 0
+        },
+        {
+          "duration_ms": 10381,
+          "example_id": "CLN-HELDOUT-SMOKING-CESSATION-CANCER",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.23214285714285715,
+            "communication_quality": 0.7142857142857143,
+            "completeness": 0.5909090909090909,
+            "context_awareness": 0.0,
+            "instruction_following": 0.2777777777777778
+          },
+          "primekg_seeds": [
+            "Varenicline",
+            "Nicotine",
+            "throat",
+            "cancer"
+          ],
+          "primekg_sub_n_edges": 661,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Varenicline (Chantix) is more effective than the nicotine patch for smoking cessation, with higher long-term abstinence rates, though both are FDA-approved and generally safe.  \n\n(2) Mechanism: Varenicline is a partial agonist at \u03b14\u03b22 nicotinic acetylcholine receptors, reducing cravings and withdrawal while blocking nicotine\u2019s rewarding effects. The nicotine patch delivers steady transdermal nicotine to manage baseline cravings without altering receptor function.  \n\n(3) Risk factors: Varenicline carries a small increased risk of neuropsychiatric side effects (e.g., abnormal dreams, insomnia, nausea) and potential cardiovascular events (e.g., heart palpitations), though no significant rise in serious events versus placebo in trials. The nicotine patch is associated with higher rates of cardiovascular adverse events (e.g., chest pain, palpitations) and gastrointestinal symptoms (nausea, vomiting), but no evidence of increased neuropsychiatric harm.  \n\n(4) What we know vs do not know:  \n- *Known*: Varenicline demonstrates superior efficacy (odds ratio ~3.1 vs placebo at 6+ months; OR ~3.6 for patch + NRT) and is recommended as first-line in guidelines. The nicotine patch is effective but less potent alone. Both have documented common side effects, with varenicline\u2019s neuropsychiatric risks being rare but notable.  \n- *Not known*: Long-term safety of varenicline in patients with prior cancer (e.g., throat cancer history) is not well studied. No direct comparative trials exist for your specific case (cancer history + smoking cessation), and individual responses to varenicline vs patch may vary based on comorbidities.  \n\n(5) Practical next steps:  \n- Consult your physician to discuss varenicline, as it is more effective for sustained cessation. Start with 0.5 mg daily for 3 days, then 0.5 mg twice daily for 4 days, then 1 mg twice daily (beginning 1 week before your quit date).  \n- If varenicline is contraindicated (e.g., history of severe psychiatric illness), use the nicotine patch (21 mg daily for 4\u20136 weeks, tapering to 14 mg) combined with short-acting NRT (e.g., gum/lozenge) for breakthrough cravings.  \n- Avoid combining varenicline with nicotine replacement therapy (NRT) due to increased side effect risk, per FDA guidance.  \n- Prioritize behavioral counseling (e.g., quitline support) alongside medication, as combination therapy improves success rates.  \n- Monitor for side effects: Report persistent nausea, vivid dreams, or mood changes immediately. Check blood pressure and heart rate if cardiovascular symptoms arise.  \n\n*Source: USPSTF 2021 (Tobacco Cessation), PHS 2008 Guideline, EAGLES 2016 Trial (JAMA Network Open).*",
+          "score": 0.41,
+          "trial": 0
+        },
+        {
+          "duration_ms": 9490,
+          "example_id": "CLN-HELDOUT-STATIN-CV-CANCER",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.5636363636363636,
+            "communication_quality": 0.21052631578947367,
+            "completeness": 0.15384615384615385,
+            "context_awareness": 0.72,
+            "instruction_following": 0.76
+          },
+          "primekg_seeds": [
+            "Atorvastatin",
+            "cancer",
+            "Healthy"
+          ],
+          "primekg_sub_n_edges": 1173,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nNo, the cancer risk from statins is not real for your age and risk profile. Statins do not increase colorectal cancer risk, and your 12% 10-year heart attack risk justifies starting a statin.\n\n(2) Mechanism:  \nStatins lower LDL cholesterol and reduce cardiovascular events via HMG-CoA reductase inhibition. Large pooled analyses of 13+ statin trials (n>59,000 participants) show no difference in cancer incidence between statin and placebo groups (RR=1.04 for diabetes risk, but no cancer signal). The US Preventive Services Task Force (2022) confirms statins have no increased cancer risk.\n\n(3) Risk factors:  \n- Your age (55) aligns with the dominant CRC risk factor (90% of CRCs diagnosed after age 50).  \n- Your 12% 10-year CVD risk meets USPSTF criteria (>=10%) for statin initiation.  \n- No hereditary cancer syndromes (e.g., Lynch syndrome) are indicated in your history.  \n- Online claims about statin-cancer links misinterpret diabetes risk data (JUPITER trial showed 1.25x diabetes risk *only* in high-risk baseline participants, not general population).\n\n(4) What we know vs do not know:  \n\u2705 **Known**: Statins reduce all-cause mortality (RR=0.92), stroke (RR=0.78), and MI (RR=0.67) with minimal cancer risk.  \n\u274c **Unknown**: Long-term (>10 years) cancer effects are still being studied, but current evidence shows no increased risk in average-risk adults like you.\n\n(5) Practical next steps:  \nStart the statin as recommended by your doctor. Discuss your 12% CVD risk with them to confirm appropriateness. Continue regular CRC screening (e.g., colonoscopy) as standard for age 55, since statins don't alter cancer risk. Avoid excessive alcohol (>45g/day) and smoking, which significantly elevate CRC risk.",
+          "score": 0.45,
+          "trial": 0
+        }
+      ],
+      "trial": 0
+    },
+    {
+      "aggregate": {
+        "n": 6,
+        "n_recused": 0,
+        "n_scored": 6,
+        "per_axis": {
+          "accuracy": 0.3365139779898816,
+          "communication_quality": 0.5066994409099672,
+          "completeness": 0.28326902982075397,
+          "context_awareness": 0.21889676910953507,
+          "instruction_following": 0.2562962962962963
+        },
+        "score": 0.35833333333333334
+      },
+      "per_example": [
+        {
+          "duration_ms": 9178,
+          "example_id": "CLN-HELDOUT-5ARI-PROSTATE",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.39759036144578314,
+            "communication_quality": 0.5,
+            "completeness": 0.3939393939393939,
+            "context_awareness": 0.0,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [
+            "prostate cancer",
+            "Finasteride",
+            "Dutasteride"
+          ],
+          "primekg_sub_n_edges": 2352,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nNo, you should not ask for finasteride or dutasteride for prostate cancer prevention based solely on your PSA of 3.4 ng/mL and family history, as these medications are not recommended for chemoprevention in men with average risk and carry significant side effects.\n\n(2) Mechanism:  \nFinasteride and dutasteride inhibit 5-alpha-reductase, reducing dihydrotestosterone (DHT) levels, which may lower prostate cancer incidence by 20-25% in high-risk men (PSA \u22652.5 ng/mL with prior negative biopsy). However, they do not reduce prostate cancer mortality and may increase high-grade cancer detection due to reduced prostate volume (detection bias), as seen in the Prostate Cancer Prevention Trial (PCPT).\n\n(3) Risk factors:  \n- Age 58 (above PCPT eligibility threshold of \u226555 years)  \n- PSA 3.4 ng/mL (slightly elevated; requires adjustment since finasteride halves PSA)  \n- Family history of prostate cancer (father diagnosed in late 60s)  \n- No prior negative biopsy (not specified in your case)  \n- Not meeting REDUCE trial criteria (PSA 2.5-10.0 ng/mL with prior negative biopsy)\n\n(4) What we know vs do not know:  \n*Known*: Finasteride reduces prostate cancer incidence by 24.8% in PCPT (18.4% vs 24.4% over 7 years) but increases high-grade cancer risk (6.4% vs 5.1% for Gleason 7-10). Dutasteride shows similar efficacy (19.9% vs 25.1% cancer incidence) but with higher discontinuation due to side effects (4.3% vs 2%).  \n*Unknown*: Whether your PSA of 3.4 ng/mL (without adjustment) reflects true risk; whether family history alone qualifies you for chemoprevention; long-term mortality impact of these drugs remains unproven.\n\n(5) Practical next steps:  \n- Request PSA adjustment (multiply 3.4 by 2 = 6.8 ng/mL estimated untreated-equivalent) to assess true risk.  \n- Discuss with your doctor whether you meet REDUCE trial criteria (PSA 2.5-10.0 ng/mL + prior negative biopsy) for chemoprevention.  \n- Consider shared decision-making: weigh 20-25% relative risk reduction against 4-10% risk of sexual dysfunction, gynecomastia, or erectile dysfunction.  \n- Avoid self-initiating treatment; require clinical evaluation to confirm eligibility and risk-benefit profile.",
+          "score": 0.4,
+          "trial": 1
+        },
+        {
+          "duration_ms": 9867,
+          "example_id": "CLN-HELDOUT-ASPIRIN-CRC",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.2833333333333333,
+            "communication_quality": 0.6153846153846154,
+            "completeness": 0.0,
+            "context_awareness": 0.14893617021276598,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [
+            "Colon cancer",
+            "colon",
+            "cancer",
+            "Healthy",
+            "Aspirin"
+          ],
+          "primekg_sub_n_edges": 154,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: No, you should not start taking daily baby aspirin without first discussing it with your physician, as the potential bleeding risks may outweigh the benefits for your specific risk profile.  \n\n(2) Mechanism: Aspirin reduces colorectal cancer risk by irreversibly inhibiting platelet COX-1, decreasing thromboxane A2 production, which may interrupt tumor-promoting inflammatory pathways and platelet-mediated angiogenesis in pre-cancerous lesions.  \n\n(3) Risk factors: Your family history (two first-degree relatives with colon cancer, one diagnosed before age 60) significantly elevates your risk. However, aspirin carries major risks including gastrointestinal bleeding (14 additional events per 1,000 over 10 years at low doses) and hemorrhagic stroke (3.2 per 1,000), particularly concerning for individuals over 60 or with bleeding disorders.  \n\n(4) What we know vs do not know: We know aspirin reduces CRC risk by ~40% after 10-20 years of use in high-risk groups like Lynch syndrome (HR 0.60-0.65), but your family history suggests possible hereditary syndromes (e.g., Lynch or attenuated FAP). We do not know your specific genetic risk profile, exact family cancer history details (e.g., polyp history), or whether you have undiagnosed bleeding risks that would make aspirin harmful.  \n\n(5) Practical next steps: Schedule a visit with your doctor to review your full family history (including polyp history, Lynch syndrome testing eligibility), discuss aspirin's risk-benefit ratio for you, and consider guideline-recommended screening (e.g., colonoscopy starting at age 45-50 for average-risk, earlier for high-risk families). Do not self-prescribe aspirin without medical evaluation.",
+          "score": 0.25,
+          "trial": 1
+        },
+        {
+          "duration_ms": 10221,
+          "example_id": "CLN-HELDOUT-BISPHOSPHONATE-AI",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.17333333333333334,
+            "communication_quality": 1.0,
+            "completeness": 0.3275862068965517,
+            "context_awareness": 0.0,
+            "instruction_following": 0.5
+          },
+          "primekg_seeds": [
+            "breast cancer",
+            "Zoledronic acid",
+            "breast",
+            "Anastrozole",
+            "cancer"
+          ],
+          "primekg_sub_n_edges": 1074,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Yes, zoledronic acid is used to reduce breast cancer recurrence risk in postmenopausal women with hormone receptor-positive early-stage breast cancer, beyond just treating bone density. It is considered safe when used as directed.\n\n(2) Mechanism: Zoledronic acid is a bisphosphonate that inhibits bone resorption by targeting osteoclasts. In breast cancer, it may reduce tumor growth and recurrence by altering the bone microenvironment, decreasing bone-derived growth factors that promote cancer cell survival and metastasis, particularly in hormone receptor-positive disease.\n\n(3) Risk factors: Key risk factors for zoledronic acid use include postmenopausal status (which you have at 64), prior chemotherapy (you had none), and high-risk features like large tumor size or positive nodes (not specified in your case). It is not routinely recommended for low-risk patients, and your oncologist likely considers your individual risk profile.\n\n(4) What we know vs do not know: We know zoledronic acid reduces recurrence risk in postmenopausal women with early-stage hormone-positive breast cancer (supported by trials like ABCSG 16 and meta-analyses), and it is safe with manageable side effects (e.g., flu-like symptoms, rare kidney or nerve issues). We do not know your specific recurrence risk profile (e.g., tumor size, node status, genomic testing results) to confirm if you qualify for this therapy, nor long-term real-world outcomes beyond clinical trial data.\n\n(5) Practical next steps: Discuss with your oncologist whether your specific tumor characteristics (e.g., tumor size, lymph node involvement, genomic assay results like Oncotype DX) support zoledronic acid use. Ask about the specific benefit-risk profile for your case, including how much it reduces recurrence risk in your subgroup, and confirm it\u2019s being used for bone health *and* recurrence prevention as part of your overall treatment plan.",
+          "score": 0.33,
+          "trial": 1
+        },
+        {
+          "duration_ms": 9178,
+          "example_id": "CLN-HELDOUT-HPV-CATCHUP",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.36904761904761907,
+            "communication_quality": 0.0,
+            "completeness": 0.23333333333333336,
+            "context_awareness": 0.4444444444444444,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [
+            "cervical cancer",
+            "Papilloma",
+            "cancer"
+          ],
+          "primekg_sub_n_edges": 421,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Yes, it is worth getting the Gardasil-9 vaccine at age 35, as it can still provide meaningful protection against cervical cancer by preventing infection with HPV types 16, 18, and other high-risk strains you may not have encountered yet.  \n\n(2) Mechanism: The Gardasil-9 vaccine works by training your immune system to recognize and neutralize nine high-risk HPV types (including HPV-16, HPV-18, HPV-31, HPV-33, HPV-35, HPV-39, HPV-45, HPV-52, and HPV-58), which are responsible for ~90% of HPV-related cervical cancers. It does not treat existing infections or existing precancerous lesions.  \n\n(3) Risk factors: Your age (35) and lack of prior vaccination increase your risk of prior HPV exposure, but the vaccine still protects against HPV types you haven't contracted. Key risks include ongoing exposure to new HPV partners, cumulative risk from past unvaccinated years, and the fact that cervical cancer development is often preceded by asymptomatic HPV infections.  \n\n(4) What we know vs do not know:  \n- *Known*: CDC states vaccination is recommended up to age 45, with 3 doses for those starting at 15+ (0, 1-2, 6 months). Real-world data shows vaccinated women have 87% lower cervical cancer risk (England study) and 47 vs. 94 cases per 100,000 by age 30 (Swedish study).  \n- *Not known*: Your individual risk reduction depends on prior HPV exposure (unknown without testing), duration of protection (long-term data beyond age 45 is limited), and whether you've already been exposed to vaccine-covered HPV types.  \n\n(5) Practical next steps:  \n- Consult your provider to discuss vaccination, as it is FDA-approved for ages 9\u201345.  \n- Complete the 3-dose series (0, 1\u20132, 6 months) for optimal protection.  \n- Continue routine cervical cancer screening (Pap/HPV tests) as recommended, since vaccination does not replace screening.  \n- Note: Vaccination provides greater relative benefit for those with no prior HPV exposure, but still reduces risk for previously unvaccinated individuals.",
+          "score": 0.31,
+          "trial": 1
+        },
+        {
+          "duration_ms": 10317,
+          "example_id": "CLN-HELDOUT-SMOKING-CESSATION-CANCER",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.23214285714285715,
+            "communication_quality": 0.7142857142857143,
+            "completeness": 0.5909090909090909,
+            "context_awareness": 0.0,
+            "instruction_following": 0.2777777777777778
+          },
+          "primekg_seeds": [
+            "Varenicline",
+            "Nicotine",
+            "throat",
+            "cancer"
+          ],
+          "primekg_sub_n_edges": 661,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Varenicline (Chantix) is more effective than the nicotine patch for smoking cessation, with higher long-term abstinence rates, though both are FDA-approved and generally safe.  \n\n(2) Mechanism: Varenicline is a partial agonist at \u03b14\u03b22 nicotinic acetylcholine receptors, reducing cravings and withdrawal while blocking nicotine\u2019s rewarding effects. The nicotine patch delivers steady transdermal nicotine to manage baseline cravings without altering receptor function.  \n\n(3) Risk factors: Varenicline carries a small increased risk of neuropsychiatric side effects (e.g., abnormal dreams, insomnia, nausea) and potential cardiovascular events (e.g., heart palpitations), though no significant rise in serious events versus placebo in trials. The nicotine patch is associated with higher rates of cardiovascular adverse events (e.g., chest pain, palpitations) and gastrointestinal symptoms (nausea, vomiting), but no evidence of increased neuropsychiatric harm.  \n\n(4) What we know vs do not know:  \n- *Known*: Varenicline demonstrates superior efficacy (odds ratio ~3.1 vs placebo at 6+ months; OR ~3.6 for patch + NRT) and is recommended as first-line in guidelines. The nicotine patch is effective but less potent alone. Both have documented common side effects, with varenicline\u2019s neuropsychiatric risks being rare but notable.  \n- *Not known*: Long-term safety of varenicline in patients with prior cancer (e.g., throat cancer history) is not well studied. No direct comparative trials exist for your specific case (cancer history + smoking cessation), and individual responses to varenicline vs patch may vary based on comorbidities.  \n\n(5) Practical next steps:  \n- Consult your physician to discuss varenicline, as it is more effective for sustained cessation. Start with 0.5 mg daily for 3 days, then 0.5 mg twice daily for 4 days, then 1 mg twice daily (beginning 1 week before your quit date).  \n- If varenicline is contraindicated (e.g., history of severe psychiatric illness), use the nicotine patch (21 mg daily for 4\u20136 weeks, tapering to 14 mg) combined with short-acting NRT (e.g., gum/lozenge) for breakthrough cravings.  \n- Avoid combining varenicline with nicotine replacement therapy (NRT) due to increased side effect risk, per FDA guidance.  \n- Prioritize behavioral counseling (e.g., quitline support) alongside medication, as combination therapy improves success rates.  \n- Monitor for side effects: Report persistent nausea, vivid dreams, or mood changes immediately. Check blood pressure and heart rate if cardiovascular symptoms arise.  \n\n*Source: USPSTF 2021 (Tobacco Cessation), PHS 2008 Guideline, EAGLES 2016 Trial (JAMA Network Open).*",
+          "score": 0.41,
+          "trial": 1
+        },
+        {
+          "duration_ms": 10655,
+          "example_id": "CLN-HELDOUT-STATIN-CV-CANCER",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.5636363636363636,
+            "communication_quality": 0.21052631578947367,
+            "completeness": 0.15384615384615385,
+            "context_awareness": 0.72,
+            "instruction_following": 0.76
+          },
+          "primekg_seeds": [
+            "Atorvastatin",
+            "cancer",
+            "Healthy"
+          ],
+          "primekg_sub_n_edges": 1173,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nNo, the cancer risk from statins is not real for your age and risk profile. Statins do not increase colorectal cancer risk, and your 12% 10-year heart attack risk justifies starting a statin.\n\n(2) Mechanism:  \nStatins lower LDL cholesterol and reduce cardiovascular events via HMG-CoA reductase inhibition. Large pooled analyses of 13+ statin trials (n>59,000 participants) show no difference in cancer incidence between statin and placebo groups (RR=1.04 for diabetes risk, but no cancer signal). The US Preventive Services Task Force (2022) confirms statins have no increased cancer risk.\n\n(3) Risk factors:  \n- Your age (55) aligns with the dominant CRC risk factor (90% of CRCs diagnosed after age 50).  \n- Your 12% 10-year CVD risk meets USPSTF criteria (>=10%) for statin initiation.  \n- No hereditary cancer syndromes (e.g., Lynch syndrome) are indicated in your history.  \n- Online claims about statin-cancer links misinterpret diabetes risk data (JUPITER trial showed 1.25x diabetes risk *only* in high-risk baseline participants, not general population).\n\n(4) What we know vs do not know:  \n\u2705 **Known**: Statins reduce all-cause mortality (RR=0.92), stroke (RR=0.78), and MI (RR=0.67) with minimal cancer risk.  \n\u274c **Unknown**: Long-term (>10 years) cancer effects are still being studied, but current evidence shows no increased risk in average-risk adults like you.\n\n(5) Practical next steps:  \nStart the statin as recommended by your doctor. Discuss your 12% CVD risk with them to confirm appropriateness. Continue regular CRC screening (e.g., colonoscopy) as standard for age 55, since statins don't alter cancer risk. Avoid excessive alcohol (>45g/day) and smoking, which significantly elevate CRC risk.",
+          "score": 0.45,
+          "trial": 1
+        }
+      ],
+      "trial": 1
+    },
+    {
+      "aggregate": {
+        "n": 6,
+        "n_recused": 0,
+        "n_scored": 6,
+        "per_axis": {
+          "accuracy": 0.3365139779898816,
+          "communication_quality": 0.5066994409099672,
+          "completeness": 0.28326902982075397,
+          "context_awareness": 0.21889676910953507,
+          "instruction_following": 0.2562962962962963
+        },
+        "score": 0.35833333333333334
+      },
+      "per_example": [
+        {
+          "duration_ms": 9562,
+          "example_id": "CLN-HELDOUT-5ARI-PROSTATE",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.39759036144578314,
+            "communication_quality": 0.5,
+            "completeness": 0.3939393939393939,
+            "context_awareness": 0.0,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [
+            "prostate cancer",
+            "Finasteride",
+            "Dutasteride"
+          ],
+          "primekg_sub_n_edges": 2352,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nNo, you should not ask for finasteride or dutasteride for prostate cancer prevention based solely on your PSA of 3.4 ng/mL and family history, as these medications are not recommended for chemoprevention in men with average risk and carry significant side effects.\n\n(2) Mechanism:  \nFinasteride and dutasteride inhibit 5-alpha-reductase, reducing dihydrotestosterone (DHT) levels, which may lower prostate cancer incidence by 20-25% in high-risk men (PSA \u22652.5 ng/mL with prior negative biopsy). However, they do not reduce prostate cancer mortality and may increase high-grade cancer detection due to reduced prostate volume (detection bias), as seen in the Prostate Cancer Prevention Trial (PCPT).\n\n(3) Risk factors:  \n- Age 58 (above PCPT eligibility threshold of \u226555 years)  \n- PSA 3.4 ng/mL (slightly elevated; requires adjustment since finasteride halves PSA)  \n- Family history of prostate cancer (father diagnosed in late 60s)  \n- No prior negative biopsy (not specified in your case)  \n- Not meeting REDUCE trial criteria (PSA 2.5-10.0 ng/mL with prior negative biopsy)\n\n(4) What we know vs do not know:  \n*Known*: Finasteride reduces prostate cancer incidence by 24.8% in PCPT (18.4% vs 24.4% over 7 years) but increases high-grade cancer risk (6.4% vs 5.1% for Gleason 7-10). Dutasteride shows similar efficacy (19.9% vs 25.1% cancer incidence) but with higher discontinuation due to side effects (4.3% vs 2%).  \n*Unknown*: Whether your PSA of 3.4 ng/mL (without adjustment) reflects true risk; whether family history alone qualifies you for chemoprevention; long-term mortality impact of these drugs remains unproven.\n\n(5) Practical next steps:  \n- Request PSA adjustment (multiply 3.4 by 2 = 6.8 ng/mL estimated untreated-equivalent) to assess true risk.  \n- Discuss with your doctor whether you meet REDUCE trial criteria (PSA 2.5-10.0 ng/mL + prior negative biopsy) for chemoprevention.  \n- Consider shared decision-making: weigh 20-25% relative risk reduction against 4-10% risk of sexual dysfunction, gynecomastia, or erectile dysfunction.  \n- Avoid self-initiating treatment; require clinical evaluation to confirm eligibility and risk-benefit profile.",
+          "score": 0.4,
+          "trial": 2
+        },
+        {
+          "duration_ms": 9309,
+          "example_id": "CLN-HELDOUT-ASPIRIN-CRC",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.2833333333333333,
+            "communication_quality": 0.6153846153846154,
+            "completeness": 0.0,
+            "context_awareness": 0.14893617021276598,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [
+            "Colon cancer",
+            "colon",
+            "cancer",
+            "Healthy",
+            "Aspirin"
+          ],
+          "primekg_sub_n_edges": 154,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: No, you should not start taking daily baby aspirin without first discussing it with your physician, as the potential bleeding risks may outweigh the benefits for your specific risk profile.  \n\n(2) Mechanism: Aspirin reduces colorectal cancer risk by irreversibly inhibiting platelet COX-1, decreasing thromboxane A2 production, which may interrupt tumor-promoting inflammatory pathways and platelet-mediated angiogenesis in pre-cancerous lesions.  \n\n(3) Risk factors: Your family history (two first-degree relatives with colon cancer, one diagnosed before age 60) significantly elevates your risk. However, aspirin carries major risks including gastrointestinal bleeding (14 additional events per 1,000 over 10 years at low doses) and hemorrhagic stroke (3.2 per 1,000), particularly concerning for individuals over 60 or with bleeding disorders.  \n\n(4) What we know vs do not know: We know aspirin reduces CRC risk by ~40% after 10-20 years of use in high-risk groups like Lynch syndrome (HR 0.60-0.65), but your family history suggests possible hereditary syndromes (e.g., Lynch or attenuated FAP). We do not know your specific genetic risk profile, exact family cancer history details (e.g., polyp history), or whether you have undiagnosed bleeding risks that would make aspirin harmful.  \n\n(5) Practical next steps: Schedule a visit with your doctor to review your full family history (including polyp history, Lynch syndrome testing eligibility), discuss aspirin's risk-benefit ratio for you, and consider guideline-recommended screening (e.g., colonoscopy starting at age 45-50 for average-risk, earlier for high-risk families). Do not self-prescribe aspirin without medical evaluation.",
+          "score": 0.25,
+          "trial": 2
+        },
+        {
+          "duration_ms": 9709,
+          "example_id": "CLN-HELDOUT-BISPHOSPHONATE-AI",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.17333333333333334,
+            "communication_quality": 1.0,
+            "completeness": 0.3275862068965517,
+            "context_awareness": 0.0,
+            "instruction_following": 0.5
+          },
+          "primekg_seeds": [
+            "breast cancer",
+            "Zoledronic acid",
+            "breast",
+            "Anastrozole",
+            "cancer"
+          ],
+          "primekg_sub_n_edges": 1074,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Yes, zoledronic acid is used to reduce breast cancer recurrence risk in postmenopausal women with hormone receptor-positive early-stage breast cancer, beyond just treating bone density. It is considered safe when used as directed.\n\n(2) Mechanism: Zoledronic acid is a bisphosphonate that inhibits bone resorption by targeting osteoclasts. In breast cancer, it may reduce tumor growth and recurrence by altering the bone microenvironment, decreasing bone-derived growth factors that promote cancer cell survival and metastasis, particularly in hormone receptor-positive disease.\n\n(3) Risk factors: Key risk factors for zoledronic acid use include postmenopausal status (which you have at 64), prior chemotherapy (you had none), and high-risk features like large tumor size or positive nodes (not specified in your case). It is not routinely recommended for low-risk patients, and your oncologist likely considers your individual risk profile.\n\n(4) What we know vs do not know: We know zoledronic acid reduces recurrence risk in postmenopausal women with early-stage hormone-positive breast cancer (supported by trials like ABCSG 16 and meta-analyses), and it is safe with manageable side effects (e.g., flu-like symptoms, rare kidney or nerve issues). We do not know your specific recurrence risk profile (e.g., tumor size, node status, genomic testing results) to confirm if you qualify for this therapy, nor long-term real-world outcomes beyond clinical trial data.\n\n(5) Practical next steps: Discuss with your oncologist whether your specific tumor characteristics (e.g., tumor size, lymph node involvement, genomic assay results like Oncotype DX) support zoledronic acid use. Ask about the specific benefit-risk profile for your case, including how much it reduces recurrence risk in your subgroup, and confirm it\u2019s being used for bone health *and* recurrence prevention as part of your overall treatment plan.",
+          "score": 0.33,
+          "trial": 2
+        },
+        {
+          "duration_ms": 9175,
+          "example_id": "CLN-HELDOUT-HPV-CATCHUP",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.36904761904761907,
+            "communication_quality": 0.0,
+            "completeness": 0.23333333333333336,
+            "context_awareness": 0.4444444444444444,
+            "instruction_following": 0.0
+          },
+          "primekg_seeds": [
+            "cervical cancer",
+            "Papilloma",
+            "cancer"
+          ],
+          "primekg_sub_n_edges": 421,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Yes, it is worth getting the Gardasil-9 vaccine at age 35, as it can still provide meaningful protection against cervical cancer by preventing infection with HPV types 16, 18, and other high-risk strains you may not have encountered yet.  \n\n(2) Mechanism: The Gardasil-9 vaccine works by training your immune system to recognize and neutralize nine high-risk HPV types (including HPV-16, HPV-18, HPV-31, HPV-33, HPV-35, HPV-39, HPV-45, HPV-52, and HPV-58), which are responsible for ~90% of HPV-related cervical cancers. It does not treat existing infections or existing precancerous lesions.  \n\n(3) Risk factors: Your age (35) and lack of prior vaccination increase your risk of prior HPV exposure, but the vaccine still protects against HPV types you haven't contracted. Key risks include ongoing exposure to new HPV partners, cumulative risk from past unvaccinated years, and the fact that cervical cancer development is often preceded by asymptomatic HPV infections.  \n\n(4) What we know vs do not know:  \n- *Known*: CDC states vaccination is recommended up to age 45, with 3 doses for those starting at 15+ (0, 1-2, 6 months). Real-world data shows vaccinated women have 87% lower cervical cancer risk (England study) and 47 vs. 94 cases per 100,000 by age 30 (Swedish study).  \n- *Not known*: Your individual risk reduction depends on prior HPV exposure (unknown without testing), duration of protection (long-term data beyond age 45 is limited), and whether you've already been exposed to vaccine-covered HPV types.  \n\n(5) Practical next steps:  \n- Consult your provider to discuss vaccination, as it is FDA-approved for ages 9\u201345.  \n- Complete the 3-dose series (0, 1\u20132, 6 months) for optimal protection.  \n- Continue routine cervical cancer screening (Pap/HPV tests) as recommended, since vaccination does not replace screening.  \n- Note: Vaccination provides greater relative benefit for those with no prior HPV exposure, but still reduces risk for previously unvaccinated individuals.",
+          "score": 0.31,
+          "trial": 2
+        },
+        {
+          "duration_ms": 10481,
+          "example_id": "CLN-HELDOUT-SMOKING-CESSATION-CANCER",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.23214285714285715,
+            "communication_quality": 0.7142857142857143,
+            "completeness": 0.5909090909090909,
+            "context_awareness": 0.0,
+            "instruction_following": 0.2777777777777778
+          },
+          "primekg_seeds": [
+            "Varenicline",
+            "Nicotine",
+            "throat",
+            "cancer"
+          ],
+          "primekg_sub_n_edges": 661,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer: Varenicline (Chantix) is more effective than the nicotine patch for smoking cessation, with higher long-term abstinence rates, though both are FDA-approved and generally safe.  \n\n(2) Mechanism: Varenicline is a partial agonist at \u03b14\u03b22 nicotinic acetylcholine receptors, reducing cravings and withdrawal while blocking nicotine\u2019s rewarding effects. The nicotine patch delivers steady transdermal nicotine to manage baseline cravings without altering receptor function.  \n\n(3) Risk factors: Varenicline carries a small increased risk of neuropsychiatric side effects (e.g., abnormal dreams, insomnia, nausea) and potential cardiovascular events (e.g., heart palpitations), though no significant rise in serious events versus placebo in trials. The nicotine patch is associated with higher rates of cardiovascular adverse events (e.g., chest pain, palpitations) and gastrointestinal symptoms (nausea, vomiting), but no evidence of increased neuropsychiatric harm.  \n\n(4) What we know vs do not know:  \n- *Known*: Varenicline demonstrates superior efficacy (odds ratio ~3.1 vs placebo at 6+ months; OR ~3.6 for patch + NRT) and is recommended as first-line in guidelines. The nicotine patch is effective but less potent alone. Both have documented common side effects, with varenicline\u2019s neuropsychiatric risks being rare but notable.  \n- *Not known*: Long-term safety of varenicline in patients with prior cancer (e.g., throat cancer history) is not well studied. No direct comparative trials exist for your specific case (cancer history + smoking cessation), and individual responses to varenicline vs patch may vary based on comorbidities.  \n\n(5) Practical next steps:  \n- Consult your physician to discuss varenicline, as it is more effective for sustained cessation. Start with 0.5 mg daily for 3 days, then 0.5 mg twice daily for 4 days, then 1 mg twice daily (beginning 1 week before your quit date).  \n- If varenicline is contraindicated (e.g., history of severe psychiatric illness), use the nicotine patch (21 mg daily for 4\u20136 weeks, tapering to 14 mg) combined with short-acting NRT (e.g., gum/lozenge) for breakthrough cravings.  \n- Avoid combining varenicline with nicotine replacement therapy (NRT) due to increased side effect risk, per FDA guidance.  \n- Prioritize behavioral counseling (e.g., quitline support) alongside medication, as combination therapy improves success rates.  \n- Monitor for side effects: Report persistent nausea, vivid dreams, or mood changes immediately. Check blood pressure and heart rate if cardiovascular symptoms arise.  \n\n*Source: USPSTF 2021 (Tobacco Cessation), PHS 2008 Guideline, EAGLES 2016 Trial (JAMA Network Open).*",
+          "score": 0.41,
+          "trial": 2
+        },
+        {
+          "duration_ms": 9846,
+          "example_id": "CLN-HELDOUT-STATIN-CV-CANCER",
+          "judge_incomplete": 0,
+          "per_axis": {
+            "accuracy": 0.5636363636363636,
+            "communication_quality": 0.21052631578947367,
+            "completeness": 0.15384615384615385,
+            "context_awareness": 0.72,
+            "instruction_following": 0.76
+          },
+          "primekg_seeds": [
+            "Atorvastatin",
+            "cancer",
+            "Healthy"
+          ],
+          "primekg_sub_n_edges": 1173,
+          "primekg_sub_n_nodes": 80,
+          "rail_log": [],
+          "response": "\n(1) Direct answer:  \nNo, the cancer risk from statins is not real for your age and risk profile. Statins do not increase colorectal cancer risk, and your 12% 10-year heart attack risk justifies starting a statin.\n\n(2) Mechanism:  \nStatins lower LDL cholesterol and reduce cardiovascular events via HMG-CoA reductase inhibition. Large pooled analyses of 13+ statin trials (n>59,000 participants) show no difference in cancer incidence between statin and placebo groups (RR=1.04 for diabetes risk, but no cancer signal). The US Preventive Services Task Force (2022) confirms statins have no increased cancer risk.\n\n(3) Risk factors:  \n- Your age (55) aligns with the dominant CRC risk factor (90% of CRCs diagnosed after age 50).  \n- Your 12% 10-year CVD risk meets USPSTF criteria (>=10%) for statin initiation.  \n- No hereditary cancer syndromes (e.g., Lynch syndrome) are indicated in your history.  \n- Online claims about statin-cancer links misinterpret diabetes risk data (JUPITER trial showed 1.25x diabetes risk *only* in high-risk baseline participants, not general population).\n\n(4) What we know vs do not know:  \n\u2705 **Known**: Statins reduce all-cause mortality (RR=0.92), stroke (RR=0.78), and MI (RR=0.67) with minimal cancer risk.  \n\u274c **Unknown**: Long-term (>10 years) cancer effects are still being studied, but current evidence shows no increased risk in average-risk adults like you.\n\n(5) Practical next steps:  \nStart the statin as recommended by your doctor. Discuss your 12% CVD risk with them to confirm appropriateness. Continue regular CRC screening (e.g., colonoscopy) as standard for age 55, since statins don't alter cancer risk. Avoid excessive alcohol (>45g/day) and smoking, which significantly elevate CRC risk.",
+          "score": 0.45,
+          "trial": 2
+        }
+      ],
+      "trial": 2
+    }
+  ],
+  "trials": 3,
+  "wall_time_s": 175
+}

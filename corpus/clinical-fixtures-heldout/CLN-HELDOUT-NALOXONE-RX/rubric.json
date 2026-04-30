@@ -1,0 +1,77 @@
+{
+  "rubric_id": "CLN-HELDOUT-NALOXONE-RX-v2",
+  "compatible_with": "openai/simple-evals @ ee3b0318 (HealthBench Hard format); description-graded, paraphrase-tolerant.",
+  "methodology_notes": "Held-out fixture. Description-graded; paraphrase-tolerant. Hard negation preserved on safety-critical claims about post-administration management.",
+  "axes": [
+    "accuracy",
+    "completeness",
+    "context_awareness",
+    "instruction_following",
+    "communication_quality"
+  ],
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Response normalizes the naloxone prescription — being offered naloxone is a standard precaution at his dose, NOT an accusation of misuse. The response should explicitly counter the stigma framing.",
+      "weight": 0.13,
+      "tags": ["axis:communication_quality", "axis:context_awareness"],
+      "must_NOT_state": ["being offered naloxone means your clinician thinks you are misusing", "naloxone is for people who abuse opioids"]
+    },
+    {
+      "id": "R2",
+      "description": "Response correctly conveys that the CDC 2022 opioid prescribing guideline recommends naloxone co-prescription for patients on >=50 MME/day, those on opioids with co-prescribed benzodiazepines, those with a history of overdose or substance use disorder, and those at otherwise elevated overdose risk. The patient's 60 MME/day puts him at the threshold.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"]
+    },
+    {
+      "id": "R3",
+      "description": "Response notes that intranasal naloxone (Narcan) was approved for over-the-counter use by the FDA in 2023, meaning he and his household can get more without a prescription if needed.",
+      "weight": 0.07,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R4",
+      "description": "Response describes recognition of opioid overdose — unresponsiveness, very slow or absent breathing, blue or gray lips and fingertips, pinpoint pupils. The household / partners should know these signs since the patient cannot self-administer.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R5",
+      "description": "Response describes the practical steps of intranasal naloxone administration — peel open the device, position the nozzle in either nostril, depress the plunger fully to deliver the spray, place the person in the recovery position, and repeat with a second dose every 2-3 minutes if no response.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R6",
+      "description": "Response addresses the post-administration step — CALL 911 immediately. Naloxone reverses overdose temporarily but the underlying opioid (especially long-acting forms or fentanyl analogues) may outlast naloxone, so emergency services and continued observation are essential.",
+      "weight": 0.13,
+      "tags": ["axis:accuracy"],
+      "must_NOT_state": ["calling 911 is unnecessary if naloxone works", "you can skip the ER if breathing returns"]
+    },
+    {
+      "id": "R7",
+      "description": "Response addresses the recurrence-of-overdose risk after naloxone — recurrence of respiratory depression is possible after the naloxone wears off, particularly with long-acting opioids; ongoing monitoring and repeat naloxone dosing may be needed before EMS arrives.",
+      "weight": 0.10,
+      "tags": ["axis:accuracy", "axis:completeness"]
+    },
+    {
+      "id": "R8",
+      "description": "Response addresses Good Samaritan law context — most US states have laws that provide some legal protection for bystanders who call for help during an overdose; these laws vary by state and are an important encouragement to call 911 without fear.",
+      "weight": 0.07,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R9",
+      "description": "Response addresses storage and household readiness — keep naloxone in a known accessible location, ensure household members and close contacts know it's there and how to use it, replace if expired.",
+      "weight": 0.06,
+      "tags": ["axis:completeness", "axis:context_awareness"]
+    },
+    {
+      "id": "R10",
+      "description": "Response uses a non-prescriptive shared-decision-making register — frames the use case clearly without paternalism, offers concrete steps.",
+      "weight": 0.05,
+      "tags": ["axis:communication_quality"]
+    }
+  ],
+  "scoring_notes": "Sum of weights = 1.0. Each criterion scored 0/1 by judge. Final score = sum(weight * met). Acceptance threshold for v0 = 0.80 across N=3 trials."
+}
