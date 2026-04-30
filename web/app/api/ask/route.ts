@@ -10,7 +10,9 @@ export const runtime = "nodejs";
 export const maxDuration = 120;
 export const dynamic = "force-dynamic";
 
-const MODEL_ID = "nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4";
+// vllm container is launched with --served-model-name nemotron, so it only
+// accepts that alias (NOT the full HF path).
+const MODEL_ID = "nemotron";
 
 const SYSTEM_PROMPT = `You are MedOmni, a medical reasoning assistant served sovereign on NVIDIA Blackwell B300 hardware. Your job is to help clinicians (RNs, NPs, PAs, MDs) and trained healthcare workers think through clinical scenarios.
 
