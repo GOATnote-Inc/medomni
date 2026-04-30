@@ -3,23 +3,11 @@
 import { useState } from "react";
 
 const SAMPLE_PROMPT =
-  "55 yo with 6mo of progressive exertional dyspnea, bilateral lower-extremity edema, JVP elevated. Workup so far: BNP 1850, EF 35% on echo. What's the next step?";
+  "lactate of 25 after housefire and altered mental status — what am I missing?";
 
-const NOT_LIVE_NOTICE = `**This surface is being wired up live.**
+const NOT_LIVE_NOTICE = `The model endpoint is being plugged in right now. This page does not fake an answer in the meantime — when Nemotron-3-Nano-Omni on the B300 starts answering here, it'll be real.
 
-The MedOmni Quick stream connects to **Nemotron-3-Nano-Omni on Brev B300 (NVFP4)** through a Cloud Run BFF + Tailscale tunnel. That pipeline is landing across the next 24-48 hours.
-
-Until then, this demo URL deliberately does **not** echo a fake answer back. We will not put canned text in front of clinicians and call it a model.
-
-**What's already real and shipping:**
-- 30 held-out clinical fixtures across 9 medical subdomains, mean 0.378
-- 9-layer reproducibility manifest (sha256 \`f9372e0cc948\`, byte-stable across re-emit)
-- Cross-family judge ensemble (Qwen2.5-7B-Instruct on a separate H200 — different model family from Nemotron-3-Mamba2 to avoid self-preference bias)
-- Negative-result honesty: PrimeKG hybrid mode dropped chemoprevention class −0.027; documented and kept opt-in
-
-Inspect the methodology + manifests at [github.com/GOATnote-Inc/medomni](https://github.com/GOATnote-Inc/medomni). Live streaming + voice + image input wires up day-by-day; this banner updates as each lands.
-
-— *Nemotron-3-Nano-Omni is multimodal (text + image + audio). The voice and upload buttons above are intentionally disabled until the streaming endpoint is ready, rather than fake them.*`;
+Refresh in a bit. Source: [github.com/GOATnote-Inc/medomni](https://github.com/GOATnote-Inc/medomni).`;
 
 export function Composer() {
   const [prompt, setPrompt] = useState("");
@@ -113,62 +101,37 @@ export function Composer() {
                 disabled={!prompt.trim() || streaming}
                 className="text-sm font-semibold px-4 py-2 rounded-md bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
               >
-                {streaming ? "Streaming..." : "Show status"}
+                {streaming ? "Streaming..." : "Ask MedOmni"}
               </button>
             )}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Quick stream panel */}
-        <article className="rounded-xl border border-slate-200 bg-white p-5 min-h-[280px] flex flex-col">
-          <header className="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
-            <div>
-              <h2 className="font-semibold text-slate-900 text-sm">MedOmni Quick</h2>
-              <p className="text-xs text-slate-500">Sovereign · B300 · NVFP4</p>
-            </div>
-            <span className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-medium">
-              wiring up
-            </span>
-          </header>
-          <div className="flex-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-            {streamed || (
-              <span className="text-slate-400 italic">
-                Streaming endpoint to Nemotron-3-Nano-Omni on Brev B300 lands in
-                the next 24-48h. Press &quot;Show status&quot; for the current
-                state of the pipeline. No fake answers.
-              </span>
-            )}
-            {streaming && (
-              <span className="inline-block w-1.5 h-4 bg-slate-700 ml-0.5 align-text-bottom animate-pulse" />
-            )}
-          </div>
-        </article>
-
-        {/* Peer stream panel — disabled */}
-        <article className="rounded-xl border border-dashed border-slate-300 bg-slate-50/60 p-5 min-h-[280px] flex flex-col">
-          <header className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200">
-            <div>
-              <h2 className="font-semibold text-slate-500 text-sm">Frontier Peer</h2>
-              <p className="text-xs text-slate-400">
-                Anthropic Claude / OpenAI GPT · BAA-covered route
-              </p>
-            </div>
-            <span className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full bg-slate-100 text-slate-500 border border-slate-200 font-medium">
-              Pro · v1
-            </span>
-          </header>
-          <div className="flex-1 flex flex-col items-center justify-center text-center gap-2 text-slate-500">
-            <p className="text-sm font-medium">Pro tier — coming soon</p>
-            <p className="text-xs leading-relaxed max-w-xs">
-              Race-to-stream with a BAA-routed frontier model and reconciliation
-              surface. Ships post-Nebius once Vertex Anthropic / OpenAI BAA
-              umbrella is wired.
+      <article className="rounded-xl border border-slate-200 bg-white p-5 min-h-[300px] flex flex-col">
+        <header className="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
+          <div>
+            <h2 className="font-semibold text-slate-900 text-sm">MedOmni</h2>
+            <p className="text-xs text-slate-500">
+              Nemotron-3-Nano-Omni · NVIDIA Blackwell B300 · open weights
             </p>
           </div>
-        </article>
-      </div>
+          <span className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-medium">
+            wiring up
+          </span>
+        </header>
+        <div className="flex-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+          {streamed || (
+            <span className="text-slate-400 italic">
+              Type a clinical question and press &quot;Ask MedOmni&quot;. The
+              answer streams here.
+            </span>
+          )}
+          {streaming && (
+            <span className="inline-block w-1.5 h-4 bg-slate-700 ml-0.5 align-text-bottom animate-pulse" />
+          )}
+        </div>
+      </article>
     </section>
   );
 }
