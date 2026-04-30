@@ -1,12 +1,20 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
+import { VoiceInput } from "@/components/VoiceInput";
+import { ImageUpload, processImage } from "@/components/ImageUpload";
 
 const SAMPLE_PROMPT =
   "lactate of 25 after housefire and altered mental status — what am I missing?";
 
+type ContentBlock =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
 export function Composer() {
   const [prompt, setPrompt] = useState("");
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [imageName, setImageName] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false);
   const [reasoning, setReasoning] = useState("");
   const [content, setContent] = useState("");
@@ -15,7 +23,7 @@ export function Composer() {
   const abortRef = useRef<AbortController | null>(null);
 
   async function send() {
-    if (!prompt.trim() || streaming) return;
+    if ((!prompt.trim() && !imageDataUrl) || streaming) return;
     setStreaming(true);
     setReasoning("");
     setContent("");
@@ -25,12 +33,27 @@ export function Composer() {
     const ac = new AbortController();
     abortRef.current = ac;
 
+    // Build OpenAI-compat multimodal content if image present
+    let messageContent: string | ContentBlock[];
+    if (imageDataUrl) {
+      const blocks: ContentBlock[] = [];
+      if (prompt.trim()) {
+        blocks.push({ type: "text", text: prompt });
+      } else {
+        blocks.push({ type: "text", text: "Describe and analyze this clinical image." });
+      }
+      blocks.push({ type: "image_url", image_url: { url: imageDataUrl } });
+      messageContent = blocks;
+    } else {
+      messageContent = prompt;
+    }
+
     try {
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [{ role: "user", content: prompt }],
+          messages: [{ role: "user", content: messageContent }],
         }),
         signal: ac.signal,
       });
@@ -65,7 +88,6 @@ export function Composer() {
         if (rdone) break;
         buffer += decoder.decode(value, { stream: true });
 
-        // Parse SSE — split on double-newline event boundary
         const events = buffer.split("\n\n");
         buffer = events.pop() ?? "";
 
@@ -105,17 +127,88 @@ export function Composer() {
   function reset() {
     abortRef.current?.abort();
     setPrompt("");
+    setImageDataUrl(null);
+    setImageName(null);
     setReasoning("");
     setContent("");
     setErrorMsg(null);
     setDone(false);
   }
 
+  function clearImage() {
+    setImageDataUrl(null);
+    setImageName(null);
+  }
+
+  function handleVoice(text: string) {
+    setPrompt(text);
+  }
+
+  function handleImage(dataUrl: string, name: string) {
+    setImageDataUrl(dataUrl);
+    setImageName(name);
+    setErrorMsg(null);
+  }
+
+  function handleImageError(msg: string) {
+    setErrorMsg(msg);
+  }
+
+  async function onDrop(e: React.DragEvent<HTMLElement>) {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setErrorMsg(`Drop an image file. Got: ${file.type || "unknown"}`);
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      setErrorMsg(`Image too large (${Math.round(file.size / 1024 / 1024)} MB; max 12 MB).`);
+      return;
+    }
+    try {
+      const dataUrl = await processImage(file);
+      handleImage(dataUrl, file.name);
+    } catch (err) {
+      setErrorMsg(`Image processing failed: ${(err as Error).message}`);
+    }
+  }
+
   const empty = !reasoning && !content && !errorMsg;
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div
+        className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={onDrop}
+      >
+        {imageDataUrl && (
+          <div className="flex items-center gap-3 px-5 pt-4 pb-2 border-b border-slate-100 bg-slate-50/40">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageDataUrl}
+              alt={imageName || "uploaded"}
+              className="w-16 h-16 object-cover rounded border border-slate-200"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-slate-700 truncate font-medium">
+                {imageName || "image"}
+              </p>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                EXIF stripped · resized · sent as multimodal input
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={clearImage}
+              className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1 rounded"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -125,31 +218,23 @@ export function Composer() {
               send();
             }
           }}
-          placeholder="Ask a clinical question. e.g. 'Workup for new HFrEF with EF 35%?'"
+          placeholder={
+            imageDataUrl
+              ? "Add context or ask a question about the image..."
+              : "Ask a clinical question. e.g. 'Workup for new HFrEF with EF 35%?' Or attach an image / hold the mic to dictate."
+          }
           rows={4}
           maxLength={4000}
           className="w-full resize-none bg-transparent px-5 py-4 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none"
         />
         <div className="flex items-center justify-between border-t border-slate-100 px-3 py-2 bg-slate-50/60">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled
-              title="Voice input ships next"
-              aria-label="Voice (coming soon)"
-              className="p-2 rounded-md text-slate-400 cursor-not-allowed"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-            </button>
-            <button
-              type="button"
-              disabled
-              title="Image upload ships next"
-              aria-label="Upload (coming soon)"
-              className="p-2 rounded-md text-slate-400 cursor-not-allowed"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-            </button>
+          <div className="flex gap-1 items-center">
+            <VoiceInput onTranscript={handleVoice} disabled={streaming} />
+            <ImageUpload
+              onImage={handleImage}
+              onError={handleImageError}
+              disabled={streaming}
+            />
             <button
               type="button"
               onClick={() => setPrompt(SAMPLE_PROMPT)}
@@ -172,7 +257,7 @@ export function Composer() {
               <button
                 type="button"
                 onClick={send}
-                disabled={!prompt.trim() || streaming}
+                disabled={(!prompt.trim() && !imageDataUrl) || streaming}
                 className="text-sm font-semibold px-4 py-2 rounded-md bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
               >
                 {streaming ? "Streaming..." : "Ask MedOmni"}
@@ -197,14 +282,13 @@ export function Composer() {
 
         {empty && (
           <p className="flex-1 text-sm text-slate-400 italic">
-            Type a clinical question and press &quot;Ask MedOmni&quot;. The
-            model streams its reasoning, then its answer.
+            Type, dictate, or attach an image. Reasoning + answer stream below.
           </p>
         )}
 
         {errorMsg && (
           <div className="flex-1 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-md p-3">
-            <strong>Connection issue:</strong> {errorMsg}
+            <strong>Issue:</strong> {errorMsg}
           </div>
         )}
 
