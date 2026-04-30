@@ -1,42 +1,117 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const SAMPLE_PROMPT =
   "lactate of 25 after housefire and altered mental status — what am I missing?";
 
-const NOT_LIVE_NOTICE = `The model endpoint is being plugged in right now. This page does not fake an answer in the meantime — when Nemotron-3-Nano-Omni on the B300 starts answering here, it'll be real.
-
-Refresh in a bit. Source: [github.com/GOATnote-Inc/medomni](https://github.com/GOATnote-Inc/medomni).`;
-
 export function Composer() {
   const [prompt, setPrompt] = useState("");
   const [streaming, setStreaming] = useState(false);
-  const [streamed, setStreamed] = useState("");
+  const [reasoning, setReasoning] = useState("");
+  const [content, setContent] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   async function send() {
     if (!prompt.trim() || streaming) return;
     setStreaming(true);
-    setStreamed("");
+    setReasoning("");
+    setContent("");
+    setErrorMsg(null);
     setDone(false);
 
-    const text = NOT_LIVE_NOTICE;
-    const chunkSize = 4;
-    for (let i = 0; i < text.length; i += chunkSize) {
-      await new Promise((r) => setTimeout(r, 12));
-      setStreamed(text.slice(0, i + chunkSize));
-    }
+    const ac = new AbortController();
+    abortRef.current = ac;
 
-    setStreaming(false);
-    setDone(true);
+    try {
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: prompt }],
+        }),
+        signal: ac.signal,
+      });
+
+      if (!res.ok) {
+        let msg = `Error ${res.status}`;
+        try {
+          const j = await res.json();
+          msg = j.error || msg;
+        } catch {
+          /* ignore */
+        }
+        setErrorMsg(msg);
+        setStreaming(false);
+        setDone(true);
+        return;
+      }
+
+      if (!res.body) {
+        setErrorMsg("Empty response from server");
+        setStreaming(false);
+        setDone(true);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done: rdone, value } = await reader.read();
+        if (rdone) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // Parse SSE — split on double-newline event boundary
+        const events = buffer.split("\n\n");
+        buffer = events.pop() ?? "";
+
+        for (const evt of events) {
+          for (const line of evt.split("\n")) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6);
+            if (data === "[DONE]") continue;
+            try {
+              const json = JSON.parse(data);
+              const delta = json.choices?.[0]?.delta;
+              if (!delta) continue;
+              if (typeof delta.reasoning === "string" && delta.reasoning.length > 0) {
+                setReasoning((prev) => prev + delta.reasoning);
+              }
+              if (typeof delta.content === "string" && delta.content.length > 0) {
+                setContent((prev) => prev + delta.content);
+              }
+            } catch {
+              /* skip un-parseable line */
+            }
+          }
+        }
+      }
+    } catch (e) {
+      const err = e as Error;
+      if (err.name !== "AbortError") {
+        setErrorMsg(err.message || "Connection failed");
+      }
+    } finally {
+      setStreaming(false);
+      setDone(true);
+      abortRef.current = null;
+    }
   }
 
   function reset() {
+    abortRef.current?.abort();
     setPrompt("");
-    setStreamed("");
+    setReasoning("");
+    setContent("");
+    setErrorMsg(null);
     setDone(false);
   }
+
+  const empty = !reasoning && !content && !errorMsg;
 
   return (
     <section className="flex flex-col gap-4">
@@ -60,17 +135,16 @@ export function Composer() {
             <button
               type="button"
               disabled
-              title="Voice input ships in v0 day 4"
+              title="Voice input ships next"
               aria-label="Voice (coming soon)"
               className="p-2 rounded-md text-slate-400 cursor-not-allowed"
             >
-              {/* mic icon */}
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
             </button>
             <button
               type="button"
               disabled
-              title="Image upload ships in v0 day 3"
+              title="Image upload ships next"
               aria-label="Upload (coming soon)"
               className="p-2 rounded-md text-slate-400 cursor-not-allowed"
             >
@@ -116,21 +190,46 @@ export function Composer() {
               Nemotron-3-Nano-Omni · NVIDIA Blackwell B300 · open weights
             </p>
           </div>
-          <span className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-medium">
-            wiring up
+          <span className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
+            live
           </span>
         </header>
-        <div className="flex-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-          {streamed || (
-            <span className="text-slate-400 italic">
-              Type a clinical question and press &quot;Ask MedOmni&quot;. The
-              answer streams here.
-            </span>
-          )}
-          {streaming && (
-            <span className="inline-block w-1.5 h-4 bg-slate-700 ml-0.5 align-text-bottom animate-pulse" />
-          )}
-        </div>
+
+        {empty && (
+          <p className="flex-1 text-sm text-slate-400 italic">
+            Type a clinical question and press &quot;Ask MedOmni&quot;. The
+            model streams its reasoning, then its answer.
+          </p>
+        )}
+
+        {errorMsg && (
+          <div className="flex-1 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-md p-3">
+            <strong>Connection issue:</strong> {errorMsg}
+          </div>
+        )}
+
+        {reasoning && (
+          <details className="mb-3 text-xs text-slate-500 bg-slate-50 rounded-md p-3 border border-slate-200" open={streaming && !content}>
+            <summary className="cursor-pointer font-medium text-slate-600">
+              Reasoning trace {streaming && !content ? "(streaming)" : ""}
+            </summary>
+            <div className="mt-2 whitespace-pre-wrap font-mono text-[11px] leading-relaxed">
+              {reasoning}
+              {streaming && !content && (
+                <span className="inline-block w-1.5 h-3 bg-slate-500 ml-0.5 align-text-bottom animate-pulse" />
+              )}
+            </div>
+          </details>
+        )}
+
+        {content && (
+          <div className="flex-1 text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
+            {content}
+            {streaming && (
+              <span className="inline-block w-1.5 h-4 bg-slate-700 ml-0.5 align-text-bottom animate-pulse" />
+            )}
+          </div>
+        )}
       </article>
     </section>
   );
