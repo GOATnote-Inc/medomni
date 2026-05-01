@@ -47,7 +47,7 @@ manifest sha256 `f9372e0cc948` byte-stable. Released open as proof-of-quality.
 > SPEC §6 ≥ 0.45 gate **NOT YET MET** (-0.065). Closes via Phase 1.6 broader corpus +
 > Phase 1.7 fixture scale + Phase 2.3 ensemble cross-judge.
 >
-> Showcase artifact: [`results/ci-medomni-heldout-consolidated-20260429-173557/CARD.md`](results/ci-medomni-heldout-consolidated-20260429-173557/CARD.md)
+> Showcase artifact: [`results/canonical-2026-05-01-hb-hard-n1000/CARD.md`](results/canonical-2026-05-01-hb-hard-n1000/CARD.md)
 
 This is the v0.1.0 public scaffold. The held-out mean is honest, the methodology is documented
 in [`docs/methodology.md`](findings/research/2026-04-29-medomni-v0/methodology-status.md), and the
