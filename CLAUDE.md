@@ -1,4 +1,16 @@
-# CLAUDE.md — prism42-nemotron-med (private)
+# CLAUDE.md — medomni (public)
+
+## Repo relationship
+
+This is the **public** release/demo repo (`github.com/GOATnote-Inc/medomni`,
+deployed to `medomni.vercel.app`). It hosts `web/` (Next.js BFF + UI) and
+release artifacts. Active research/training lives in the **private** sister
+repo `github.com/GOATnote-Inc/prism42-nemotron-med` (factory_loop, PEFT
+production training, evals, CARDs — no web app). Same public/private split
+pattern as `prism42` (public) ↔ `prism2` (private). The hot-path markers
+below were inherited from the private repo's charter and still apply
+verbatim until split out — the isolation contract (don't touch the
+prism42 prod surface, don't touch ElevenLabs/LiveKit/DNS) holds for both.
 
 ## §0 — HOT-PATH MARKERS (read first, every session)
 
