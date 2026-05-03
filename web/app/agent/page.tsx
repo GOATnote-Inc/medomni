@@ -7,6 +7,7 @@ import { AudioRecorder } from "@/components/AudioRecorder";
 import type { PubMedSearchResult } from "@/lib/tools/pubmed";
 import type { PrimeKGSubgraphResult } from "@/lib/tools/primekg";
 import type { GuidelineCurrencyResult } from "@/lib/tools/guideline-currency";
+import type { CalculatorResult } from "@/lib/tools/clinical-calculator";
 
 interface PubMedToolPart {
   type: "tool-pubmed_search";
@@ -30,6 +31,14 @@ interface GuidelineToolPart {
   state: "input-streaming" | "input-available" | "output-available" | "output-error";
   input?: { query?: string; maxResults?: number };
   output?: GuidelineCurrencyResult | { error: string };
+}
+
+interface CalculatorToolPart {
+  type: "tool-clinical_calculate";
+  toolCallId: string;
+  state: "input-streaming" | "input-available" | "output-available" | "output-error";
+  input?: { score?: string; inputs?: Record<string, unknown> };
+  output?: CalculatorResult | { error: string };
 }
 
 interface FilePart {
@@ -100,11 +109,14 @@ export default function AgentPage() {
           <ModeToggle mode={mode} onChange={setMode} disabled={busy} />
         </div>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">
-          Clinical agent · 3 sovereign tools
+          Clinical agent · 4 sovereign tools
         </h1>
         <div className="flex flex-wrap gap-2 text-[11px]">
           <span className="px-2 py-0.5 rounded-full border border-amber-300 bg-amber-50 text-amber-800">
             guideline currency
+          </span>
+          <span className="px-2 py-0.5 rounded-full border border-violet-300 bg-violet-50 text-violet-800">
+            calculators
           </span>
           <span className="px-2 py-0.5 rounded-full border border-slate-300 bg-slate-50 text-slate-700">
             PubMed
@@ -174,6 +186,9 @@ export default function AgentPage() {
                 }
                 if (part.type === "tool-guideline_currency_check") {
                   return <GuidelineToolCard key={key} part={part as GuidelineToolPart} />;
+                }
+                if (part.type === "tool-clinical_calculate") {
+                  return <CalculatorToolCard key={key} part={part as CalculatorToolPart} />;
                 }
                 return null;
               })}
@@ -259,10 +274,14 @@ export default function AgentPage() {
   );
 }
 
-const SAMPLE_QUESTIONS: Array<{ tool: "currency" | "pubmed" | "primekg"; q: string }> = [
+const SAMPLE_QUESTIONS: Array<{ tool: "currency" | "calc" | "pubmed" | "primekg"; q: string }> = [
   {
     tool: "currency",
     q: "Is warfarin still first-line for non-valvular AFib in a 72-year-old?",
+  },
+  {
+    tool: "calc",
+    q: "72yo woman with HTN, DM, prior TIA, no CHF/vascular disease — what's her CHA2DS2-VASc and should she be anticoagulated?",
   },
   {
     tool: "pubmed",
@@ -275,12 +294,14 @@ const SAMPLE_QUESTIONS: Array<{ tool: "currency" | "pubmed" | "primekg"; q: stri
 ];
 
 function SampleQuestions({ onPick }: { onPick: (q: string) => void }) {
-  const colorFor = (t: "currency" | "pubmed" | "primekg") =>
+  const colorFor = (t: "currency" | "calc" | "pubmed" | "primekg") =>
     t === "currency"
       ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
-      : t === "pubmed"
-        ? "border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100"
-        : "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100";
+      : t === "calc"
+        ? "border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
+        : t === "pubmed"
+          ? "border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100"
+          : "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100";
   return (
     <section className="flex flex-col gap-2">
       <p className="text-xs uppercase tracking-wider text-slate-500">
@@ -368,6 +389,40 @@ function MicGlyph() {
       <path d="M5 11a7 7 0 0 0 14 0" />
       <line x1="12" y1="19" x2="12" y2="22" />
     </svg>
+  );
+}
+
+function CalculatorToolCard({ part }: { part: CalculatorToolPart }) {
+  const score = part.input?.score;
+  const output = part.output;
+  return (
+    <div className="border border-violet-300 rounded-md bg-violet-50/60 px-3 py-2 text-sm">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wider">
+        <span className="text-violet-800 font-medium">tool · clinical_calculate</span>
+        <span className="text-violet-400">·</span>
+        <span className="text-violet-600">{part.state.replace("-", " ")}</span>
+      </div>
+      {score && (
+        <div className="mt-1 text-slate-700">
+          <span className="text-slate-400">score:</span> {score}
+        </div>
+      )}
+      {output && "error" in output && (
+        <div className="mt-2 text-rose-700 text-xs">error: {output.error}</div>
+      )}
+      {output && "score_name" in output && (
+        <div className="mt-2 flex flex-col gap-1.5">
+          <div className="text-slate-800 font-medium">
+            {output.score_name}: {output.score} —{" "}
+            <span className="text-violet-700">{output.risk_band}</span>
+          </div>
+          <div className="text-xs text-slate-700 leading-relaxed">
+            {output.interpretation}
+          </div>
+          <div className="text-[11px] text-slate-500 italic">{output.citation}</div>
+        </div>
+      )}
+    </div>
   );
 }
 
