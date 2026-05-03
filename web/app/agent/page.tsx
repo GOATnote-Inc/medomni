@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import { AudioRecorder } from "@/components/AudioRecorder";
 import type { PubMedSearchResult } from "@/lib/tools/pubmed";
 
 interface PubMedToolPart {
@@ -13,27 +14,81 @@ interface PubMedToolPart {
   output?: PubMedSearchResult | { error: string };
 }
 
+interface FilePart {
+  type: "file";
+  mediaType: string;
+  url: string;
+  filename?: string;
+}
+
+type Mode = "text" | "voice";
+
 export default function AgentPage() {
+  const [mode, setMode] = useState<Mode>("text");
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status } = useChat({
+  const [pendingAudio, setPendingAudio] = useState<{ url: string; durationMs: number } | null>(null);
+  const [audioError, setAudioError] = useState<string | null>(null);
+
+  const { messages, sendMessage, status, stop } = useChat({
     transport: new DefaultChatTransport({ api: "/api/agent" }),
   });
 
   const busy = status === "submitted" || status === "streaming";
+  const hasAudio = pendingAudio !== null;
+
+  function handleAudio(url: string, durationMs: number) {
+    setPendingAudio({ url, durationMs });
+    setAudioError(null);
+  }
+
+  function clearAudio() {
+    setPendingAudio(null);
+  }
+
+  async function submit() {
+    if (busy) return;
+    const trimmed = input.trim();
+    if (mode === "voice" && pendingAudio) {
+      const followup = trimmed ||
+        "Transcribe the audio and answer the clinical question it contains. Cite guidelines and PMIDs where they meaningfully change the answer.";
+      await sendMessage({
+        text: followup,
+        files: [
+          {
+            type: "file",
+            mediaType: "audio/wav",
+            url: pendingAudio.url,
+            filename: `recording-${pendingAudio.durationMs}ms.wav`,
+          } as FilePart,
+        ],
+      });
+      setInput("");
+      setPendingAudio(null);
+      return;
+    }
+    if (mode === "text" && trimmed) {
+      await sendMessage({ text: trimmed });
+      setInput("");
+    }
+  }
 
   return (
     <main className="flex-1 w-full max-w-4xl mx-auto px-6 py-10 flex flex-col gap-6">
       <header className="flex flex-col gap-2">
-        <p className="text-xs tracking-widest uppercase text-slate-500 font-medium">
-          GOATnote · MedOmni · agent (day 1)
-        </p>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-xs tracking-widest uppercase text-slate-500 font-medium">
+            GOATnote · MedOmni · agent
+          </p>
+          <ModeToggle mode={mode} onChange={setMode} disabled={busy} />
+        </div>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">
           Agent loop with PubMed search
         </h1>
         <p className="max-w-2xl text-sm text-slate-600 leading-relaxed">
-          The model reasons, decides whether to consult PubMed, runs the search,
-          then writes its answer with citations. Reasoning, tool calls, and the
-          final answer stream live below. No PHI; public demo.
+          Ask in text or voice. The model reasons, decides whether to consult
+          PubMed, runs the search, then writes its answer with citations.
+          Audio in, text out — single forward pass on Nemotron-3-Nano-Omni
+          (no separate ASR model). Public demo, no PHI.
         </p>
       </header>
 
@@ -54,10 +109,18 @@ export default function AgentPage() {
                   );
                 }
                 if (part.type === "reasoning") {
+                  // For voice messages the model is instructed to start with
+                  // "Transcript: ..." — this lets the user verify the ASR
+                  // before reading the answer. Auto-expanded while streaming.
+                  const looksLikeTranscript = part.text.trimStart().toLowerCase().startsWith("transcript:");
                   return (
-                    <details key={key} className="text-sm text-slate-500">
+                    <details
+                      key={key}
+                      className="text-sm text-slate-500"
+                      open={looksLikeTranscript || part.state === "streaming"}
+                    >
                       <summary className="cursor-pointer text-xs uppercase tracking-wider text-slate-400 hover:text-slate-600">
-                        reasoning
+                        {looksLikeTranscript ? "transcript + reasoning" : "reasoning"}
                       </summary>
                       <div className="whitespace-pre-wrap mt-2 italic border-l-2 border-slate-200 pl-3">
                         {part.text}
@@ -65,9 +128,11 @@ export default function AgentPage() {
                     </details>
                   );
                 }
+                if (part.type === "file" && (part as FilePart).mediaType?.startsWith("audio/")) {
+                  return <AudioMessageChip key={key} url={(part as FilePart).url} />;
+                }
                 if (part.type === "tool-pubmed_search") {
-                  const tp = part as PubMedToolPart;
-                  return <PubMedToolCard key={key} part={tp} />;
+                  return <PubMedToolCard key={key} part={part as PubMedToolPart} />;
                 }
                 return null;
               })}
@@ -75,36 +140,150 @@ export default function AgentPage() {
           </div>
         ))}
         {busy && (
-          <div className="text-xs text-slate-500 italic">working...</div>
+          <div className="flex items-center gap-2 text-xs text-slate-500 italic">
+            <span>working...</span>
+            <button
+              type="button"
+              onClick={() => stop()}
+              className="text-slate-400 hover:text-slate-600 underline"
+            >
+              stop
+            </button>
+          </div>
         )}
       </section>
 
       <form
-        className="flex gap-2 sticky bottom-4"
+        className="flex flex-col gap-2 sticky bottom-4"
         onSubmit={(e) => {
           e.preventDefault();
-          const trimmed = input.trim();
-          if (!trimmed || busy) return;
-          sendMessage({ text: trimmed });
-          setInput("");
+          submit();
         }}
       >
-        <input
-          className="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-slate-500"
-          placeholder="Ask a clinical question..."
-          value={input}
-          onChange={(e) => setInput(e.currentTarget.value)}
-          disabled={busy}
-        />
-        <button
-          type="submit"
-          className="rounded-md bg-slate-900 text-white px-4 py-2 text-sm disabled:bg-slate-400"
-          disabled={busy || input.trim().length === 0}
-        >
-          ask
-        </button>
+        {audioError && (
+          <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-md px-3 py-2">
+            {audioError}
+          </div>
+        )}
+        {pendingAudio && (
+          <div className="flex items-center gap-3 px-3 py-2 rounded-md border border-slate-300 bg-slate-50 text-xs">
+            <div className="flex items-center gap-2 text-slate-700">
+              <MicGlyph />
+              <span>Recording attached · {(pendingAudio.durationMs / 1000).toFixed(1)}s · 16 kHz mono PCM</span>
+            </div>
+            <button
+              type="button"
+              onClick={clearAudio}
+              className="ml-auto text-slate-500 hover:text-slate-800"
+            >
+              clear
+            </button>
+          </div>
+        )}
+        <div className="flex gap-2 items-center">
+          {mode === "voice" && (
+            <AudioRecorder
+              onAudio={handleAudio}
+              onError={setAudioError}
+              disabled={busy || hasAudio}
+            />
+          )}
+          <input
+            className="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-slate-500"
+            placeholder={
+              mode === "voice"
+                ? hasAudio
+                  ? "Optional follow-up text + send..."
+                  : "Tap the mic to record. Optional follow-up text below."
+                : "Ask a clinical question..."
+            }
+            value={input}
+            onChange={(e) => setInput(e.currentTarget.value)}
+            disabled={busy}
+          />
+          <button
+            type="submit"
+            className="rounded-md bg-slate-900 text-white px-4 py-2 text-sm disabled:bg-slate-400"
+            disabled={
+              busy ||
+              (mode === "text" && input.trim().length === 0) ||
+              (mode === "voice" && !hasAudio && input.trim().length === 0)
+            }
+          >
+            ask
+          </button>
+        </div>
       </form>
     </main>
+  );
+}
+
+function ModeToggle({
+  mode,
+  onChange,
+  disabled,
+}: {
+  mode: Mode;
+  onChange: (m: Mode) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="input mode"
+      className="inline-flex border border-slate-300 rounded-md text-xs overflow-hidden"
+    >
+      {(["text", "voice"] as const).map((m) => {
+        const active = m === mode;
+        return (
+          <button
+            key={m}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            disabled={disabled}
+            onClick={() => onChange(m)}
+            className={
+              active
+                ? "px-3 py-1.5 bg-slate-900 text-white font-medium"
+                : "px-3 py-1.5 bg-white text-slate-600 hover:bg-slate-100 disabled:text-slate-400"
+            }
+          >
+            {m}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function AudioMessageChip({ url }: { url: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+      <MicGlyph />
+      <span className="text-slate-700">voice input</span>
+      <audio src={url} controls className="h-7" />
+    </div>
+  );
+}
+
+function MicGlyph() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-rose-600"
+    >
+      <rect x="9" y="2" width="6" height="13" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0" />
+      <line x1="12" y1="19" x2="12" y2="22" />
+    </svg>
   );
 }
 
