@@ -30,6 +30,11 @@ import {
   guidelineCurrencyCheck,
   type GuidelineCurrencyResult,
 } from "@/lib/tools/guideline-currency";
+import {
+  clinicalCalculate,
+  SUPPORTED_SCORES,
+  type CalculatorResult,
+} from "@/lib/tools/clinical-calculator";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -123,6 +128,29 @@ const TOOL_SPEC = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "clinical_calculate",
+      description:
+        "Compute a standard clinical risk/severity score with a structured input. Supported: cha2ds2-vasc (stroke risk in non-valvular AFib), has-bled (bleed risk on anticoag), meld-na (end-stage liver severity), wells-dvt (DVT pre-test probability), perc (rule out PE in low-risk patients). Use whenever the user gives enough patient detail to compute one of these scores — DON'T guess the math; call the tool. Returns score + risk band + interpretation + citation.",
+      parameters: {
+        type: "object",
+        properties: {
+          score: {
+            type: "string",
+            description: "Score name. One of: cha2ds2-vasc, has-bled, meld-na, wells-dvt, perc.",
+            enum: ["cha2ds2-vasc", "has-bled", "meld-na", "wells-dvt", "perc"],
+          },
+          inputs: {
+            type: "object",
+            description: "Score-specific inputs. Examples:\n- cha2ds2-vasc: {age:72, sex:'female', chf:false, hypertension:true, diabetes:true, stroke_tia_thromboembolism:false, vascular_disease:false}\n- has-bled: {hypertension_uncontrolled:true, abnormal_renal:false, stroke_history:false, bleeding_history:false, labile_inr:false, age_over_65:true, drugs_predisposing_bleeding:true, alcohol_use:false}\n- meld-na: {bilirubin_mgdl:2.1, inr:1.6, creatinine_mgdl:1.4, sodium_meql:131, on_dialysis:false}\n- wells-dvt: {active_cancer:false, localized_tenderness_along_deep_veins:true, entire_leg_swollen:true, calf_swelling_3cm_vs_other:true, alternative_diagnosis_at_least_as_likely:false}\n- perc: {age_under_50:true, hr_under_100:true, spo2_at_least_95:true, no_unilateral_leg_swelling:true, no_hemoptysis:true, no_recent_surgery_trauma_4wk:true, no_prior_pe_dvt:true, no_estrogen_use:true}",
+          },
+        },
+        required: ["score"],
+      },
+    },
+  },
 ];
 
 const SYSTEM_PROMPT = `You are MedOmni, a medical reasoning assistant served sovereign on NVIDIA Blackwell B300 hardware. You help clinicians (RNs, NPs, PAs, MDs) and trained healthcare workers think through clinical scenarios.
@@ -141,9 +169,10 @@ When the user message contains audio:
 
 Tool use:
 - Call guideline_currency_check FIRST when your draft answer relies on a clinical default that may have shifted since 2023 (DOAC vs warfarin, H. pylori first-line, pneumococcal vaccination, opioid taper, GLP-1 contraindications, denosumab discontinuation, SGLT2 in HFrEF, etc.). One quick call up front prevents you from confidently citing a stale default.
+- Call clinical_calculate whenever the user gives enough patient detail to compute a standard score (CHA2DS2-VASc, HAS-BLED, MELD-Na, Wells DVT, PERC). Do NOT estimate these scores in your head — the tool is exact.
 - Call pubmed_search when recent literature would meaningfully change your answer.
 - Call primekg_lookup when the question turns on relationships between named medical entities — drug-drug interactions, drug-disease contraindications, gene-disease associations, pathway membership. Especially valuable for polypharmacy questions.
-- Two tool calls per turn is the hard cap. After that, answer from prior knowledge and acknowledge the limit.
+- Three tool calls per turn is the hard cap. After that, answer from prior knowledge and acknowledge the limit.
 - If a tool returns an "error" field or zero matches, do not retry — answer from prior knowledge and note what was unavailable.
 
 This is a public demo. Be tight; every word counts.`;
@@ -384,6 +413,7 @@ type ToolResult =
   | PubMedSearchResult
   | PrimeKGSubgraphResult
   | GuidelineCurrencyResult
+  | CalculatorResult
   | { error: string };
 
 async function runTool(name: string, argsRaw: string): Promise<ToolResult> {
@@ -423,6 +453,21 @@ async function runTool(name: string, argsRaw: string): Promise<ToolResult> {
     if (!query.trim()) return { error: "query is required" };
     try {
       return await guidelineCurrencyCheck({ query, maxResults });
+    } catch (e) {
+      return { error: (e as Error).message };
+    }
+  }
+
+  if (name === "clinical_calculate") {
+    const score = typeof parsed.score === "string" ? parsed.score : "";
+    const inputs = typeof parsed.inputs === "object" && parsed.inputs !== null
+      ? parsed.inputs as Record<string, unknown>
+      : {};
+    if (!score.trim()) {
+      return { error: `score is required. Supported: ${SUPPORTED_SCORES.join(", ")}` };
+    }
+    try {
+      return await clinicalCalculate({ score, inputs });
     } catch (e) {
       return { error: (e as Error).message };
     }
