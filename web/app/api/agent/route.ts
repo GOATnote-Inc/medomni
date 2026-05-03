@@ -25,6 +25,7 @@ import {
 } from "ai";
 import type { NextRequest } from "next/server";
 import { pubmedSearch, type PubMedSearchResult } from "@/lib/tools/pubmed";
+import { primekgLookup, type PrimeKGSubgraphResult } from "@/lib/tools/primekg";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -62,6 +63,37 @@ const TOOL_SPEC = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "primekg_lookup",
+      description:
+        "Look up an entity in PrimeKG (a curated medical knowledge graph: drugs, diseases, genes, phenotypes, anatomy) and return its k-hop neighborhood. Returns connected drugs (e.g. drug-drug interactions), associated diseases/phenotypes, and pathway annotations as a structured text block. Use when the user asks about drug interactions, contraindications, disease-gene associations, or relationships between named medical entities.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description:
+              "Name of the entity to look up (e.g. 'warfarin', 'ibrutinib', 'atrial fibrillation', 'BRCA1'). Free-text; the service runs case-insensitive substring matching against PrimeKG node names.",
+          },
+          maxHops: {
+            type: "integer",
+            description: "Graph traversal depth (1-3, default 2). Higher = broader neighborhood.",
+            minimum: 1,
+            maximum: 3,
+          },
+          maxNodes: {
+            type: "integer",
+            description: "Maximum nodes in returned subgraph (10-150, default 60).",
+            minimum: 10,
+            maximum: 150,
+          },
+        },
+        required: ["query"],
+      },
+    },
+  },
 ];
 
 const SYSTEM_PROMPT = `You are MedOmni, a medical reasoning assistant served sovereign on NVIDIA Blackwell B300 hardware. You help clinicians (RNs, NPs, PAs, MDs) and trained healthcare workers think through clinical scenarios.
@@ -78,7 +110,11 @@ When the user message contains audio:
 - Begin your reasoning with "Transcript: <verbatim transcript>" on the first line so the user can see what you heard.
 - Then continue normally — reasoning, optional tool call, final answer.
 
-You may call pubmed_search when current literature would meaningfully change your answer. Otherwise, answer directly.
+Tool use:
+- Call pubmed_search when recent literature would meaningfully change your answer.
+- Call primekg_lookup when the question turns on relationships between named medical entities — drug-drug interactions, drug-disease contraindications, gene-disease associations, pathway membership. Especially valuable for polypharmacy questions.
+- One tool call per turn is usually enough. Two is the hard cap. After that, answer from prior knowledge and acknowledge the limit.
+- If a tool returns an "error" field, do not retry the same tool with the same arguments — answer from prior knowledge and note what was unavailable.
 
 This is a public demo. Be tight; every word counts.`;
 
@@ -314,27 +350,40 @@ async function streamOneStep(
 
 // --- Tool execution --------------------------------------------------------
 
-async function runTool(
-  name: string,
-  argsRaw: string,
-): Promise<PubMedSearchResult | { error: string }> {
-  if (name !== "pubmed_search") {
-    return { error: `unknown tool: ${name}` };
-  }
-  let parsed: { query?: unknown; maxResults?: unknown };
+type ToolResult = PubMedSearchResult | PrimeKGSubgraphResult | { error: string };
+
+async function runTool(name: string, argsRaw: string): Promise<ToolResult> {
+  let parsed: Record<string, unknown>;
   try {
-    parsed = JSON.parse(argsRaw || "{}");
+    parsed = JSON.parse(argsRaw || "{}") as Record<string, unknown>;
   } catch (e) {
     return { error: `invalid tool arguments JSON: ${(e as Error).message}` };
   }
-  const query = typeof parsed.query === "string" ? parsed.query : "";
-  const maxResults = typeof parsed.maxResults === "number" ? parsed.maxResults : 5;
-  if (!query.trim()) return { error: "query is required" };
-  try {
-    return await pubmedSearch({ query, maxResults });
-  } catch (e) {
-    return { error: (e as Error).message };
+
+  if (name === "pubmed_search") {
+    const query = typeof parsed.query === "string" ? parsed.query : "";
+    const maxResults = typeof parsed.maxResults === "number" ? parsed.maxResults : 5;
+    if (!query.trim()) return { error: "query is required" };
+    try {
+      return await pubmedSearch({ query, maxResults });
+    } catch (e) {
+      return { error: (e as Error).message };
+    }
   }
+
+  if (name === "primekg_lookup") {
+    const query = typeof parsed.query === "string" ? parsed.query : "";
+    const maxHops = typeof parsed.maxHops === "number" ? parsed.maxHops : 2;
+    const maxNodes = typeof parsed.maxNodes === "number" ? parsed.maxNodes : 60;
+    if (!query.trim()) return { error: "query is required" };
+    try {
+      return await primekgLookup({ query, maxHops, maxNodes });
+    } catch (e) {
+      return { error: (e as Error).message };
+    }
+  }
+
+  return { error: `unknown tool: ${name}` };
 }
 
 // --- Route handler ---------------------------------------------------------
@@ -431,7 +480,7 @@ export async function POST(req: NextRequest) {
           });
 
           if (totalToolCalls > 2) {
-            const quotaMsg = "Tool quota for this turn is exceeded. Do not call pubmed_search again. Answer the user from prior knowledge and clearly note that recent literature could not be retrieved.";
+            const quotaMsg = "Tool quota for this turn is exceeded. Do not call any more tools. Answer the user from prior knowledge and clearly note which information could not be retrieved.";
             writer.write({
               type: "tool-output-available",
               toolCallId: tc.id,
