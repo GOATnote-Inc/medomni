@@ -6,6 +6,7 @@ import { DefaultChatTransport } from "ai";
 import { AudioRecorder } from "@/components/AudioRecorder";
 import type { PubMedSearchResult } from "@/lib/tools/pubmed";
 import type { PrimeKGSubgraphResult } from "@/lib/tools/primekg";
+import type { GuidelineCurrencyResult } from "@/lib/tools/guideline-currency";
 
 interface PubMedToolPart {
   type: "tool-pubmed_search";
@@ -21,6 +22,14 @@ interface PrimeKGToolPart {
   state: "input-streaming" | "input-available" | "output-available" | "output-error";
   input?: { query?: string; maxHops?: number; maxNodes?: number };
   output?: PrimeKGSubgraphResult | { error: string };
+}
+
+interface GuidelineToolPart {
+  type: "tool-guideline_currency_check";
+  toolCallId: string;
+  state: "input-streaming" | "input-available" | "output-available" | "output-error";
+  input?: { query?: string; maxResults?: number };
+  output?: GuidelineCurrencyResult | { error: string };
 }
 
 interface FilePart {
@@ -145,6 +154,9 @@ export default function AgentPage() {
                 }
                 if (part.type === "tool-primekg_lookup") {
                   return <PrimeKGToolCard key={key} part={part as PrimeKGToolPart} />;
+                }
+                if (part.type === "tool-guideline_currency_check") {
+                  return <GuidelineToolCard key={key} part={part as GuidelineToolPart} />;
                 }
                 return null;
               })}
@@ -296,6 +308,58 @@ function MicGlyph() {
       <path d="M5 11a7 7 0 0 0 14 0" />
       <line x1="12" y1="19" x2="12" y2="22" />
     </svg>
+  );
+}
+
+function GuidelineToolCard({ part }: { part: GuidelineToolPart }) {
+  const query = part.input?.query;
+  const output = part.output;
+
+  return (
+    <div className="border border-amber-300 rounded-md bg-amber-50/60 px-3 py-2 text-sm">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wider">
+        <span className="text-amber-800 font-medium">tool · guideline_currency_check</span>
+        <span className="text-amber-400">·</span>
+        <span className="text-amber-600">{part.state.replace("-", " ")}</span>
+      </div>
+      {query && (
+        <div className="mt-1 text-slate-700">
+          <span className="text-slate-400">concept:</span> {query}
+        </div>
+      )}
+      {output && "error" in output && (
+        <div className="mt-2 text-rose-700 text-xs">error: {output.error}</div>
+      )}
+      {output && "matches" in output && (
+        <div className="mt-2 flex flex-col gap-2">
+          <div className="text-xs text-slate-600">
+            {output.match_count} of {output.registry_size} registry entries matched
+          </div>
+          {output.matches.length === 0 && (
+            <div className="text-xs italic text-slate-500">
+              No registry hit. The model should answer from prior knowledge and
+              cite normally.
+            </div>
+          )}
+          {output.matches.map((m) => (
+            <div
+              key={m.id}
+              className="text-xs leading-relaxed border-l-2 border-amber-300 pl-3"
+            >
+              <div className="text-slate-700 font-medium">{m.concept}</div>
+              <div className="mt-0.5 text-slate-500">
+                <span className="text-rose-700">stale:</span> {m.stale_default}
+              </div>
+              <div className="mt-0.5 text-slate-700">
+                <span className="text-emerald-700">current:</span>{" "}
+                {m.current_default}
+              </div>
+              <div className="mt-0.5 text-slate-500 italic">{m.citation}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
