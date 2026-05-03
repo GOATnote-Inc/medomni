@@ -26,6 +26,10 @@ import {
 import type { NextRequest } from "next/server";
 import { pubmedSearch, type PubMedSearchResult } from "@/lib/tools/pubmed";
 import { primekgLookup, type PrimeKGSubgraphResult } from "@/lib/tools/primekg";
+import {
+  guidelineCurrencyCheck,
+  type GuidelineCurrencyResult,
+} from "@/lib/tools/guideline-currency";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -94,6 +98,31 @@ const TOOL_SPEC = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "guideline_currency_check",
+      description:
+        "Check whether a clinical default the user mentions (or that you are about to recommend) is the CURRENT standard or a stale recommendation that has been superseded since 2023. Returns matched entries from a curated registry with the stale default, the current default, and the citing guideline body+year. Use early in your reasoning whenever the question touches a topic where guidance has shifted recently (DOAC vs warfarin, H. pylori first-line, adult pneumococcal vaccination, BPH therapy, opioid taper, GLP-1 contraindications, denosumab discontinuation, SGLT2 in non-diabetic HFrEF, etc.) — call once with the clinical concept, then incorporate the current default into your final answer.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description:
+              "Clinical concept or phrase to check (e.g. 'H. pylori first-line therapy', 'PCV13 adult vaccination', 'warfarin AFib first-line', 'denosumab stop'). Free-text; the registry runs token overlap.",
+          },
+          maxResults: {
+            type: "integer",
+            description: "Maximum entries to return (1-8, default 3).",
+            minimum: 1,
+            maximum: 8,
+          },
+        },
+        required: ["query"],
+      },
+    },
+  },
 ];
 
 const SYSTEM_PROMPT = `You are MedOmni, a medical reasoning assistant served sovereign on NVIDIA Blackwell B300 hardware. You help clinicians (RNs, NPs, PAs, MDs) and trained healthcare workers think through clinical scenarios.
@@ -111,10 +140,11 @@ When the user message contains audio:
 - Then continue normally — reasoning, optional tool call, final answer.
 
 Tool use:
+- Call guideline_currency_check FIRST when your draft answer relies on a clinical default that may have shifted since 2023 (DOAC vs warfarin, H. pylori first-line, pneumococcal vaccination, opioid taper, GLP-1 contraindications, denosumab discontinuation, SGLT2 in HFrEF, etc.). One quick call up front prevents you from confidently citing a stale default.
 - Call pubmed_search when recent literature would meaningfully change your answer.
 - Call primekg_lookup when the question turns on relationships between named medical entities — drug-drug interactions, drug-disease contraindications, gene-disease associations, pathway membership. Especially valuable for polypharmacy questions.
-- One tool call per turn is usually enough. Two is the hard cap. After that, answer from prior knowledge and acknowledge the limit.
-- If a tool returns an "error" field, do not retry the same tool with the same arguments — answer from prior knowledge and note what was unavailable.
+- Two tool calls per turn is the hard cap. After that, answer from prior knowledge and acknowledge the limit.
+- If a tool returns an "error" field or zero matches, do not retry — answer from prior knowledge and note what was unavailable.
 
 This is a public demo. Be tight; every word counts.`;
 
@@ -350,7 +380,11 @@ async function streamOneStep(
 
 // --- Tool execution --------------------------------------------------------
 
-type ToolResult = PubMedSearchResult | PrimeKGSubgraphResult | { error: string };
+type ToolResult =
+  | PubMedSearchResult
+  | PrimeKGSubgraphResult
+  | GuidelineCurrencyResult
+  | { error: string };
 
 async function runTool(name: string, argsRaw: string): Promise<ToolResult> {
   let parsed: Record<string, unknown>;
@@ -378,6 +412,17 @@ async function runTool(name: string, argsRaw: string): Promise<ToolResult> {
     if (!query.trim()) return { error: "query is required" };
     try {
       return await primekgLookup({ query, maxHops, maxNodes });
+    } catch (e) {
+      return { error: (e as Error).message };
+    }
+  }
+
+  if (name === "guideline_currency_check") {
+    const query = typeof parsed.query === "string" ? parsed.query : "";
+    const maxResults = typeof parsed.maxResults === "number" ? parsed.maxResults : 3;
+    if (!query.trim()) return { error: "query is required" };
+    try {
+      return await guidelineCurrencyCheck({ query, maxResults });
     } catch (e) {
       return { error: (e as Error).message };
     }

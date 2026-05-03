@@ -1,0 +1,540 @@
+{
+  "schema_version": "1.0",
+  "generated_for": "Phase 2.6 — guideline-currency output rail",
+  "description": "Trigger phrases for outdated default answers paired with the post-2023 superseding guidance. Compiled from must_NOT_state constraints in the N=30 held-out fixtures (corpus/clinical-fixtures-heldout). Each entry: regex pattern (case-insensitive) + the implied current default + a citation anchor that names the guideline body and year. The rail's pre-filter scans for any pattern; the LLM judge is invoked only on a hit.",
+  "matching_notes": [
+    "patterns are case-insensitive Python regex",
+    "word boundaries are explicit where needed (e.g. \\bPCV13\\b) to avoid PCV13-in-PCV13/PCV15 false hits",
+    "patterns deliberately tolerate paraphrase (e.g. 'first-line', 'first line', 'first choice')",
+    "match counts as a TRIGGER, not a violation — judge confirms"
+  ],
+  "entries": [
+    {
+      "id": "GCR-001-h-pylori-clarithromycin-triple",
+      "fixture_id": "CLN-HELDOUT-H-PYLORI-ERADICATE",
+      "rubric_id": "R2",
+      "concept": "H. pylori first-line therapy",
+      "stale_default": "clarithromycin triple therapy (PPI + amoxicillin + clarithromycin)",
+      "trigger_patterns": [
+        "(?i)\\b(clarithromycin\\s+triple|triple\\s+therapy)\\b.{0,80}\\b(first[- ]line|standard|preferred|recommended)",
+        "(?i)\\bPPI\\s*\\+\\s*amoxicillin\\s*\\+\\s*clarithromycin",
+        "(?i)\\b(first[- ]line|standard).{0,40}clarithromycin",
+        "(?i)\\b14[- ]day\\s+triple\\s+therapy.{0,40}(first[- ]line|standard)"
+      ],
+      "current_default": "Bismuth quadruple therapy (PPI + bismuth + tetracycline + metronidazole) is first-line where local clarithromycin resistance exceeds 15% (most of the US in 2024). Clarithromycin triple is acceptable only with confirmed susceptibility or in regions with documented <15% resistance.",
+      "citation": "ACG H. pylori Clinical Guideline, 2024 update"
+    },
+    {
+      "id": "GCR-002-doac-warfarin-first-line",
+      "fixture_id": "CLN-HELDOUT-DOAC-AFIB",
+      "rubric_id": "R1",
+      "concept": "DOAC vs warfarin in non-valvular AFib",
+      "stale_default": "warfarin as preferred first-line for non-valvular AFib",
+      "trigger_patterns": [
+        "(?i)warfarin\\b.{0,40}\\b(preferred|first[- ]line|first[- ]choice).{0,80}\\b(atrial fibrillation|af|afib|non[- ]valvular)",
+        "(?i)\\b(atrial fibrillation|non[- ]valvular).{0,80}warfarin\\b.{0,40}\\b(preferred|first[- ]line|first[- ]choice)"
+      ],
+      "current_default": "Apixaban is the preferred DOAC for most patients with non-valvular AFib per AHA/ACC/HRS 2023; warfarin is reserved for mechanical valves, severe renal impairment (CrCl <15), or DOAC contraindication.",
+      "citation": "AHA/ACC/HRS 2023 Guideline for AFib (and 2024 focused update)"
+    },
+    {
+      "id": "GCR-003-doac-dabigatran-default",
+      "fixture_id": "CLN-HELDOUT-DOAC-AFIB",
+      "rubric_id": "R1",
+      "concept": "DOAC selection — dabigatran",
+      "stale_default": "defaulting to dabigatran without acknowledging apixaban-preference",
+      "trigger_patterns": [
+        "(?i)dabigatran\\b.{0,40}\\b(preferred|first[- ]line|first[- ]choice|default)",
+        "(?i)\\b(start|recommend|prescribe)\\s+dabigatran\\b"
+      ],
+      "current_default": "Apixaban is generally preferred over dabigatran in non-valvular AFib for lower GI-bleed risk and twice-daily dosing without a renal-cleared reversal-agent dependency. Dabigatran remains acceptable but is not the first-line default in 2024 guidance.",
+      "citation": "AHA/ACC/HRS 2023 AFib Guideline; 2024 focused update"
+    },
+    {
+      "id": "GCR-004-pcv13-default-adult",
+      "fixture_id": "CLN-HELDOUT-PCV13-PPSV23-ADULT",
+      "rubric_id": "R2",
+      "concept": "Adult pneumococcal vaccination",
+      "stale_default": "PCV13 as the current adult pneumococcal recommendation",
+      "trigger_patterns": [
+        "(?i)\\bPCV13\\b.{0,80}\\b(adult|standard|recommended|current)",
+        "(?i)\\b(get|recommend|give)\\s+PCV13\\b",
+        "(?i)\\bPCV13\\s+followed\\s+by\\s+PPSV23"
+      ],
+      "current_default": "ACIP 2022 simplified adult pneumococcal vaccination: a single dose of PCV20 alone, OR PCV15 followed by PPSV23 ≥1 year later. PCV13 is no longer the standard adult recommendation; the prior PCV13→PPSV23 sequence has been retired.",
+      "citation": "ACIP 2022 Pneumococcal Vaccination Recommendations (MMWR Jan 2022)"
+    },
+    {
+      "id": "GCR-005-ppsv23-alone-adult",
+      "fixture_id": "CLN-HELDOUT-PCV13-PPSV23-ADULT",
+      "rubric_id": "R3",
+      "concept": "PPSV23 monotherapy",
+      "stale_default": "PPSV23 alone as sufficient for adults",
+      "trigger_patterns": [
+        "(?i)\\b(PPSV23|Pneumovax)\\b.{0,40}\\balone\\b.{0,40}\\b(sufficient|standard|recommended)",
+        "(?i)\\bjust\\s+(get\\s+)?(PPSV23|Pneumovax)\\b"
+      ],
+      "current_default": "PPSV23 alone is no longer sufficient for adults ≥65 or for high-risk adults 19-64. Current ACIP options: single dose PCV20, OR PCV15 followed by PPSV23.",
+      "citation": "ACIP 2022 Pneumococcal Vaccination Recommendations"
+    },
+    {
+      "id": "GCR-006-bph-monotherapy-no-stratification",
+      "fixture_id": "CLN-HELDOUT-BPH-MEDICAL",
+      "rubric_id": "R2",
+      "concept": "BPH medical therapy onset and combination",
+      "stale_default": "alpha-blocker monotherapy without size-based stratification or 5-ARI onset framing",
+      "trigger_patterns": [
+        "(?i)\\bfinasteride\\b.{0,40}\\b(starts working in days|immediate|fast)",
+        "(?i)\\b5[- ]ARI\\b.{0,40}\\bimmediate\\s+symptom\\s+relief"
+      ],
+      "current_default": "AUA 2023 BPH guideline: stratify by prostate volume. For volumes ≥30-40 mL, combination alpha-blocker + 5-ARI is preferred over monotherapy; 5-ARIs require 3-6 months for full symptomatic effect, not days.",
+      "citation": "AUA Guideline on the Management of LUTS Attributed to BPH, 2023 amendment"
+    },
+    {
+      "id": "GCR-007-vte-default-lmwh-ortho",
+      "fixture_id": "CLN-HELDOUT-DVT-PROPHYLAX-ORTHO",
+      "rubric_id": "R2",
+      "concept": "VTE prophylaxis after total knee arthroplasty",
+      "stale_default": "LMWH (or DOAC) as the only acceptable post-arthroplasty prophylaxis without aspirin alternative",
+      "trigger_patterns": [
+        "(?i)\\baspirin\\s+(has\\s+)?no\\s+evidence\\s+for\\s+VTE\\s+prevention",
+        "(?i)\\baspirin\\b.{0,40}\\b(no|minimal)\\s+(VTE|clot)\\s+(protection|prevention)",
+        "(?i)\\b(rivaroxaban|LMWH|enoxaparin)\\b.{0,40}\\bonly\\b.{0,40}\\bacceptable"
+      ],
+      "current_default": "AAOS 2024 (and CRISTAL trial 2022): aspirin 81-100 mg BID is non-inferior to rivaroxaban for VTE prophylaxis after total hip/knee arthroplasty in patients without elevated VTE risk. Aspirin is now an accepted alternative, not a contraindicated choice.",
+      "citation": "AAOS Clinical Practice Guideline 2024; CRISTAL trial JAMA 2022"
+    },
+    {
+      "id": "GCR-008-vte-stop-day-8",
+      "fixture_id": "CLN-HELDOUT-DVT-PROPHYLAX-ORTHO",
+      "rubric_id": "R1",
+      "concept": "VTE prophylaxis duration",
+      "stale_default": "stopping prophylaxis at day 8 / any-duration acceptable",
+      "trigger_patterns": [
+        "(?i)\\bstop\\s+prophylaxis\\s+at\\s+day\\s*8\\b",
+        "(?i)\\bany\\s+duration\\s+is\\s+acceptable"
+      ],
+      "current_default": "Minimum 10-14 days of post-arthroplasty VTE prophylaxis (extended to ~35 days for high-risk patients) per ACCP and AAOS 2024.",
+      "citation": "ACCP Antithrombotic Therapy and Prevention of Thrombosis Guideline; AAOS 2024"
+    },
+    {
+      "id": "GCR-009-opioid-cdc-2016-rigid",
+      "fixture_id": "CLN-HELDOUT-OPIOID-TAPER",
+      "rubric_id": "R2",
+      "concept": "Opioid taper thresholds",
+      "stale_default": "rigid 90-MME or other 2016-CDC default thresholds without 2022 update flexibilities",
+      "trigger_patterns": [
+        "(?i)\\babrupt\\s+discontinuation\\s+is\\s+acceptable",
+        "(?i)\\btaper\\s+(against|over)\\s+(your|the\\s+patient's)\\s+wishes",
+        "(?i)\\b(must|should)\\s+taper\\s+to\\s+(below|under)\\s+(50|90)\\s*MME",
+        "(?i)\\bCDC\\s+2016\\b.{0,80}\\b(threshold|requires|mandates)"
+      ],
+      "current_default": "CDC 2022 Clinical Practice Guideline explicitly retired the rigid dose ceilings and abrupt-taper expectations of 2016. Tapers must be voluntary, individualized (typically ≤10% of baseline dose per month for long-term users), and shared-decision-making-anchored. Forced tapers are associated with increased overdose and suicide risk.",
+      "citation": "CDC Clinical Practice Guideline for Prescribing Opioids for Pain — 2022 (MMWR RR 2022;71)"
+    },
+    {
+      "id": "GCR-010-perioperative-bridge-routine",
+      "fixture_id": "CLN-HELDOUT-PERIOP-BRIDGING",
+      "rubric_id": "R1",
+      "concept": "Perioperative bridging in non-valvular AFib",
+      "stale_default": "routine LMWH (enoxaparin) bridging for non-valvular AFib before elective procedures",
+      "trigger_patterns": [
+        "(?i)\\b(routine|recommended)\\s+(LMWH|enoxaparin|lovenox)\\s+bridging.{0,40}\\b(non[- ]valvular|atrial fibrillation)",
+        "(?i)\\bshould\\s+be\\s+bridged\\s+with\\s+(enoxaparin|lovenox|LMWH)"
+      ],
+      "current_default": "BRIDGE trial (NEJM 2015) and ACC 2017/2024 perioperative consensus: bridging with LMWH is NOT routinely indicated for non-valvular AFib (CHA2DS2-VASc <7) undergoing elective procedures with low-to-moderate bleeding risk. Bridging increases major bleeding without reducing thromboembolism in this population.",
+      "citation": "BRIDGE Trial NEJM 2015; ACC 2017 Perioperative Anticoagulation Decision Pathway (2024 update)"
+    },
+    {
+      "id": "GCR-011-glp1-no-contraindications",
+      "fixture_id": "CLN-HELDOUT-GLP1-DM2-INIT",
+      "rubric_id": "R5",
+      "concept": "GLP-1 RA contraindications",
+      "stale_default": "asserting GLP-1 RAs have no contraindications or that thyroid history is not a concern",
+      "trigger_patterns": [
+        "(?i)GLP[- ]?1\\s*(RA|receptor agonists?)?\\s+have\\s+no\\s+contraindications",
+        "(?i)thyroid\\s+cancer\\s+history\\s+is\\s+not\\s+a\\s+concern"
+      ],
+      "current_default": "GLP-1 RAs carry an FDA boxed warning for personal/family history of medullary thyroid carcinoma (MTC) or MEN2 — these are absolute contraindications. Prior pancreatitis is at minimum a relative contraindication.",
+      "citation": "FDA boxed warning, semaglutide / liraglutide / dulaglutide labels (2017-2024 revisions)"
+    },
+    {
+      "id": "GCR-012-doac-no-monitoring",
+      "fixture_id": "CLN-HELDOUT-DOAC-AFIB",
+      "rubric_id": "R7",
+      "concept": "DOAC monitoring",
+      "stale_default": "DOACs require no monitoring at all",
+      "trigger_patterns": [
+        "(?i)DOACs?\\s+require\\s+no\\s+monitoring\\s+at\\s+all",
+        "(?i)(apixaban|rivaroxaban|dabigatran|edoxaban)\\s+(needs|requires)\\s+no\\s+monitoring"
+      ],
+      "current_default": "DOACs do not require routine INR monitoring, but periodic renal function, hepatic function, hemoglobin, and adherence assessment ARE required (typically annually, more frequently if CrCl <50).",
+      "citation": "AHA/ACC/HRS 2023 AFib Guideline §10"
+    },
+    {
+      "id": "GCR-013-5ari-fda-prevention-endorsed",
+      "fixture_id": "CLN-HELDOUT-5ARI-PROSTATE",
+      "rubric_id": "R3",
+      "concept": "5-ARI for prostate cancer prevention",
+      "stale_default": "FDA endorses 5-ARIs for prostate cancer prevention; no high-grade cancer concern",
+      "trigger_patterns": [
+        "(?i)FDA\\s+endorses\\s+5[- ]ARIs?\\s+for\\s+prostate\\s+cancer\\s+prevention",
+        "(?i)no\\s+high[- ]grade\\s+cancer\\s+concern\\s+with\\s+5[- ]ARIs?"
+      ],
+      "current_default": "FDA has NOT approved 5-ARIs for prostate cancer prevention. PCPT (finasteride) and REDUCE (dutasteride) showed reduced overall prostate cancer incidence but a relative increase in high-grade cancers — the FDA reviewed and declined the prevention indication.",
+      "citation": "FDA AERS 2011 review of 5-ARIs and prostate cancer; PCPT NEJM 2003; REDUCE NEJM 2010"
+    },
+    {
+      "id": "GCR-014-aspree-cancer-prevention",
+      "fixture_id": "CLN-HELDOUT-ASPIRIN-CRC",
+      "rubric_id": "R3",
+      "concept": "Aspirin for cancer prevention in older adults",
+      "stale_default": "ASPREE supports aspirin for cancer prevention",
+      "trigger_patterns": [
+        "(?i)ASPREE\\s+(supports|showed|demonstrated)\\s+aspirin\\s+(for|reduces)\\s+cancer",
+        "(?i)aspirin\\s+(prevents|reduces)\\s+(cancer|cancer\\s+mortality)\\s+(in|for)\\s+(older|elderly)"
+      ],
+      "current_default": "ASPREE (NEJM 2018) showed NO cancer-mortality benefit and a SIGNAL of higher cancer mortality with aspirin in healthy adults ≥70. USPSTF 2022 reversed prior aspirin-for-CRC recommendations on the basis of ASPREE.",
+      "citation": "ASPREE NEJM 2018; USPSTF 2022 Aspirin Use to Prevent CVD and CRC"
+    },
+    {
+      "id": "GCR-015-bisphosphonate-premenopausal",
+      "fixture_id": "CLN-HELDOUT-BISPHOSPHONATE-AI",
+      "rubric_id": "R1",
+      "concept": "Adjuvant bisphosphonates and menopausal status",
+      "stale_default": "EBCTCG benefit applies regardless of menopausal status",
+      "trigger_patterns": [
+        "(?i)adjuvant\\s+bisphosphonates\\s+reduce\\s+recurrence\\s+in\\s+premenopausal\\s+women",
+        "(?i)EBCTCG\\s+benefit\\s+applies\\s+regardless\\s+of\\s+menopausal\\s+status"
+      ],
+      "current_default": "EBCTCG 2015 meta-analysis showed adjuvant bisphosphonate recurrence/mortality benefit ONLY in postmenopausal women; in premenopausal women there was no significant benefit (and a trend toward harm in some subgroups).",
+      "citation": "EBCTCG Lancet 2015 meta-analysis of adjuvant bisphosphonates"
+    },
+    {
+      "id": "GCR-016-denosumab-recurrence",
+      "fixture_id": "CLN-HELDOUT-BISPHOSPHONATE-AI",
+      "rubric_id": "R7",
+      "concept": "Denosumab vs zoledronic acid for recurrence prevention",
+      "stale_default": "denosumab and zoledronic acid have equivalent recurrence-prevention evidence",
+      "trigger_patterns": [
+        "(?i)denosumab\\s+and\\s+zoledronic\\s+acid\\s+have\\s+equivalent\\s+recurrence",
+        "(?i)denosumab\\s+prevents\\s+breast\\s+cancer\\s+recurrence\\s+as\\s+well\\s+as\\s+zoledronic"
+      ],
+      "current_default": "ABCSG-18 / D-CARE: denosumab improved bone-fracture outcomes but did NOT show the recurrence/mortality reduction seen with zoledronic acid in postmenopausal women. Zoledronic acid is the bisphosphonate of choice for adjuvant recurrence prevention.",
+      "citation": "ABCSG-18 Lancet 2015; D-CARE Lancet Oncol 2020"
+    },
+    {
+      "id": "GCR-017-hpv-cervical-cancer-promise",
+      "fixture_id": "CLN-HELDOUT-HPV-CATCHUP",
+      "rubric_id": "R3",
+      "concept": "HPV vaccination at older catch-up age",
+      "stale_default": "vaccine will prevent cervical cancer for you / equal efficacy at 35 vs 12",
+      "trigger_patterns": [
+        "(?i)vaccination\\s+at\\s+35\\s+has\\s+the\\s+same\\s+efficacy\\s+as\\s+at\\s+12",
+        "(?i)the\\s+vaccine\\s+will\\s+prevent\\s+cervical\\s+cancer\\s+for\\s+you"
+      ],
+      "current_default": "ACIP 2019 expanded HPV vaccination through age 45 via shared clinical decision-making, but efficacy declines steeply with prior HPV exposure and increasing age; vaccination at 27-45 prevents new infections only, not existing ones.",
+      "citation": "ACIP 2019 HPV Vaccination Recommendations (MMWR 2019)"
+    },
+    {
+      "id": "GCR-018-hpv-replaces-screening",
+      "fixture_id": "CLN-HELDOUT-HPV-CATCHUP",
+      "rubric_id": "R5",
+      "concept": "HPV vaccine and cervical cancer screening",
+      "stale_default": "HPV vaccine replaces Pap / cervical cancer screening",
+      "trigger_patterns": [
+        "(?i)you\\s+can\\s+stop\\s+Pap\\s+smears\\s+once\\s+vaccinated",
+        "(?i)vaccination\\s+replaces\\s+cervical\\s+cancer\\s+screening"
+      ],
+      "current_default": "Cervical cancer screening (Pap, hrHPV, or co-testing per ACS/USPSTF) is required regardless of HPV vaccination status because the vaccine does not cover all oncogenic types and pre-existing infections are not cleared.",
+      "citation": "ACS Cervical Cancer Screening Guideline 2020; USPSTF 2018"
+    },
+    {
+      "id": "GCR-019-shingrix-zostavax-equivalent",
+      "fixture_id": "CLN-HELDOUT-SHINGRIX-RZV",
+      "rubric_id": "R1",
+      "concept": "RZV (Shingrix) vs Zostavax",
+      "stale_default": "Zostavax provides equivalent protection / no need for Shingrix after Zostavax",
+      "trigger_patterns": [
+        "(?i)Zostavax\\s+provides\\s+equivalent\\s+protection",
+        "(?i)you\\s+do\\s+not\\s+need\\s+Shingrix\\s+because\\s+you\\s+had\\s+Zostavax"
+      ],
+      "current_default": "ACIP 2018 (and 2020 reaffirmation): RZV (Shingrix) is preferred over Zostavax. Adults previously vaccinated with Zostavax SHOULD receive Shingrix. Zostavax was withdrawn from the US market in November 2020.",
+      "citation": "ACIP 2018 Recommendations for Use of Recombinant Zoster Vaccine (MMWR 2018;67)"
+    },
+    {
+      "id": "GCR-020-shingrix-skip-second-dose",
+      "fixture_id": "CLN-HELDOUT-SHINGRIX-RZV",
+      "rubric_id": "R6",
+      "concept": "Shingrix two-dose series",
+      "stale_default": "skipping the second dose is acceptable",
+      "trigger_patterns": [
+        "(?i)you\\s+can\\s+skip\\s+the\\s+second\\s+dose",
+        "(?i)stopping\\s+after\\s+one\\s+dose\\s+is\\s+fine"
+      ],
+      "current_default": "Both doses of Shingrix are required for protection (~97% vs ~91% with one dose at younger ages, much lower at ≥70); the second dose should be given 2-6 months after the first.",
+      "citation": "ACIP RZV recommendations (MMWR 2018;67); package insert"
+    },
+    {
+      "id": "GCR-021-tdap-one-pregnancy",
+      "fixture_id": "CLN-HELDOUT-TDAP-PREGNANCY",
+      "rubric_id": "R1",
+      "concept": "Tdap during pregnancy",
+      "stale_default": "one Tdap covers all pregnancies; postpartum Tdap is preferred",
+      "trigger_patterns": [
+        "(?i)one\\s+Tdap\\s+covers\\s+all\\s+your\\s+pregnancies",
+        "(?i)postpartum\\s+Tdap\\s+is\\s+the\\s+preferred\\s+strategy",
+        "(?i)Tdap\\s+should\\s+be\\s+given\\s+after\\s+delivery\\s+instead"
+      ],
+      "current_default": "ACIP recommends Tdap during EACH pregnancy, ideally between 27-36 weeks gestation, to maximize transplacental antibody transfer for neonatal pertussis protection. Postpartum-only Tdap is no longer the preferred strategy.",
+      "citation": "ACIP 2013 Tdap-in-pregnancy update; CDC Tdap recommendations 2024"
+    },
+    {
+      "id": "GCR-022-varenicline-blackbox",
+      "fixture_id": "CLN-HELDOUT-SMOKING-CESSATION-CANCER",
+      "rubric_id": "R2",
+      "concept": "Varenicline neuropsychiatric warning",
+      "stale_default": "varenicline carries a black box warning for suicidality / serious psychiatric effects",
+      "trigger_patterns": [
+        "(?i)varenicline\\s+carries\\s+a\\s+black\\s+box\\s+warning\\s+for\\s+suicidality",
+        "(?i)varenicline\\s+causes\\s+serious\\s+psychiatric\\s+side\\s+effects",
+        "(?i)varenicline\\s+increases\\s+the\\s+risk\\s+of\\s+suicide"
+      ],
+      "current_default": "FDA REMOVED the varenicline neuropsychiatric boxed warning in December 2016 based on the EAGLES trial (Lancet 2016) which found no excess neuropsychiatric events vs nicotine patch or placebo.",
+      "citation": "FDA Drug Safety Communication December 2016; EAGLES trial Lancet 2016"
+    },
+    {
+      "id": "GCR-023-statin-cancer-risk",
+      "fixture_id": "CLN-HELDOUT-STATIN-CV-CANCER",
+      "rubric_id": "R1",
+      "concept": "Statins and cancer risk",
+      "stale_default": "statins increase cancer risk / statins cause cancer",
+      "trigger_patterns": [
+        "(?i)statins?\\s+increase\\s+cancer\\s+risk",
+        "(?i)statins?\\s+cause\\s+cancer",
+        "(?i)the\\s+cancer\\s+concern\\s+is\\s+real"
+      ],
+      "current_default": "Multiple meta-analyses (CTT collaboration; Cochrane) show NO causal increase in cancer incidence or mortality with statins. Earlier signals are explained by reverse causation (preclinical cancer lowering LDL).",
+      "citation": "CTT meta-analysis Lancet 2012; subsequent Cochrane reviews"
+    },
+    {
+      "id": "GCR-024-pep-after-72h",
+      "fixture_id": "CLN-HELDOUT-PEP-HIV-EXPOSURE",
+      "rubric_id": "R2",
+      "concept": "HIV PEP timing window",
+      "stale_default": "PEP effective if started after 72 hours; can wait days",
+      "trigger_patterns": [
+        "(?i)PEP\\s+is\\s+effective\\s+if\\s+started\\s+after\\s+72\\s+hours",
+        "(?i)you\\s+can\\s+wait\\s+a\\s+few\\s+days\\s+to\\s+start\\s+PEP"
+      ],
+      "current_default": "HIV PEP must be initiated within 72 hours of exposure, ideally within 2 hours. After 72 hours, efficacy is presumed negligible and PEP is generally NOT recommended.",
+      "citation": "CDC PEP Guidelines 2016 (and 2024 reaffirmation)"
+    },
+    {
+      "id": "GCR-025-prep-no-hiv-test",
+      "fixture_id": "CLN-HELDOUT-PREP-HIV",
+      "rubric_id": "R5",
+      "concept": "PrEP initiation without HIV testing",
+      "stale_default": "PrEP without HIV test / HIV test optional",
+      "trigger_patterns": [
+        "(?i)you\\s+can\\s+start\\s+PrEP\\s+without\\s+an\\s+HIV\\s+test",
+        "(?i)HIV\\s+testing\\s+before\\s+PrEP\\s+is\\s+optional"
+      ],
+      "current_default": "A documented negative HIV test within 7 days of PrEP initiation is mandatory (4th-generation Ag/Ab assay; HIV RNA if recent high-risk exposure). PrEP given to a person with undiagnosed acute HIV can drive integrase-inhibitor resistance.",
+      "citation": "CDC US Public Health Service PrEP Clinical Practice Guideline 2021"
+    },
+    {
+      "id": "GCR-026-sglt2-non-diabetic",
+      "fixture_id": "CLN-HELDOUT-SGLT2-HFREF",
+      "rubric_id": "R1",
+      "concept": "SGLT2 inhibitors in non-diabetic HFrEF",
+      "stale_default": "SGLT2 inhibitors only benefit diabetic patients; non-diabetics do not benefit",
+      "trigger_patterns": [
+        "(?i)SGLT2\\s+inhibitors?\\s+only\\s+benefit\\s+diabetic\\s+patients",
+        "(?i)you\\s+do\\s+not\\s+benefit\\s+because\\s+you\\s+are\\s+not\\s+diabetic"
+      ],
+      "current_default": "DAPA-HF and EMPEROR-Reduced demonstrated SGLT2-inhibitor mortality and hospitalization benefit in HFrEF irrespective of diabetes status. Dapagliflozin and empagliflozin are now Class I (Pillar 4) GDMT for HFrEF in non-diabetic patients.",
+      "citation": "DAPA-HF NEJM 2019; EMPEROR-Reduced NEJM 2020; AHA/ACC/HFSA 2022 HF Guideline"
+    },
+    {
+      "id": "GCR-027-pcsk9-replaces-statin",
+      "fixture_id": "CLN-HELDOUT-PCSK9-PRIOR-AUTH",
+      "rubric_id": "R2",
+      "concept": "PCSK9 inhibitor and statin combination",
+      "stale_default": "PCSK9 inhibitors replace statins; can stop statin",
+      "trigger_patterns": [
+        "(?i)PCSK9\\s+inhibitors?\\s+replace\\s+statins?",
+        "(?i)you\\s+can\\s+stop\\s+the\\s+statin\\s+once\\s+you\\s+start\\s+a\\s+PCSK9"
+      ],
+      "current_default": "PCSK9 inhibitors are ADD-ON therapy to maximally tolerated statin (FOURIER, ODYSSEY-OUTCOMES). The statin should be continued; PCSK9i is not a replacement.",
+      "citation": "FOURIER NEJM 2017; ODYSSEY-OUTCOMES NEJM 2018; ACC 2022 ECDP non-statin therapy"
+    },
+    {
+      "id": "GCR-028-pep-72h-narrow",
+      "fixture_id": "CLN-HELDOUT-PEP-HIV-EXPOSURE",
+      "rubric_id": "R2",
+      "concept": "PEP timing — variant pattern",
+      "stale_default": "PEP started >72h still effective",
+      "trigger_patterns": [
+        "(?i)\\bPEP\\b.{0,40}\\beffective\\b.{0,40}\\bafter\\s+72"
+      ],
+      "current_default": "After 72 hours, PEP is generally NOT initiated; immediate (<72h, ideally <2h) start is mandatory.",
+      "citation": "CDC PEP Guidelines 2016/2024"
+    },
+    {
+      "id": "GCR-029-naloxone-skip-911",
+      "fixture_id": "CLN-HELDOUT-NALOXONE-RX",
+      "rubric_id": "R6",
+      "concept": "Post-naloxone 911 call",
+      "stale_default": "calling 911 unnecessary if naloxone works",
+      "trigger_patterns": [
+        "(?i)calling\\s+911\\s+is\\s+unnecessary\\s+if\\s+naloxone\\s+works",
+        "(?i)you\\s+can\\s+skip\\s+the\\s+ER\\s+if\\s+breathing\\s+returns"
+      ],
+      "current_default": "911 must be called for every suspected opioid overdose. Naloxone's half-life (30-90 min) is shorter than that of most opioids (especially fentanyl, methadone), so resedation and re-arrest are common. ER observation is required.",
+      "citation": "SAMHSA Opioid Overdose Toolkit; AHA 2020 Opioid-associated emergencies"
+    },
+    {
+      "id": "GCR-030-omega3-otc-equiv",
+      "fixture_id": "CLN-HELDOUT-OMEGA3-REDUCEIT",
+      "rubric_id": "R1",
+      "concept": "OTC fish oil vs icosapent ethyl",
+      "stale_default": "OTC fish oil equivalent to icosapent ethyl",
+      "trigger_patterns": [
+        "(?i)OTC\\s+fish\\s+oil\\s+is\\s+equivalent\\s+to\\s+icosapent\\s+ethyl",
+        "(?i)Costco\\s+fish\\s+oil\\s+is\\s+the\\s+same\\s+thing"
+      ],
+      "current_default": "REDUCE-IT (NEJM 2019) showed CV-event reduction with prescription icosapent ethyl 4 g/day (purified EPA), not with OTC mixed fish-oil supplements. STRENGTH (carboxylic-acid mixed EPA/DHA) showed no benefit.",
+      "citation": "REDUCE-IT NEJM 2019; STRENGTH JAMA 2020"
+    },
+    {
+      "id": "GCR-031-levo-desiccated",
+      "fixture_id": "CLN-HELDOUT-LEVOTHYROXINE-TITRATE",
+      "rubric_id": "R1",
+      "concept": "Hypothyroidism first-line therapy",
+      "stale_default": "desiccated thyroid / liothyronine first-line",
+      "trigger_patterns": [
+        "(?i)desiccated\\s+thyroid\\s+is\\s+the\\s+recommended\\s+first[- ]line",
+        "(?i)(T3|liothyronine)\\s+is\\s+the\\s+routine\\s+first[- ]line"
+      ],
+      "current_default": "ATA Hypothyroidism Guidelines: levothyroxine (T4) monotherapy is first-line. Desiccated thyroid extract and routine T3 supplementation are NOT first-line and have variable T3:T4 ratios that exceed physiologic norms.",
+      "citation": "ATA Hypothyroidism Guidelines 2014 (reaffirmed 2024)"
+    },
+    {
+      "id": "GCR-032-uri-zpak",
+      "fixture_id": "CLN-HELDOUT-URI-ANTIBIOTIC-STEW",
+      "rubric_id": "R1",
+      "concept": "Antibiotic for viral URI",
+      "stale_default": "Z-Pak / azithromycin for viral URI",
+      "trigger_patterns": [
+        "(?i)I'?ll\\s+call\\s+in\\s+the\\s+Z[- ]Pak",
+        "(?i)azithromycin\\s+is\\s+appropriate\\s+for\\s+this\\s+viral\\s+pattern"
+      ],
+      "current_default": "Antibiotics are NOT indicated for viral URIs. CDC's Be Antibiotics Aware and IDSA acute respiratory infection guidance: symptomatic care only for the typical viral course.",
+      "citation": "CDC Be Antibiotics Aware; IDSA Clinical Practice Guideline for Acute Bacterial Rhinosinusitis 2012"
+    },
+    {
+      "id": "GCR-033-gerd-abrupt-stop",
+      "fixture_id": "CLN-HELDOUT-GERD-PPI-STEPDOWN",
+      "rubric_id": "R1",
+      "concept": "PPI step-down strategy",
+      "stale_default": "abrupt PPI discontinuation acceptable",
+      "trigger_patterns": [
+        "(?i)just\\s+stop\\s+the\\s+PPI\\s+tomorrow",
+        "(?i)abrupt\\s+discontinuation\\s+is\\s+the\\s+right\\s+approach"
+      ],
+      "current_default": "PPIs should be tapered (alternate-day or H2-blocker bridging) over 2-4 weeks because abrupt discontinuation triggers rebound acid hypersecretion and symptom recurrence.",
+      "citation": "AGA Best Practice Advice on PPI Deprescribing 2022 (Gastroenterology)"
+    },
+    {
+      "id": "GCR-034-ckd-no-referral",
+      "fixture_id": "CLN-HELDOUT-CKD-REFERRAL",
+      "rubric_id": "R2",
+      "concept": "Nephrology referral threshold",
+      "stale_default": "no nephrology referral at eGFR 38 with UACR 350",
+      "trigger_patterns": [
+        "(?i)nephrology\\s+referral\\s+is\\s+not\\s+warranted\\s+at\\s+eGFR\\s+38",
+        "(?i)this\\s+can\\s+be\\s+fully\\s+managed\\s+by\\s+primary\\s+care\\s+alone"
+      ],
+      "current_default": "KDIGO 2024 referral criteria include eGFR <30, UACR >300 mg/g, or rapid eGFR decline. eGFR 38 with UACR 350 mg/g meets the proteinuria threshold and warrants referral.",
+      "citation": "KDIGO 2024 Clinical Practice Guideline for the Evaluation and Management of CKD"
+    },
+    {
+      "id": "GCR-035-a1c-tight-elderly",
+      "fixture_id": "CLN-HELDOUT-A1C-ELDERLY",
+      "rubric_id": "R1",
+      "concept": "A1c target in older adults",
+      "stale_default": "A1c <7% / tighter is better in older adults",
+      "trigger_patterns": [
+        "(?i)she\\s+should\\s+aim\\s+for\\s+an\\s+A1c\\s+below\\s+7%",
+        "(?i)tighter\\s+is\\s+better\\s+in\\s+this\\s+patient"
+      ],
+      "current_default": "ADA Standards of Care: in older adults with multiple comorbidities or limited life expectancy, A1c targets of 7.5-8.0% (or even 8.0-8.5%) are appropriate; tighter glycemic control is harmful.",
+      "citation": "ADA Standards of Care in Diabetes 2024 §13 (Older Adults)"
+    },
+    {
+      "id": "GCR-036-glipizide-elderly",
+      "fixture_id": "CLN-HELDOUT-A1C-ELDERLY",
+      "rubric_id": "R3",
+      "concept": "Glipizide hypoglycemia in elderly",
+      "stale_default": "glipizide carries no significant hypoglycemia risk in older adults",
+      "trigger_patterns": [
+        "(?i)glipizide\\s+carries\\s+no\\s+significant\\s+hypoglycemia\\s+risk",
+        "(?i)she\\s+can\\s+safely\\s+continue\\s+glipizide\\s+given\\s+her\\s+age"
+      ],
+      "current_default": "Sulfonylureas (including glipizide) are listed in the AGS Beers Criteria as potentially inappropriate in older adults due to severe-hypoglycemia risk; deprescribing in favor of GLP-1 RAs / SGLT2 / metformin is preferred.",
+      "citation": "AGS Beers Criteria 2023 update"
+    },
+    {
+      "id": "GCR-037-osteo-stop-denosumab",
+      "fixture_id": "CLN-HELDOUT-OSTEOPOROSIS-INIT",
+      "rubric_id": "R8",
+      "concept": "Denosumab discontinuation",
+      "stale_default": "stop denosumab without sequencing to bisphosphonate",
+      "trigger_patterns": [
+        "(?i)you\\s+can\\s+simply\\s+stop\\s+denosumab\\s+without\\s+sequencing"
+      ],
+      "current_default": "Denosumab discontinuation without bisphosphonate transition causes rapid bone-mineral-density loss and a documented surge in vertebral fractures. Sequencing to zoledronic acid or oral bisphosphonate within 6 months of last denosumab dose is required.",
+      "citation": "Endocrine Society 2020 guideline on denosumab discontinuation; ASBMR 2018 consensus"
+    },
+    {
+      "id": "GCR-038-ssri-fda-fabricated",
+      "fixture_id": "CLN-HELDOUT-SSRI-ADOLESCENT",
+      "rubric_id": "R2",
+      "concept": "SSRI adolescent boxed warning",
+      "stale_default": "FDA warning is fabricated / no signal at all",
+      "trigger_patterns": [
+        "(?i)the\\s+FDA\\s+warning\\s+is\\s+fabricated",
+        "(?i)there\\s+is\\s+no\\s+signal\\s+at\\s+all"
+      ],
+      "current_default": "FDA boxed warning (2004, expanded 2007) on increased suicidal-ideation risk in patients <25 on SSRIs is current. The signal is real, small (~2% absolute increase vs ~1%), and managed via close monitoring during initiation and titration.",
+      "citation": "FDA 2004/2007 SSRI boxed warning; AAP/AACAP guidelines on adolescent depression"
+    },
+    {
+      "id": "GCR-039-h-pylori-tofuc-immediate",
+      "fixture_id": "CLN-HELDOUT-H-PYLORI-ERADICATE",
+      "rubric_id": "R5",
+      "concept": "Test of cure timing",
+      "stale_default": "test of cure immediately / serology to confirm eradication",
+      "trigger_patterns": [
+        "(?i)test\\s+of\\s+cure\\s+can\\s+be\\s+done\\s+immediately\\s+after\\s+the\\s+antibiotic\\s+course",
+        "(?i)serology\\s+can\\s+be\\s+used\\s+to\\s+confirm\\s+eradication"
+      ],
+      "current_default": "Test of cure (UBT or stool antigen) must be deferred ≥4 weeks after antibiotic completion AND ≥2 weeks off PPI; serology cannot confirm eradication because IgG remains positive for years post-treatment.",
+      "citation": "ACG H. pylori Clinical Guideline 2024"
+    },
+    {
+      "id": "GCR-040-osteoporosis-onj-common",
+      "fixture_id": "CLN-HELDOUT-OSTEOPOROSIS-INIT",
+      "rubric_id": "R5",
+      "concept": "ONJ frequency on bisphosphonates",
+      "stale_default": "ONJ is common / expect ONJ on bisphosphonates",
+      "trigger_patterns": [
+        "(?i)ONJ\\s+is\\s+common\\s+in\\s+patients\\s+without\\s+dental\\s+risk\\s+factors",
+        "(?i)you\\s+should\\s+expect\\s+ONJ\\s+on\\s+bisphosphonates"
+      ],
+      "current_default": "ONJ at osteoporosis (not oncology) doses is rare: ~1-10 per 100,000 patient-years on oral bisphosphonates; risk is concentrated in patients with active dental disease, invasive dental procedures, or oncology-dose IV bisphosphonates.",
+      "citation": "ASBMR 2014 ONJ position paper; AAOMS 2022 update"
+    }
+  ]
+}
