@@ -123,6 +123,10 @@ export default function AgentPage() {
         </p>
       </header>
 
+      {messages.length === 0 && mode === "text" && !busy && (
+        <SampleQuestions onPick={(q) => setInput(q)} />
+      )}
+
       <section className="flex flex-col gap-4">
         {messages.map((m) => (
           <div key={m.id} className="border border-slate-200 rounded-md p-4 bg-white">
@@ -252,6 +256,49 @@ export default function AgentPage() {
         </div>
       </form>
     </main>
+  );
+}
+
+const SAMPLE_QUESTIONS: Array<{ tool: "currency" | "pubmed" | "primekg"; q: string }> = [
+  {
+    tool: "currency",
+    q: "Is warfarin still first-line for non-valvular AFib in a 72-year-old?",
+  },
+  {
+    tool: "pubmed",
+    q: "What does the most recent literature say about apixaban dosing in CKD stage 4?",
+  },
+  {
+    tool: "primekg",
+    q: "Drug-drug interaction risk: ibrutinib plus apixaban — what should I watch for?",
+  },
+];
+
+function SampleQuestions({ onPick }: { onPick: (q: string) => void }) {
+  const colorFor = (t: "currency" | "pubmed" | "primekg") =>
+    t === "currency"
+      ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+      : t === "pubmed"
+        ? "border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100"
+        : "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100";
+  return (
+    <section className="flex flex-col gap-2">
+      <p className="text-xs uppercase tracking-wider text-slate-500">
+        try a sample question — one per tool
+      </p>
+      <div className="flex flex-col sm:flex-row gap-2">
+        {SAMPLE_QUESTIONS.map((s) => (
+          <button
+            key={s.q}
+            type="button"
+            onClick={() => onPick(s.q)}
+            className={`text-left text-xs leading-snug px-3 py-2 rounded-md border transition-colors flex-1 ${colorFor(s.tool)}`}
+          >
+            {s.q}
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
