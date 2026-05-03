@@ -1,0 +1,154 @@
+name: agent-pr-review
+
+# Auto-reviews every PR using a Claude safety-engineer agent.
+# Approves auto-merge-candidate diffs per RULES §10 + .github/safety-engineer-prompt.md.
+# Comments concerns + waits on anything else.
+#
+# Runs alongside auto-merge-on-approved.yml — this adds the missing
+# intelligence layer that decides WHEN to add the `approved` label.
+#
+# Requires repo secret ANTHROPIC_API_KEY_PR_REVIEW (the agent calls Claude
+# via API; a separate key from any other Claude usage so we can revoke
+# this specifically without breaking other automation).
+#
+# Cost estimate: ~$0.05 per PR review (Claude Opus 4.7 ~5k in + 200 out).
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: read
+
+jobs:
+  safety-engineer-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Get PR diff + metadata
+        id: pr-context
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr diff "$PR_NUMBER" > /tmp/pr.diff
+          echo "diff_lines=$(wc -l < /tmp/pr.diff)" >> $GITHUB_OUTPUT
+          gh pr view "$PR_NUMBER" --json files --jq '.files[] | "\(.additions) \(.deletions) \(.path)"' > /tmp/pr.files
+          gh pr view "$PR_NUMBER" --json title,body --jq '"\(.title)\n\n\(.body)"' > /tmp/pr.body
+          gh pr checks "$PR_NUMBER" --json name,bucket,conclusion > /tmp/pr.checks 2>/dev/null || echo "[]" > /tmp/pr.checks
+          git log origin/main --oneline -5 > /tmp/main.log
+
+      - name: Run safety-engineer agent
+        id: review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY_PR_REVIEW }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "FAIL: ANTHROPIC_API_KEY_PR_REVIEW secret not set" >&2
+            echo "decision=COMMENT_AND_WAIT" >> $GITHUB_OUTPUT
+            echo "rationale=auto-review unavailable (no API key); awaiting human" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          cat .github/safety-engineer-prompt.md > /tmp/prompt.md
+          echo "---" >> /tmp/prompt.md
+          echo "## PR title + body" >> /tmp/prompt.md
+          cat /tmp/pr.body >> /tmp/prompt.md
+          echo "---" >> /tmp/prompt.md
+          echo "## Files changed (additions deletions path)" >> /tmp/prompt.md
+          cat /tmp/pr.files >> /tmp/prompt.md
+          echo "---" >> /tmp/prompt.md
+          echo "## Total diff size: ${{ steps.pr-context.outputs.diff_lines }} lines" >> /tmp/prompt.md
+          echo "---" >> /tmp/prompt.md
+          echo "## CI checks" >> /tmp/prompt.md
+          cat /tmp/pr.checks >> /tmp/prompt.md
+          echo "---" >> /tmp/prompt.md
+          echo "## Recent main commits" >> /tmp/prompt.md
+          cat /tmp/main.log >> /tmp/prompt.md
+          echo "---" >> /tmp/prompt.md
+          echo "## Diff (truncated to 4000 lines)" >> /tmp/prompt.md
+          head -4000 /tmp/pr.diff >> /tmp/prompt.md
+
+          response=$(curl -s -X POST https://api.anthropic.com/v1/messages \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -d "$(jq -nR --arg p "$(cat /tmp/prompt.md)" '{
+              model: "claude-opus-4-7",
+              max_tokens: 1500,
+              messages: [{role: "user", content: $p}]
+            }')")
+
+          response_text=$(echo "$response" | jq -r '.content[0].text // ""')
+          json_blob=$(echo "$response_text" | grep -oE '\{[^}]*"decision"[^}]*\}' | tail -1)
+
+          if [ -z "$json_blob" ]; then
+            echo "decision=COMMENT_AND_WAIT" >> $GITHUB_OUTPUT
+            echo "rationale=agent did not return parseable JSON; awaiting human" >> $GITHUB_OUTPUT
+            echo "Raw response (truncated):" >&2
+            echo "$response_text" | head -50 >&2
+            exit 0
+          fi
+
+          decision=$(echo "$json_blob" | jq -r '.decision')
+          rationale=$(echo "$json_blob" | jq -r '.rationale_one_line // "no rationale"')
+          trigger=$(echo "$json_blob" | jq -r '.trigger // "none"')
+
+          echo "decision=$decision" >> $GITHUB_OUTPUT
+          echo "rationale=$rationale" >> $GITHUB_OUTPUT
+          echo "trigger=$trigger" >> $GITHUB_OUTPUT
+
+      - name: Apply decision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          DECISION: ${{ steps.review.outputs.decision }}
+          RATIONALE: ${{ steps.review.outputs.rationale }}
+          TRIGGER: ${{ steps.review.outputs.trigger }}
+        run: |
+          body_file=$(mktemp)
+          case "$DECISION" in
+            APPROVE)
+              {
+                printf 'safety-engineer auto-review: **APPROVE**\n'
+                printf '> %s\n' "$RATIONALE"
+                printf '> trigger: %s\n\n' "$TRIGGER"
+                printf 'Adding `approved` label. `auto-merge-on-approved.yml` will fire when CI is green.\n'
+              } > "$body_file"
+              gh pr comment "$PR_NUMBER" --body-file "$body_file"
+              gh pr edit "$PR_NUMBER" --add-label approved
+              ;;
+            COMMENT_AND_WAIT)
+              {
+                printf 'safety-engineer auto-review: **COMMENT_AND_WAIT**\n'
+                printf '> %s\n' "$RATIONALE"
+                printf '> trigger: %s\n\n' "$TRIGGER"
+                printf 'This PR needs human eyes per the rubric in `.github/safety-engineer-prompt.md`. Auto-merge will not fire.\n'
+              } > "$body_file"
+              gh pr comment "$PR_NUMBER" --body-file "$body_file"
+              ;;
+            BLOCK)
+              {
+                printf 'safety-engineer auto-review: **BLOCK**\n'
+                printf '> %s\n' "$RATIONALE"
+                printf '> trigger: %s\n\n' "$TRIGGER"
+                printf 'This PR has a safety/sovereignty concern. Adding `blocked` label. Resolve concerns + remove label before re-review.\n'
+              } > "$body_file"
+              gh pr comment "$PR_NUMBER" --body-file "$body_file"
+              gh pr edit "$PR_NUMBER" --add-label blocked
+              ;;
+            *)
+              echo "Unknown decision: $DECISION; defaulting to no-op (human review)" >&2
+              ;;
+          esac
