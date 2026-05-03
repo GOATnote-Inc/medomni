@@ -41,7 +41,14 @@ export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 const MODEL_ID = "nemotron";
-const MAX_STEPS = 4;
+// Per-query budgets. The literature consensus (Cursor 25/turn, Anthropic
+// "no hard cap, prefer parallel calls", OpenAI deep research hundreds/session,
+// Karpathy autoresearcher: explicitly anti-count-cap) is that tight call
+// caps cost more than they save by forcing re-prompt cycles. Right governor
+// is wall-clock + budget + no-progress, not count.
+const MAX_STEPS = 6;                  // outer reasoning iterations
+const MAX_TOOL_CALLS_PER_TURN = 8;    // cumulative across all steps in one query
+const WALL_CLOCK_MS = 45_000;         // hard ceiling on a single user query
 // Audio is the largest input type; a 60s WAV at 16 kHz mono PCM is ~2.6 MB
 // base64. /api/ask uses 4 MB; we mirror that cap.
 const MAX_BODY_BYTES = 4_000_000;
@@ -172,7 +179,7 @@ Tool use:
 - Call clinical_calculate whenever the user gives enough patient detail to compute a standard score (CHA2DS2-VASc, HAS-BLED, MELD-Na, Wells DVT, PERC). Do NOT estimate these scores in your head — the tool is exact.
 - Call pubmed_search when recent literature would meaningfully change your answer.
 - Call primekg_lookup when the question turns on relationships between named medical entities — drug-drug interactions, drug-disease contraindications, gene-disease associations, pathway membership. Especially valuable for polypharmacy questions.
-- Three tool calls per turn is the hard cap. After that, answer from prior knowledge and acknowledge the limit.
+- You have a generous tool-call budget (up to 8 calls per query). Use parallel calls when independent (e.g. PubMed + PrimeKG + currency check on the same question can all fire in one step). The budget is a safety net, not a target — most questions resolve in 1-2 calls.
 - If a tool returns an "error" field or zero matches, do not retry — answer from prior knowledge and note what was unavailable.
 
 This is a public demo. Be tight; every word counts.`;
@@ -523,8 +530,18 @@ export async function POST(req: NextRequest) {
       ];
 
       let totalToolCalls = 0;
+      const startedAt = Date.now();
+      const wallClockExceeded = () => Date.now() - startedAt > WALL_CLOCK_MS;
 
       for (let step = 0; step < MAX_STEPS; step++) {
+        if (wallClockExceeded()) {
+          writer.write({
+            type: "error",
+            errorText: `Wall-clock budget (${WALL_CLOCK_MS / 1000}s) exceeded; stopping the agent loop.`,
+          });
+          return;
+        }
+
         let result: StepResult;
         try {
           result = await streamOneStep(tunnelUrl, history, writer, step);
@@ -540,7 +557,8 @@ export async function POST(req: NextRequest) {
         }
 
         // Append the assistant turn with the structured tool calls to history,
-        // exactly as OpenAI tool-calling expects.
+        // exactly as OpenAI tool-calling expects. Tool calls inside one
+        // response array are dispatched in parallel below.
         history.push({
           role: "assistant",
           content: result.contentEmitted || null,
@@ -551,11 +569,9 @@ export async function POST(req: NextRequest) {
           })),
         });
 
+        // Surface each tool call's input frame first so the UI cards transition
+        // input-streaming → input-available → output-* cleanly.
         for (const tc of result.toolCalls) {
-          totalToolCalls += 1;
-
-          // Always emit input-available first so the UI part transitions
-          // input-streaming → input-available → output-* cleanly.
           let inputObj: unknown;
           try {
             inputObj = JSON.parse(tc.argsRaw || "{}");
@@ -568,32 +584,43 @@ export async function POST(req: NextRequest) {
             toolName: tc.name,
             input: inputObj,
           });
+        }
 
-          if (totalToolCalls > 2) {
-            const quotaMsg = "Tool quota for this turn is exceeded. Do not call any more tools. Answer the user from prior knowledge and clearly note which information could not be retrieved.";
-            writer.write({
-              type: "tool-output-available",
-              toolCallId: tc.id,
-              output: { error: quotaMsg },
-            });
-            history.push({
-              role: "tool",
-              tool_call_id: tc.id,
-              content: JSON.stringify({ error: quotaMsg }),
-            });
-            continue;
-          }
+        // Dispatch all tool calls in this step concurrently — same rationale
+        // as Anthropic's parallel tool-use guidance: prefer one turn with N
+        // parallel calls over N turns with 1 call each. Per-call quota check
+        // happens before dispatch; over-budget calls get the quota error
+        // instead of running.
+        const dispatched = await Promise.all(
+          result.toolCalls.map(async (tc) => {
+            totalToolCalls += 1;
+            if (totalToolCalls > MAX_TOOL_CALLS_PER_TURN) {
+              return {
+                tc,
+                output: {
+                  error: `Tool budget for this query (${MAX_TOOL_CALLS_PER_TURN} calls) exceeded. Do not call any more tools — answer from prior knowledge and acknowledge the limit.`,
+                },
+              };
+            }
+            try {
+              const output = await runTool(tc.name, tc.argsRaw);
+              return { tc, output };
+            } catch (e) {
+              return { tc, output: { error: (e as Error).message } };
+            }
+          }),
+        );
 
-          const toolOutput = await runTool(tc.name, tc.argsRaw);
+        for (const { tc, output } of dispatched) {
           writer.write({
             type: "tool-output-available",
             toolCallId: tc.id,
-            output: toolOutput,
+            output,
           });
           history.push({
             role: "tool",
             tool_call_id: tc.id,
-            content: JSON.stringify(toolOutput),
+            content: JSON.stringify(output),
           });
         }
       }
