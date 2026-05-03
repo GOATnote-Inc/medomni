@@ -138,7 +138,10 @@ jobs:
                 printf 'Squash-merging directly. (Label-then-chain to auto-merge-on-approved is blocked by GitHub workflow chain-trigger restriction on default GITHUB_TOKEN — single workflow does both decision + merge to actually close the loop.)\n'
               } > "$body_file"
               GH_TOKEN="$GH_DEFAULT" gh pr comment "$PR_NUMBER" --body-file "$body_file"
-              GH_TOKEN="$GH_DEFAULT" gh pr edit "$PR_NUMBER" --add-label approved
+              # Ensure label exists (idempotent), then apply. -f makes
+              # `label create` succeed if the label already exists.
+              GH_TOKEN="$GH_DEFAULT" gh label create approved --color "0E8A16" --description "safety-engineer auto-review approved + auto-merge" -f >/dev/null 2>&1 || true
+              GH_TOKEN="$GH_DEFAULT" gh pr edit "$PR_NUMBER" --add-label approved 2>/dev/null || echo "label add failed (non-fatal)"
               # Direct squash-merge using the PAT. The PR author is a Claude session;
               # the safety-engineer is a different agent identity (different prompt,
               # different decision rubric). RULES §10 self-merge prohibition is about
@@ -168,7 +171,8 @@ jobs:
                 printf 'This PR has a safety/sovereignty concern. Adding `blocked` label. Resolve concerns + remove label before re-review.\n'
               } > "$body_file"
               GH_TOKEN="$GH_DEFAULT" gh pr comment "$PR_NUMBER" --body-file "$body_file"
-              GH_TOKEN="$GH_DEFAULT" gh pr edit "$PR_NUMBER" --add-label blocked
+              GH_TOKEN="$GH_DEFAULT" gh label create blocked --color "B60205" --description "safety-engineer auto-review blocked — safety/sovereignty concern" -f >/dev/null 2>&1 || true
+              GH_TOKEN="$GH_DEFAULT" gh pr edit "$PR_NUMBER" --add-label blocked 2>/dev/null || echo "label add failed (non-fatal)"
               ;;
             *)
               echo "Unknown decision: $DECISION; defaulting to no-op (human review)" >&2
