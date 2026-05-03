@@ -5,6 +5,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { AudioRecorder } from "@/components/AudioRecorder";
 import type { PubMedSearchResult } from "@/lib/tools/pubmed";
+import type { PrimeKGSubgraphResult } from "@/lib/tools/primekg";
 
 interface PubMedToolPart {
   type: "tool-pubmed_search";
@@ -12,6 +13,14 @@ interface PubMedToolPart {
   state: "input-streaming" | "input-available" | "output-available" | "output-error";
   input?: { query?: string; maxResults?: number };
   output?: PubMedSearchResult | { error: string };
+}
+
+interface PrimeKGToolPart {
+  type: "tool-primekg_lookup";
+  toolCallId: string;
+  state: "input-streaming" | "input-available" | "output-available" | "output-error";
+  input?: { query?: string; maxHops?: number; maxNodes?: number };
+  output?: PrimeKGSubgraphResult | { error: string };
 }
 
 interface FilePart {
@@ -133,6 +142,9 @@ export default function AgentPage() {
                 }
                 if (part.type === "tool-pubmed_search") {
                   return <PubMedToolCard key={key} part={part as PubMedToolPart} />;
+                }
+                if (part.type === "tool-primekg_lookup") {
+                  return <PrimeKGToolCard key={key} part={part as PrimeKGToolPart} />;
                 }
                 return null;
               })}
@@ -284,6 +296,60 @@ function MicGlyph() {
       <path d="M5 11a7 7 0 0 0 14 0" />
       <line x1="12" y1="19" x2="12" y2="22" />
     </svg>
+  );
+}
+
+function PrimeKGToolCard({ part }: { part: PrimeKGToolPart }) {
+  const query = part.input?.query;
+  const output = part.output;
+
+  return (
+    <div className="border border-emerald-300 rounded-md bg-emerald-50/60 px-3 py-2 text-sm">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wider">
+        <span className="text-emerald-800 font-medium">tool · primekg_lookup</span>
+        <span className="text-emerald-400">·</span>
+        <span className="text-emerald-600">{part.state.replace("-", " ")}</span>
+      </div>
+      {query && (
+        <div className="mt-1 text-slate-700">
+          <span className="text-slate-400">entity:</span> {query}
+          {part.input?.maxHops ? (
+            <span className="text-slate-400"> · {part.input.maxHops}-hop</span>
+          ) : null}
+        </div>
+      )}
+      {output && "error" in output && (
+        <div className="mt-2 text-rose-700 text-xs">error: {output.error}</div>
+      )}
+      {output && "n_nodes" in output && (
+        <div className="mt-2 flex flex-col gap-2">
+          <div className="text-xs text-slate-600">
+            {output.seed_count} seed{output.seed_count === 1 ? "" : "s"}
+            {output.seed_names.length > 0 && (
+              <>
+                {" "}
+                ({output.seed_names.slice(0, 4).join(", ")}
+                {output.seed_names.length > 4 ? ", …" : ""})
+              </>
+            )}
+            {" · "}
+            {output.n_nodes} node{output.n_nodes === 1 ? "" : "s"} ·{" "}
+            {output.n_edges} edge{output.n_edges === 1 ? "" : "s"} ·{" "}
+            {output.elapsed_ms} ms
+          </div>
+          {output.block && (
+            <details className="text-xs">
+              <summary className="cursor-pointer text-emerald-700 hover:text-emerald-900">
+                subgraph block
+              </summary>
+              <pre className="mt-2 whitespace-pre-wrap font-mono text-[11px] leading-snug text-slate-700 bg-white/60 border border-emerald-200 rounded p-2 max-h-72 overflow-auto">
+                {output.block}
+              </pre>
+            </details>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
