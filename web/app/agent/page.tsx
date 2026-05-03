@@ -100,13 +100,26 @@ export default function AgentPage() {
           <ModeToggle mode={mode} onChange={setMode} disabled={busy} />
         </div>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">
-          Agent loop with PubMed search
+          Clinical agent · 3 sovereign tools
         </h1>
+        <div className="flex flex-wrap gap-2 text-[11px]">
+          <span className="px-2 py-0.5 rounded-full border border-amber-300 bg-amber-50 text-amber-800">
+            guideline currency
+          </span>
+          <span className="px-2 py-0.5 rounded-full border border-slate-300 bg-slate-50 text-slate-700">
+            PubMed
+          </span>
+          <span className="px-2 py-0.5 rounded-full border border-emerald-300 bg-emerald-50 text-emerald-800">
+            PrimeKG
+          </span>
+        </div>
         <p className="max-w-2xl text-sm text-slate-600 leading-relaxed">
-          Ask in text or voice. The model reasons, decides whether to consult
-          PubMed, runs the search, then writes its answer with citations.
-          Audio in, text out — single forward pass on Nemotron-3-Nano-Omni
-          (no separate ASR model). Public demo, no PHI.
+          Ask in text or voice. The model reasons, decides which tool to call
+          (guideline-currency check for stale-default risk, PubMed for recent
+          literature, PrimeKG for drug-drug + relationship lookups), then
+          writes its answer with citations. Audio in, text out — single forward
+          pass on Nemotron-3-Nano-Omni (no separate ASR model). Public demo,
+          no PHI.
         </p>
       </header>
 
