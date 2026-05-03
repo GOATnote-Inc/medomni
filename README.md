@@ -75,6 +75,61 @@ stack with persona-tagged graph edges is genuinely under-served.
 
 ---
 
+## Live demo + 3-GPU sovereign factory
+
+The MedOmni stack is **operational now** — not a slide deck. Three GPUs run continuously,
+each with a distinct role in the training/serving/evaluation flywheel:
+
+| Pod | Hardware | Role | What's running |
+|---|---|---|---|
+| **catfish** | NVIDIA B300 (Blackwell, 288 GB HBM3E) | **Inference + agent surface** | `vllm-omni-b300` serving `nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4` with native structured tool-calling (`--enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser nemotron_v3`). Powers `medomni.vercel.app/agent` (PubMed tool, visible reasoning). NVFP4 quantization is Blackwell-only. |
+| **lobster** | NVIDIA H200 (Hopper, 143 GB HBM) | **Training + sovereign judge** | Path D Megatron-Bridge LoRA training (V1 shipped 2026-05-03 in 11.3 hr at 2.6 s/step — **12.4× faster** than HF/PEFT eager). Then `judge-qwen` serving `Qwen/Qwen2.5-7B-Instruct` for sovereign corpus filtering. |
+| **narwhal** | NVIDIA H200 (Hopper, 143 GB HBM) | **Data factory** | `vllm` serving `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16` + `factory_loop.py` generating quality-judged medical reasoning chains for the next training round. ~21k+ items / day. |
+
+**The autonomous loop** (Karpathy autoresearcher pattern, applied to a vertical):
+
+```
+        ┌─────────────────────────────────────────────────────────────────┐
+        │                                                                 │
+        ▼                                                                 │
+[narwhal + catfish: factory_loop.py generates clinical reasoning items]   │
+        │                                                                 │
+        │  47k+ raw items / week                                          │
+        ▼                                                                 │
+[laptop: scripts/judge_reasoning_sovereign.py — gpt-4.1 + Qwen ensemble]  │
+        │                                                                 │
+        │  ~45% pass rate, structured rejection reasons, $1.20 / 1k       │
+        ▼                                                                 │
+[curated jsonl → lobster: scripts/deploy_v2_corpus.sh]                    │
+        │                                                                 │
+        ▼                                                                 │
+[lobster: Path D Megatron-Bridge LoRA on Nemotron-3-Nano-30B (≤5 epochs)] │
+        │                                                                 │
+        │  ~28 hr wall, $120, kill-switch on val PPL > 10                 │
+        ▼                                                                 │
+[lobster: HF PEFT export → catfish: vllm --enable-lora]                   │
+        │                                                                 │
+        ▼                                                                 │
+[catfish: serve V_n adapter → /api/agent renders new behavior live]       │
+        │                                                                 │
+        │  (eval loop: HealthBench Hard N=1000 paired V_{n-1} vs V_n,     │
+        │   gpt-4.1 graded, paired-bootstrap CI, ship rule applied        │
+        │   literally per PREREG.yaml)                                    │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘
+```
+
+The loop runs continuously. No GPU sits idle for >12h (idle-deletion-risk per
+internal ops rule). PRs are the human-inspected checkpoints; the work between
+PRs is autonomous.
+
+**Sovereignty floor:** every box above runs on hardware we control. The only
+cloud dependency is **OpenAI's gpt-4.1** as the canonical judge (and that's
+optional — sovereign-only Qwen ensemble works, just with less calibration
+against the OpenAI HealthBench paper baseline).
+
+---
+
 ## Architecture
 
 ```
