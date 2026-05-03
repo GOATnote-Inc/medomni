@@ -111,13 +111,18 @@ jobs:
 
       - name: Apply decision
         env:
-          # AUTO_MERGE_PAT (if set) is used for the actual merge call.
-          # GITHUB_TOKEN can label + comment but lacks mergePullRequest
-          # permission ("Resource not accessible by integration") — verified
-          # on PR #21. PAT with `repo` scope unblocks autonomous merge.
-          # If AUTO_MERGE_PAT is unset, the merge step gracefully falls back
-          # to "leave for human" via the same fallback chain as before.
-          GH_TOKEN: ${{ secrets.AUTO_MERGE_PAT || github.token }}
+          # Two tokens by purpose:
+          # - GH_DEFAULT (built-in GITHUB_TOKEN): always works for comment +
+          #   label on this private repo. Used for everything except merge.
+          # - GH_MERGE (AUTO_MERGE_PAT, if set): only required for the merge
+          #   call, which the default token cannot do ("Resource not
+          #   accessible by integration" — verified on PR #21). If the PAT
+          #   is unset OR misscoped (lacks `repo` access to this private
+          #   repo / org SSO not authorized), the merge call gracefully
+          #   degrades to "leave for human" without breaking the comment
+          #   + label that already landed.
+          GH_DEFAULT: ${{ github.token }}
+          GH_MERGE: ${{ secrets.AUTO_MERGE_PAT }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           DECISION: ${{ steps.review.outputs.decision }}
           RATIONALE: ${{ steps.review.outputs.rationale }}
@@ -132,15 +137,19 @@ jobs:
                 printf '> trigger: %s\n\n' "$TRIGGER"
                 printf 'Squash-merging directly. (Label-then-chain to auto-merge-on-approved is blocked by GitHub workflow chain-trigger restriction on default GITHUB_TOKEN — single workflow does both decision + merge to actually close the loop.)\n'
               } > "$body_file"
-              gh pr comment "$PR_NUMBER" --body-file "$body_file"
-              gh pr edit "$PR_NUMBER" --add-label approved
-              # Direct squash-merge. The PR author is a Claude session; the safety-engineer
-              # is a different agent identity (different prompt, different decision rubric).
-              # RULES §10 self-merge prohibition is about the AUTHOR merging; this is the
-              # REVIEWER merging. Different role.
-              gh pr merge "$PR_NUMBER" --squash --auto --delete-branch || \
-                gh pr merge "$PR_NUMBER" --squash --delete-branch --admin || \
-                echo "merge attempts exhausted — leaving for human follow-up" >&2
+              GH_TOKEN="$GH_DEFAULT" gh pr comment "$PR_NUMBER" --body-file "$body_file"
+              GH_TOKEN="$GH_DEFAULT" gh pr edit "$PR_NUMBER" --add-label approved
+              # Direct squash-merge using the PAT. The PR author is a Claude session;
+              # the safety-engineer is a different agent identity (different prompt,
+              # different decision rubric). RULES §10 self-merge prohibition is about
+              # the AUTHOR merging; this is the REVIEWER merging. Different role.
+              if [ -n "$GH_MERGE" ]; then
+                GH_TOKEN="$GH_MERGE" gh pr merge "$PR_NUMBER" --squash --auto --delete-branch || \
+                  GH_TOKEN="$GH_MERGE" gh pr merge "$PR_NUMBER" --squash --delete-branch --admin || \
+                  GH_TOKEN="$GH_DEFAULT" gh pr comment "$PR_NUMBER" --body "auto-merge attempt failed (PAT scope?). Approved label is set; human can finalize."
+              else
+                GH_TOKEN="$GH_DEFAULT" gh pr comment "$PR_NUMBER" --body "AUTO_MERGE_PAT not set — approved label is set, awaiting human merge."
+              fi
               ;;
             COMMENT_AND_WAIT)
               {
@@ -149,7 +158,7 @@ jobs:
                 printf '> trigger: %s\n\n' "$TRIGGER"
                 printf 'This PR needs human eyes per the rubric in `.github/safety-engineer-prompt.md`. Auto-merge will not fire.\n'
               } > "$body_file"
-              gh pr comment "$PR_NUMBER" --body-file "$body_file"
+              GH_TOKEN="$GH_DEFAULT" gh pr comment "$PR_NUMBER" --body-file "$body_file"
               ;;
             BLOCK)
               {
@@ -158,8 +167,8 @@ jobs:
                 printf '> trigger: %s\n\n' "$TRIGGER"
                 printf 'This PR has a safety/sovereignty concern. Adding `blocked` label. Resolve concerns + remove label before re-review.\n'
               } > "$body_file"
-              gh pr comment "$PR_NUMBER" --body-file "$body_file"
-              gh pr edit "$PR_NUMBER" --add-label blocked
+              GH_TOKEN="$GH_DEFAULT" gh pr comment "$PR_NUMBER" --body-file "$body_file"
+              GH_TOKEN="$GH_DEFAULT" gh pr edit "$PR_NUMBER" --add-label blocked
               ;;
             *)
               echo "Unknown decision: $DECISION; defaulting to no-op (human review)" >&2
