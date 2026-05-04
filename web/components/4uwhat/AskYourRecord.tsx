@@ -121,7 +121,22 @@ export function AskYourRecord({
   return (
     <section
       className={className}
-      style={style}
+      style={{
+        // Flex column so the message list takes available space and the input
+        // bar pins to the bottom. `min-height: 0` is the well-known flex
+        // gotcha that lets the messages region actually shrink and scroll
+        // instead of pushing the input off-screen. The parent container is
+        // expected to constrain height (the right rail aside in RecordsOS).
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 0,
+        // Hard cap so even a stray un-bounded parent can't make us grow into
+        // siblings. The rail's other sections (care team, recent activity)
+        // get their own scroll regions; this just keeps the chat sane.
+        maxHeight: "min(70vh, 640px)",
+        gap: 12,
+        ...style,
+      }}
       aria-label="Ask your record"
     >
       <div
@@ -129,7 +144,8 @@ export function AskYourRecord({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: 12,
+          flexShrink: 0,
+          minWidth: 0,
         }}
       >
         <Eyebrow>ASK YOUR RECORD</Eyebrow>
@@ -139,16 +155,22 @@ export function AskYourRecord({
         </Mono>
       </div>
 
-      {/* Streamed turn list (lightweight). Renders the latest assistant
-          message + reasoning + tool calls; older turns collapse. */}
+      {/* Streamed turn list. Grows to fill available vertical space and
+          scrolls internally so the input bar below stays pinned. The user
+          previously saw reasoning rendering BELOW the input bar — caused by
+          a fixed `maxHeight: 220` parent + un-pinned input that let long
+          reasoning blocks visually appear under the form on certain
+          viewports. Flex-column with min-height:0 + overflow-y:auto makes
+          the scroll authoritative. */}
       {messages.length > 0 && (
         <div
           style={{
             ...cardSurface,
             padding: 14,
-            marginBottom: 12,
-            maxHeight: 220,
+            flex: 1,
+            minHeight: 0,
             overflowY: "auto",
+            overflowX: "hidden",
             display: "flex",
             flexDirection: "column",
             gap: 12,
@@ -171,6 +193,10 @@ export function AskYourRecord({
                         lineHeight: 1.45,
                         color: "rgba(255,255,255,0.92)",
                         whiteSpace: "pre-wrap",
+                        // Long URLs / tokens / drug-name strings shouldn't
+                        // force horizontal scroll inside the chat panel.
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
                       }}
                     >
                       {part.text}
@@ -207,6 +233,8 @@ export function AskYourRecord({
                           borderLeft: "2px solid rgba(255,255,255,0.12)",
                           fontStyle: "italic",
                           whiteSpace: "pre-wrap",
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
                         }}
                       >
                         {part.text}
@@ -238,8 +266,12 @@ export function AskYourRecord({
                         color: "rgba(255,255,255,0.75)",
                         display: "inline-flex",
                         alignItems: "center",
+                        flexWrap: "wrap",
                         gap: 8,
                         alignSelf: "flex-start",
+                        maxWidth: "100%",
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
                       }}
                     >
                       <span style={{ color: "var(--accent)", fontWeight: 700 }}>tool</span>
@@ -266,6 +298,14 @@ export function AskYourRecord({
         onSubmit={(e) => {
           e.preventDefault();
           submit();
+        }}
+        style={{
+          // Input bar is pinned to the bottom of the chat panel: it never
+          // shrinks and never scrolls. Combined with the messages region's
+          // `flex: 1; overflow-y: auto` above, this is the canonical
+          // chat-panel layout (Slack/iMessage/etc).
+          flexShrink: 0,
+          minWidth: 0,
         }}
       >
         <div style={inputShellFocus}>
@@ -305,10 +345,11 @@ export function AskYourRecord({
       {messages.length === 0 && suggestions && suggestions.length > 0 && (
         <div
           style={{
-            marginTop: 14,
             display: "flex",
             flexDirection: "column",
             gap: 6,
+            flexShrink: 0,
+            minWidth: 0,
           }}
         >
           {suggestions.map((s, i) => (
@@ -331,6 +372,8 @@ export function AskYourRecord({
                 fontWeight: 500,
                 cursor: "pointer",
                 lineHeight: 1.4,
+                overflowWrap: "anywhere",
+                wordBreak: "break-word",
               }}
             >
               <span style={{ color: "var(--accent)", marginRight: 8 }}>→</span>

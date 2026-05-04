@@ -42,15 +42,26 @@ import {
 } from "@/lib/4uwhat/sample-data";
 
 // ── Shared inline styles (copied from variant-records-os.jsx) ─────────
+// `minWidth: 0` on every card lets long medication names / lab analyte
+// names wrap inside the card instead of forcing the parent grid column to
+// expand and collide with siblings. `overflow: hidden` is the second guard
+// for any absolutely-positioned child or oversized SVG that tries to
+// escape (sparklines occasionally overshoot by 1-2px due to stroke caps).
 const cardBase: CSSProperties = {
   background: "var(--p42-bg-card, #0e0e0e)",
   border: "1px solid rgba(255,255,255,0.07)",
   padding: 18,
+  minWidth: 0,
+  overflow: "hidden",
 };
 
 const tableHead: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1.5fr 1fr 0.9fr 0.9fr 0.5fr",
+  // minmax(0, …) on every column — long analyte names ("Lipoprotein(a)
+  // mass") otherwise force the analyte column wider than its share and
+  // shove value/range/trend off-edge.
+  gridTemplateColumns:
+    "minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 0.5fr)",
   gap: 12,
   padding: "8px 0",
   borderBottom: "1px solid rgba(255,255,255,0.08)",
@@ -60,16 +71,23 @@ const tableHead: CSSProperties = {
   letterSpacing: "0.12em",
   color: "rgba(255,255,255,0.4)",
   textTransform: "uppercase",
+  minWidth: 0,
 };
 
 const tableRow: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1.5fr 1fr 0.9fr 0.9fr 0.5fr",
+  gridTemplateColumns:
+    "minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 0.5fr)",
   gap: 12,
   padding: "10px 0",
   borderBottom: "1px solid rgba(255,255,255,0.04)",
   fontSize: 12.5,
   alignItems: "center",
+  minWidth: 0,
+  // Cell content (analyte name, range string, sparkline) wraps inside
+  // its column rather than overflowing into the next.
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
 };
 
 const medRow: CSSProperties = {
@@ -78,6 +96,7 @@ const medRow: CSSProperties = {
   alignItems: "center",
   padding: "8px 10px",
   border: "1px solid rgba(255,255,255,0.06)",
+  minWidth: 0,
 };
 
 const timelineRow: CSSProperties = {
@@ -86,6 +105,7 @@ const timelineRow: CSSProperties = {
   alignItems: "center",
   padding: "10px 0",
   borderBottom: "1px solid rgba(255,255,255,0.05)",
+  minWidth: 0,
 };
 
 const btnGhost: CSSProperties = {
@@ -198,9 +218,27 @@ export function RecordsOS() {
         background: "#000",
         color: "#fff",
         display: "grid",
-        gridTemplateColumns: "220px 1fr 360px",
+        // Three-column desktop layout. Both rails are explicit fixed widths
+        // (220px nav, 360px AI rail) so they cannot squeeze the fluid
+        // center column. `minmax(0, 1fr)` on the center column is the CSS
+        // Grid gotcha fix: bare `1fr` defaults to `minmax(auto, 1fr)`,
+        // which lets oversized children (long lab names, wide tables,
+        // sparklines) push the column wider than the viewport. `minmax(0,
+        // 1fr)` clamps it to the available space so children honor it.
+        gridTemplateColumns: "220px minmax(0, 1fr) 360px",
         fontFamily: "var(--font-display)",
         minHeight: "calc(100vh - 40px)",
+        // Bound the dashboard to the viewport height so the rails (nav +
+        // AI rail) can scroll internally instead of pushing the page taller
+        // than the screen, which is what was making the chat panel input
+        // appear "mid-scroll" when reasoning streamed in.
+        height: "calc(100vh - 40px)",
+        // No horizontal page scroll, ever. The rails are fixed widths so
+        // the only way to break out is via a runaway grid child; the
+        // overflow-x guard catches that.
+        overflowX: "hidden",
+        overflowY: "hidden",
+        maxWidth: "100vw",
         borderTop: "1px solid #1f1f1f",
       }}
     >
@@ -211,9 +249,21 @@ export function RecordsOS() {
           display: "flex",
           flexDirection: "column",
           background: "#000",
+          // Grid item — without min-height:0 the inner `<nav>` cannot
+          // actually scroll (the flex column would expand the rail to fit
+          // every nav item).
+          minHeight: 0,
+          minWidth: 0,
+          overflow: "hidden",
         }}
       >
-        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #1f1f1f" }}>
+        <div
+          style={{
+            padding: "20px 20px 16px",
+            borderBottom: "1px solid #1f1f1f",
+            flexShrink: 0,
+          }}
+        >
           <Wordmark size={13} />
           <Mono size={9} style={{ marginTop: 10, display: "block" }} color="rgba(255,255,255,0.35)">
             HEALTH / v4.2
@@ -221,7 +271,14 @@ export function RecordsOS() {
         </div>
 
         {/* Patient picker */}
-        <div style={{ padding: "12px 20px", borderBottom: "1px solid #1f1f1f" }}>
+        <div
+          style={{
+            padding: "12px 20px",
+            borderBottom: "1px solid #1f1f1f",
+            flexShrink: 0,
+            minWidth: 0,
+          }}
+        >
           <Mono size={9} color="rgba(255,255,255,0.4)" style={{ marginBottom: 6, display: "block" }}>
             PATIENT
           </Mono>
@@ -229,8 +286,15 @@ export function RecordsOS() {
         </div>
 
         {/* Patient identity */}
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #1f1f1f" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: "1px solid #1f1f1f",
+            flexShrink: 0,
+            minWidth: 0,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
             <Avatar
               initials={patient.name
                 .split(" ")
@@ -241,7 +305,13 @@ export function RecordsOS() {
               size={32}
               accent={true}
             />
-            <div>
+            <div
+              style={{
+                minWidth: 0,
+                overflowWrap: "anywhere",
+                wordBreak: "break-word",
+              }}
+            >
               <div style={{ fontWeight: 600, fontSize: 13, lineHeight: 1.2 }}>{patient.name}</div>
               <Mono size={9} color="rgba(255,255,255,0.4)">
                 {patient.mrn}
@@ -251,7 +321,7 @@ export function RecordsOS() {
         </div>
 
         {/* Nav */}
-        <nav style={{ padding: "8px 8px", flex: 1, overflowY: "auto" }}>
+        <nav style={{ padding: "8px 8px", flex: 1, overflowY: "auto", overflowX: "hidden", minHeight: 0 }}>
           {NAV.map((n) => {
             const active = n.id === activeModule;
             return (
@@ -292,7 +362,13 @@ export function RecordsOS() {
         </nav>
 
         {/* Footer status */}
-        <div style={{ padding: "12px 20px", borderTop: "1px solid #1f1f1f" }}>
+        <div
+          style={{
+            padding: "12px 20px",
+            borderTop: "1px solid #1f1f1f",
+            flexShrink: 0,
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Dot color="var(--accent)" glow={true} size={6} />
             <Mono size={9}>SYNCED · 2 MIN AGO</Mono>
@@ -301,7 +377,17 @@ export function RecordsOS() {
       </aside>
 
       {/* ── MAIN ────────────────────────────────────────────────────── */}
-      <main style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <main
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          // `min-width: 0` (already present) is the grid gotcha fix; pair
+          // with `min-height: 0` so the inner content scroll region works.
+          minWidth: 0,
+          minHeight: 0,
+          overflow: "hidden",
+        }}
+      >
         {/* Top bar */}
         <div
           style={{
@@ -333,14 +419,34 @@ export function RecordsOS() {
         </div>
 
         {/* Content scroll area */}
-        <div style={{ padding: "24px 28px", flex: 1, minHeight: 0 }}>
+        <div
+          style={{
+            padding: "24px 28px",
+            flex: 1,
+            minHeight: 0,
+            minWidth: 0,
+            // The dashboard content (hero row, vitals strip, labs/meds row,
+            // timeline) is taller than the viewport. Without a scroll
+            // container here, the whole page would grow and the rails
+            // would lose their internal-scroll behavior.
+            overflowY: "auto",
+            overflowX: "hidden",
+          }}
+        >
           {/* Hero row */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1.2fr 1fr",
+              // `minmax(0, …fr)` everywhere a grid child renders content
+              // that could be wider than the column (long names, big
+              // numerics, sparklines). Without this, `1.2fr 1fr` defaults
+              // to `minmax(auto, …)` and any oversized inline element
+              // (like the 36px display name "Maya Okafor") stretches the
+              // column past the available width.
+              gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 1fr)",
               gap: 16,
               marginBottom: 16,
+              minWidth: 0,
             }}
           >
             <div style={cardBase}>
@@ -496,13 +602,26 @@ export function RecordsOS() {
               <Eyebrow>VITALS · LAST 12 READINGS</Eyebrow>
               <Mono>FROM APPLE WATCH · OURA · CLINIC</Mono>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)" }}>
+            <div
+              style={{
+                display: "grid",
+                // minmax(0, 1fr) prevents a single oversized vital reading
+                // (e.g. a long unit string) from squeezing the other five.
+                gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+                minWidth: 0,
+              }}
+            >
               {Object.values(vitals).map((v, i) => (
                 <div
                   key={v.label}
                   style={{
                     padding: "16px 20px",
                     borderRight: i < 5 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                    minWidth: 0,
+                    // Sparkline below uses w={120} which is wider than the
+                    // column at sub-1280px viewports; clip rather than
+                    // expand the cell.
+                    overflow: "hidden",
                   }}
                 >
                   <Mono size={9}>{v.label.toUpperCase()}</Mono>
@@ -549,9 +668,10 @@ export function RecordsOS() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1.4fr 1fr",
+              gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)",
               gap: 16,
               marginBottom: 16,
+              minWidth: 0,
             }}
           >
             {/* Labs table */}
@@ -596,7 +716,14 @@ export function RecordsOS() {
                       {l.value} <Mono size={9}>{l.unit}</Mono>
                     </span>
                     <Mono>{l.range}</Mono>
-                    <span style={{ color: l.flag === "low" ? "#ffaa00" : "var(--accent)" }}>
+                    <span
+                      style={{
+                        color: l.flag === "low" ? "#ffaa00" : "var(--accent)",
+                        display: "inline-block",
+                        minWidth: 0,
+                        overflow: "hidden",
+                      }}
+                    >
                       <Sparkline
                         data={l.trend}
                         w={70}
@@ -623,13 +750,27 @@ export function RecordsOS() {
             </div>
 
             {/* Meds + conditions stacked */}
-            <div style={{ display: "grid", gridTemplateRows: "1fr 1fr", gap: 16 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateRows: "minmax(0, 1fr) minmax(0, 1fr)",
+                gap: 16,
+                minWidth: 0,
+              }}
+            >
               <div style={cardBase}>
                 <Eyebrow style={{ marginBottom: 12 }}>MEDICATIONS · 4 ACTIVE</Eyebrow>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {meds.slice(0, 4).map((m) => (
                     <div key={m.id} style={medRow}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
+                        }}
+                      >
                         <Tooltip
                           label={m.name}
                           range={`${m.dose} · ${m.freq}`}
@@ -683,11 +824,12 @@ export function RecordsOS() {
                       key={c.id}
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "12px 1fr auto auto",
+                        gridTemplateColumns: "12px minmax(0, 1fr) auto auto",
                         alignItems: "center",
                         gap: 10,
                         padding: "8px 0",
                         borderBottom: "1px solid rgba(255,255,255,0.05)",
+                        minWidth: 0,
                       }}
                     >
                       <Dot
@@ -703,6 +845,9 @@ export function RecordsOS() {
                         style={{
                           fontSize: 13,
                           color: c.status === "active" ? "#fff" : "rgba(255,255,255,0.5)",
+                          minWidth: 0,
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
                         }}
                       >
                         {c.name}
@@ -726,7 +871,14 @@ export function RecordsOS() {
           </div>
 
           {/* Bottom row: timeline preview + sharing */}
-          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)",
+              gap: 16,
+              minWidth: 0,
+            }}
+          >
             <div style={cardBase}>
               <div
                 style={{
@@ -756,7 +908,18 @@ export function RecordsOS() {
                     >
                       {e.tag}
                     </Tag>
-                    <span style={{ fontSize: 13, fontWeight: 500, flex: 1 }}>{e.title}</span>
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 500,
+                        flex: 1,
+                        minWidth: 0,
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {e.title}
+                    </span>
                     <Mono color="rgba(255,255,255,0.45)">{e.who}</Mono>
                   </div>
                 ))}
@@ -773,15 +936,27 @@ export function RecordsOS() {
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
+                      gap: 10,
                       padding: "10px 12px",
                       border: "1px solid rgba(255,255,255,0.06)",
+                      minWidth: 0,
                     }}
                   >
-                    <div>
+                    <div
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
+                      }}
+                    >
                       <div style={{ fontSize: 13, fontWeight: 500 }}>{s.who}</div>
                       <Mono size={9}>{s.scope.toUpperCase()}</Mono>
                     </div>
-                    <button type="button" style={{ ...btnGhost, padding: "4px 8px", fontSize: 10 }}>
+                    <button
+                      type="button"
+                      style={{ ...btnGhost, padding: "4px 8px", fontSize: 10, flexShrink: 0 }}
+                    >
                       REVOKE
                     </button>
                   </div>
@@ -799,30 +974,68 @@ export function RecordsOS() {
           display: "flex",
           flexDirection: "column",
           background: "#000",
+          // Bound the rail to the grid track height so its three sections
+          // (chat, care team, recent activity) can each scroll internally
+          // without pushing the page taller than the viewport.
+          minHeight: 0,
+          minWidth: 0,
+          overflow: "hidden",
         }}
       >
-        {/* Ask your record (AI) */}
-        <div style={{ padding: "20px 22px", borderBottom: "1px solid #1f1f1f" }}>
+        {/* Ask your record (AI) — flex:1 so the chat panel takes the
+            largest share of the rail; AskYourRecord itself caps to a
+            sensible viewport-bounded max. */}
+        <div
+          style={{
+            padding: "20px 22px",
+            borderBottom: "1px solid #1f1f1f",
+            display: "flex",
+            flexDirection: "column",
+            flex: "1 1 auto",
+            minHeight: 0,
+            minWidth: 0,
+          }}
+        >
           <AskYourRecord suggestions={SAMPLE_AI_SUGGESTIONS} />
         </div>
 
         {/* Care team */}
-        <div style={{ padding: "18px 22px", borderBottom: "1px solid #1f1f1f" }}>
+        <div
+          style={{
+            padding: "18px 22px",
+            borderBottom: "1px solid #1f1f1f",
+            flexShrink: 0,
+            minWidth: 0,
+          }}
+        >
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
             <Eyebrow>CARE TEAM</Eyebrow>
             <Mono>{careTeam.filter((c) => c.online).length} ONLINE</Mono>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {careTeam.map((c) => (
-              <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div
+                key={c.id}
+                style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}
+              >
                 <Avatar initials={c.avatar} online={c.online} size={28} />
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    overflowWrap: "anywhere",
+                    wordBreak: "break-word",
+                  }}
+                >
                   <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.3 }}>
                     {c.name}
                   </div>
                   <Mono size={9}>{c.role.toUpperCase()}</Mono>
                 </div>
-                <button type="button" style={{ ...btnGhost, padding: "3px 7px", fontSize: 10 }}>
+                <button
+                  type="button"
+                  style={{ ...btnGhost, padding: "3px 7px", fontSize: 10, flexShrink: 0 }}
+                >
                   MSG
                 </button>
               </div>
@@ -831,7 +1044,18 @@ export function RecordsOS() {
         </div>
 
         {/* Recent activity */}
-        <div style={{ padding: "18px 22px", flex: 1, overflowY: "auto" }}>
+        <div
+          style={{
+            padding: "18px 22px",
+            // Cap at a fraction of the rail so it doesn't crowd out the
+            // chat panel. Internal scroll lets the activity list grow.
+            flex: "0 1 auto",
+            maxHeight: "30vh",
+            overflowY: "auto",
+            overflowX: "hidden",
+            minWidth: 0,
+          }}
+        >
           <Eyebrow style={{ marginBottom: 12 }}>RECENT ACTIVITY</Eyebrow>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <ActivityRow time="2 min" actor="4UWHAt" verb="synced" obj="Apple Health · 47 entries" />
@@ -843,7 +1067,7 @@ export function RecordsOS() {
           </div>
         </div>
 
-        <div style={{ height: 4, background: "var(--accent)" }} />
+        <div style={{ height: 4, background: "var(--accent)", flexShrink: 0 }} />
       </aside>
     </div>
   );

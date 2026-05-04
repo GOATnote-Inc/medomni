@@ -1,6 +1,19 @@
 @import "tailwindcss";
 
 /* =========================================================================
+   Page-level overflow guard. The Records OS dashboard renders at viewport
+   width; without this guard a runaway grid child or oversized SVG could
+   force a horizontal page scrollbar. The dashboard's three-column grid
+   already constrains its own children with `minmax(0, 1fr)`; this is a
+   second, page-wide safety net.
+   ========================================================================= */
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* =========================================================================
    4UWHAt design tokens — ported from /Users/kiteboard/medomni/assets/lib/colors_and_type.css
    Source of truth: assets/README.md §Design Tokens.
    The default theme is DARK; .theme-light flips semantic foreground/background.
