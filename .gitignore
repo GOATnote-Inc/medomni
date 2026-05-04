@@ -55,3 +55,8 @@ Thumbs.db
 .idea/
 *.swp
 third_party/
+
+# Spike sandbox (scripts/spike/) — local Medplum + Synthea data, never commit
+scripts/spike/.medplum-data/
+scripts/spike/synthea/
+scripts/spike/.spike-token
