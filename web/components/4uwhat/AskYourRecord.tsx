@@ -13,16 +13,34 @@
 //
 // BASE_PATH is required: useChat's DefaultChatTransport calls raw fetch()
 // which does not auto-prefix the Next.js basePath. See lib/basePath.ts.
+//
+// Voice I/O (B3, regression fix from /agent):
+//   - mic button next to the input → AudioRecorder (mirrors /agent path)
+//   - VoiceOutToggle in the panel header → useSpeechSynthesis reads the
+//     streaming assistant deltas sentence-by-sentence
+//   - localStorage key `medomni:voiceOut` matches /agent so the toggle
+//     state persists across the two surfaces.
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { BASE_PATH } from "@/lib/basePath";
 import { Eyebrow } from "./Eyebrow";
 import { Mono } from "./Mono";
 import { PrismMark } from "./PrismMark";
+import { AudioRecorder } from "@/components/AudioRecorder";
+import { VoiceOutToggle } from "@/components/VoiceOutToggle";
+import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 import { usePatientId } from "@/hooks/usePatientId";
 import { usePersona } from "@/hooks/usePersona";
+
+const VOICE_OUT_STORAGE_KEY = "medomni:voiceOut";
 
 const cardSurface: CSSProperties = {
   background: "var(--p42-ink, #0a0a0a)",
@@ -62,11 +80,49 @@ const submitStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+interface FilePart {
+  type: "file";
+  mediaType: string;
+  url: string;
+  filename?: string;
+}
+
 interface AskYourRecordProps {
   /** Suggestion chips rendered above the input until first turn. */
   suggestions?: string[];
   className?: string;
   style?: CSSProperties;
+}
+
+// Strip markdown fences/asterisks/etc. for TTS. Mirrors /agent's helper
+// (kept inline rather than imported so the /agent route stays the
+// canonical owner — this is the Records-OS version of the same idea).
+function stripMarkdownForSpeech(s: string): string {
+  return s
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/(\*\*|__)(.*?)\1/g, "$2")
+    .replace(/(\*|_)(.*?)\1/g, "$2")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/^\s*\d+\.\s+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Flush at sentence boundaries so utterances sound natural.
+function splitForSpeech(buffer: string): { chunks: string[]; rest: string } {
+  const re = /[^.!?\n]+[.!?\n]+["')\]]?\s*/g;
+  const chunks: string[] = [];
+  let lastEnd = 0;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(buffer)) !== null) {
+    chunks.push(match[0]);
+    lastEnd = re.lastIndex;
+  }
+  return { chunks, rest: buffer.slice(lastEnd) };
 }
 
 export function AskYourRecord({
@@ -77,6 +133,44 @@ export function AskYourRecord({
   const [patientId] = usePatientId();
   const [persona] = usePersona();
   const [input, setInput] = useState("");
+  const [pendingAudio, setPendingAudio] = useState<{
+    url: string;
+    durationMs: number;
+  } | null>(null);
+  const [audioError, setAudioError] = useState<string | null>(null);
+
+  // Voice-out toggle state. Default off; persists via localStorage to
+  // match /agent so flipping the toggle on either surface carries to
+  // the other on the next mount.
+  const [voiceOutEnabled, setVoiceOutEnabled] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(VOICE_OUT_STORAGE_KEY);
+      if (raw === "true") setVoiceOutEnabled(true);
+    } catch {
+      // localStorage can throw in strict privacy modes; fail silent.
+    }
+  }, []);
+  const handleVoiceOutChange = (next: boolean) => {
+    setVoiceOutEnabled(next);
+    try {
+      window.localStorage.setItem(VOICE_OUT_STORAGE_KEY, String(next));
+    } catch {
+      // ignore
+    }
+  };
+
+  const {
+    speak: ttsSpeak,
+    cancel: ttsCancel,
+    state: ttsState,
+    supported: ttsSupported,
+  } = useSpeechSynthesis({ enabled: voiceOutEnabled });
+
+  // Spoken-offset bookkeeping per assistant text-part. Same shape as
+  // /agent — keys are `${messageId}#${partIdx}`.
+  const spokenLenRef = useRef<Map<string, number>>(new Map());
+  const speechBufferRef = useRef<Map<string, string>>(new Map());
 
   // Refs hold the live patientId/persona so the transport's body callback
   // (created once via useMemo) reads the latest values at request time
@@ -109,10 +203,93 @@ export function AskYourRecord({
   const { messages, sendMessage, status, stop } = useChat({ transport });
 
   const busy = status === "submitted" || status === "streaming";
+  const hasAudio = pendingAudio !== null;
+
+  // Walk every assistant text-part each render, queue only the NEW
+  // characters past the last spoken offset, flush at sentence boundaries.
+  // O(deltas) per render — same shape as /agent's effect.
+  useEffect(() => {
+    if (!voiceOutEnabled) return;
+    for (const m of messages) {
+      if (m.role !== "assistant") continue;
+      m.parts.forEach((part, i) => {
+        if (part.type !== "text") return;
+        const key = `${m.id}#${i}`;
+        const fullText = (part as { text?: string }).text ?? "";
+        const prev = spokenLenRef.current.get(key) ?? 0;
+        if (fullText.length <= prev) return;
+        const delta = fullText.slice(prev);
+        spokenLenRef.current.set(key, fullText.length);
+        const cleaned = stripMarkdownForSpeech(delta);
+        if (!cleaned) return;
+        const buf =
+          (speechBufferRef.current.get(key) ?? "") + cleaned + " ";
+        const { chunks, rest } = splitForSpeech(buf);
+        speechBufferRef.current.set(key, rest);
+        for (const c of chunks) {
+          const trimmed = c.trim();
+          if (trimmed) ttsSpeak(trimmed);
+        }
+      });
+    }
+  }, [messages, voiceOutEnabled, ttsSpeak]);
+
+  // Flush leftover buffer when streaming ends (last sentence may not
+  // end with terminal punctuation).
+  useEffect(() => {
+    if (busy) return;
+    if (!voiceOutEnabled) return;
+    for (const [key, rest] of speechBufferRef.current.entries()) {
+      const trimmed = rest.trim();
+      if (trimmed) ttsSpeak(trimmed);
+      speechBufferRef.current.set(key, "");
+    }
+  }, [busy, voiceOutEnabled, ttsSpeak]);
+
+  // While the user is recording, silence any in-flight TTS so the mic
+  // doesn't pick up the speaker output.
+  useEffect(() => {
+    if (hasAudio) ttsCancel();
+  }, [hasAudio, ttsCancel]);
+
+  function handleAudio(url: string, durationMs: number) {
+    setPendingAudio({ url, durationMs });
+    setAudioError(null);
+  }
+
+  function clearAudio() {
+    setPendingAudio(null);
+  }
 
   function submit() {
     if (busy) return;
+    // Any new turn cancels in-flight TTS — the user has the floor again.
+    ttsCancel();
     const trimmed = input.trim();
+
+    // Audio attached → send audio + optional follow-up text. Mirrors
+    // /agent's voice-mode submit path 1:1.
+    if (pendingAudio) {
+      const followup =
+        trimmed ||
+        "Transcribe the audio and answer the clinical question about this record. Cite guidelines and PMIDs where they meaningfully change the answer.";
+      void sendMessage({
+        text: followup,
+        files: [
+          {
+            type: "file",
+            mediaType: "audio/wav",
+            url: pendingAudio.url,
+            filename: `recording-${pendingAudio.durationMs}ms.wav`,
+          } as FilePart,
+        ],
+      });
+      setInput("");
+      setPendingAudio(null);
+      return;
+    }
+
+    // Text-only path.
     if (!trimmed) return;
     void sendMessage({ text: trimmed });
     setInput("");
@@ -144,15 +321,32 @@ export function AskYourRecord({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          gap: 8,
           flexShrink: 0,
           minWidth: 0,
+          flexWrap: "wrap",
         }}
       >
         <Eyebrow>ASK YOUR RECORD</Eyebrow>
-        <Mono size={9}>
-          {patientId ? `PT · ${patientId.slice(0, 16)}` : "NO PATIENT SELECTED"}
-          {persona ? ` · ${persona.toUpperCase()}` : ""}
-        </Mono>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            minWidth: 0,
+          }}
+        >
+          <VoiceOutToggle
+            enabled={voiceOutEnabled}
+            onChange={handleVoiceOutChange}
+            state={ttsState}
+            supported={ttsSupported}
+          />
+          <Mono size={9}>
+            {patientId ? `PT · ${patientId.slice(0, 16)}` : "NO PATIENT SELECTED"}
+            {persona ? ` · ${persona.toUpperCase()}` : ""}
+          </Mono>
+        </div>
       </div>
 
       {/* Streamed turn list. Grows to fill available vertical space and
@@ -177,7 +371,10 @@ export function AskYourRecord({
           }}
         >
           {messages.map((m) => (
-            <div key={m.id} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div
+              key={m.id}
+              style={{ display: "flex", flexDirection: "column", gap: 6 }}
+            >
               <Mono size={9} color="rgba(255,255,255,0.45)">
                 {m.role === "user" ? "YOU" : "MEDOMNI"}
               </Mono>
@@ -199,11 +396,15 @@ export function AskYourRecord({
                         wordBreak: "break-word",
                       }}
                     >
-                      {part.text}
+                      {(part as { text?: string }).text}
                     </div>
                   );
                 }
                 if (part.type === "reasoning") {
+                  const reasoningPart = part as {
+                    text?: string;
+                    state?: string;
+                  };
                   return (
                     <details
                       key={key}
@@ -212,7 +413,7 @@ export function AskYourRecord({
                         fontSize: 11,
                         color: "rgba(255,255,255,0.55)",
                       }}
-                      open={part.state === "streaming"}
+                      open={reasoningPart.state === "streaming"}
                     >
                       <summary
                         style={{
@@ -237,12 +438,46 @@ export function AskYourRecord({
                           wordBreak: "break-word",
                         }}
                       >
-                        {part.text}
+                        {reasoningPart.text}
                       </div>
                     </details>
                   );
                 }
-                if (typeof part.type === "string" && part.type.startsWith("tool-")) {
+                if (
+                  part.type === "file" &&
+                  (part as FilePart).mediaType?.startsWith("audio/")
+                ) {
+                  return (
+                    <div
+                      key={key}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "6px 10px",
+                        border: "1px solid rgba(255,0,150,0.25)",
+                        background: "rgba(255,0,150,0.04)",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 10.5,
+                        color: "rgba(255,255,255,0.75)",
+                        alignSelf: "flex-start",
+                      }}
+                    >
+                      <span style={{ color: "var(--accent)", fontWeight: 700 }}>
+                        VOICE
+                      </span>
+                      <audio
+                        src={(part as FilePart).url}
+                        controls
+                        style={{ height: 24 }}
+                      />
+                    </div>
+                  );
+                }
+                if (
+                  typeof part.type === "string" &&
+                  part.type.startsWith("tool-")
+                ) {
                   // Tool cards are rendered as compact mono badges. The full
                   // inputs/outputs render in /agent for deep inspection; the
                   // dashboard footer just signals what the agent reached for.
@@ -274,14 +509,20 @@ export function AskYourRecord({
                         wordBreak: "break-word",
                       }}
                     >
-                      <span style={{ color: "var(--accent)", fontWeight: 700 }}>tool</span>
+                      <span style={{ color: "var(--accent)", fontWeight: 700 }}>
+                        tool
+                      </span>
                       <span>{toolName}</span>
                       <span style={{ color: "rgba(255,255,255,0.35)" }}>·</span>
                       <span>{state.replace(/-/g, " ")}</span>
                       {q ? (
                         <>
-                          <span style={{ color: "rgba(255,255,255,0.35)" }}>·</span>
-                          <span style={{ color: "rgba(255,255,255,0.55)" }}>{String(q)}</span>
+                          <span style={{ color: "rgba(255,255,255,0.35)" }}>
+                            ·
+                          </span>
+                          <span style={{ color: "rgba(255,255,255,0.55)" }}>
+                            {String(q)}
+                          </span>
                         </>
                       ) : null}
                     </div>
@@ -291,6 +532,63 @@ export function AskYourRecord({
               })}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Audio-attached chip + recording-error banner sit just above the
+          input shell so the user can clear or retry without losing focus. */}
+      {audioError && (
+        <div
+          style={{
+            flexShrink: 0,
+            padding: "8px 10px",
+            border: "1px solid rgba(244,63,94,0.45)",
+            background: "rgba(244,63,94,0.08)",
+            color: "rgba(254,205,211,0.95)",
+            fontFamily: "var(--font-mono)",
+            fontSize: 11,
+            lineHeight: 1.4,
+          }}
+          role="alert"
+        >
+          {audioError}
+        </div>
+      )}
+      {pendingAudio && (
+        <div
+          style={{
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "8px 10px",
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "rgba(255,255,255,0.04)",
+            fontFamily: "var(--font-mono)",
+            fontSize: 11,
+            color: "rgba(255,255,255,0.75)",
+          }}
+        >
+          <span style={{ color: "var(--accent)", fontWeight: 700 }}>VOICE</span>
+          <span>
+            recorded · {(pendingAudio.durationMs / 1000).toFixed(1)}s · 16 kHz mono
+          </span>
+          <button
+            type="button"
+            onClick={clearAudio}
+            style={{
+              marginLeft: "auto",
+              background: "transparent",
+              color: "rgba(255,255,255,0.55)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              padding: "3px 8px",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              cursor: "pointer",
+            }}
+          >
+            clear
+          </button>
         </div>
       )}
 
@@ -307,33 +605,49 @@ export function AskYourRecord({
           flexShrink: 0,
           minWidth: 0,
         }}
+        data-testid="askyourrecord-form"
       >
         <div style={inputShellFocus}>
           <PrismMark size={16} color="var(--accent)" />
           <input
             type="text"
-            placeholder="ask anything about this record_"
+            placeholder={
+              hasAudio
+                ? "optional follow-up text_"
+                : "ask anything about this record_"
+            }
             value={input}
             disabled={busy}
             onChange={(e) => setInput(e.currentTarget.value)}
             style={inputStyle}
             aria-label="Ask a question about this record"
           />
+          {/* Mic — tap to start, tap to stop. AudioRecorder owns the
+              recording state itself, so we only feed it onAudio/onError. */}
+          <AudioRecorder
+            onAudio={handleAudio}
+            onError={setAudioError}
+            disabled={busy || hasAudio}
+          />
           {busy ? (
             <button
               type="button"
               onClick={() => stop()}
-              style={{ ...submitStyle, background: "transparent", color: "var(--accent)" }}
+              style={{
+                ...submitStyle,
+                background: "transparent",
+                color: "var(--accent)",
+              }}
             >
               stop
             </button>
           ) : (
             <button
               type="submit"
-              disabled={input.trim().length === 0}
+              disabled={!hasAudio && input.trim().length === 0}
               style={{
                 ...submitStyle,
-                opacity: input.trim().length === 0 ? 0.5 : 1,
+                opacity: !hasAudio && input.trim().length === 0 ? 0.5 : 1,
               }}
             >
               ask

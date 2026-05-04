@@ -81,6 +81,13 @@ export interface SampleImaging {
   radiologist: string;
 }
 
+export interface SampleCareTeamAppointment {
+  /** ISO date (YYYY-MM-DD). Time-of-day omitted by design — demo data. */
+  date: string;
+  /** Short description rendered next to the date in the drawer card. */
+  type: string;
+}
+
 export interface SampleCareTeamMember {
   id: string;
   name: string;
@@ -88,6 +95,14 @@ export interface SampleCareTeamMember {
   org: string;
   avatar: string;
   online: boolean;
+  /** Next scheduled appointment with this provider. Optional — drawer
+   *  renders "(none scheduled)" when absent. */
+  nextAppointment?: SampleCareTeamAppointment;
+  /** Open clinical threads worth tracking between visits. Each entry is
+   *  a short, plain-language sentence — anchored to Maya's actual labs/
+   *  conditions/meds elsewhere in this file so the chips stay coherent
+   *  with the rest of the synthetic record. */
+  itemsToWatch?: string[];
 }
 
 export interface SampleShare {
@@ -242,10 +257,72 @@ export const SAMPLE_IMAGING: SampleImaging[] = [
 ];
 
 export const SAMPLE_CARE_TEAM: SampleCareTeamMember[] = [
-  { id: "ade", name: "Dr. R. Adebayo", role: "Primary care", org: "Riverside Primary Care", avatar: "RA", online: true },
-  { id: "pat", name: "Dr. P. Patel", role: "Pulmonology", org: "Riverside Pulmonary", avatar: "PP", online: false },
-  { id: "won", name: "A. Wong, RD", role: "Dietitian", org: "In-network", avatar: "AW", online: true },
-  { id: "rui", name: "M. Ruiz, PharmD", role: "Pharmacist", org: "CVS · Mission St.", avatar: "MR", online: false },
+  {
+    id: "ade",
+    name: "Dr. R. Adebayo",
+    role: "Primary care",
+    org: "Riverside Primary Care",
+    avatar: "RA",
+    online: true,
+    nextAppointment: {
+      date: "2026-10-21",
+      type: "Annual physical (in-person)",
+    },
+    itemsToWatch: [
+      "LDL 92 on rosuvastatin 5 mg — recheck lipids in 8 weeks",
+      "Vitamin D 28 ng/mL still insufficient — confirm D₃ 2000 IU adherence",
+      "Resting HR trending into athletic range (58 bpm) — note baseline at next visit",
+    ],
+  },
+  {
+    id: "pat",
+    name: "Dr. P. Patel",
+    role: "Pulmonology",
+    org: "Riverside Pulmonary",
+    avatar: "PP",
+    online: false,
+    nextAppointment: {
+      date: "2026-08-19",
+      type: "Asthma follow-up + spirometry",
+    },
+    itemsToWatch: [
+      "Fluticasone 110 mcg adherence 88% — reinforce twice-daily use",
+      "Albuterol refills (4 remaining) — flag if usage climbs above 2× per week",
+      "Chest X-ray (Mar 8) clear — re-image only if symptom escalation",
+    ],
+  },
+  {
+    id: "won",
+    name: "A. Wong, RD",
+    role: "Dietitian",
+    org: "In-network",
+    avatar: "AW",
+    online: true,
+    nextAppointment: {
+      date: "2026-06-04",
+      type: "Nutrition follow-up (telehealth)",
+    },
+    itemsToWatch: [
+      "Triglycerides 88 mg/dL — keep current Mediterranean pattern",
+      "Vitamin D dietary sources (fatty fish, fortified dairy) given low 25-OH",
+      "Weight trending −1.2 lb / 90d at BMI 22.1 — maintain, don't restrict",
+    ],
+  },
+  {
+    id: "rui",
+    name: "M. Ruiz, PharmD",
+    role: "Pharmacist",
+    org: "CVS · Mission St.",
+    avatar: "MR",
+    online: false,
+    // Pharmacist consults are typically open-walk-in; leave appointment
+    // blank to exercise the "(none scheduled)" empty-state in the drawer.
+    itemsToWatch: [
+      "Rosuvastatin 5 mg refills (2 remaining) — auto-refill enrollment available",
+      "Fluticasone inhaler technique check at next pickup",
+      "OTC vitamin D₃ 2000 IU — confirm brand + lot tracked in med list",
+    ],
+  },
 ];
 
 export const SAMPLE_SHARES: SampleShare[] = [

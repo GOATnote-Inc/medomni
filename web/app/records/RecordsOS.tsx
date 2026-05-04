@@ -737,6 +737,15 @@ function CareTeamDrawerBody({
     boxSizing: "border-box",
   };
 
+  // Format ISO dates ("2026-10-21") as "Oct 21, 2026". Locale-en for the
+  // demo; if i18n lands later, swap to Intl with the active locale.
+  const apptDateLabel = member.nextAppointment
+    ? new Date(`${member.nextAppointment.date}T00:00:00`).toLocaleDateString(
+        "en-US",
+        { year: "numeric", month: "short", day: "numeric" },
+      )
+    : null;
+
   return (
     <div>
       <div style={drawerSection}>
@@ -750,6 +759,123 @@ function CareTeamDrawerBody({
           </div>
         </div>
       </div>
+
+      {/* Next appointment — always rendered (renders "(none scheduled)"
+          when the member has no nextAppointment). The Reschedule button
+          is intentionally disabled in demo mode; the tooltip explains. */}
+      <div style={drawerSection}>
+        <span style={drawerLabel}>Next appointment</span>
+        {member.nextAppointment ? (
+          <div
+            style={{
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "rgba(255,255,255,0.03)",
+              padding: "10px 12px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>
+                {apptDateLabel}
+              </div>
+              <div
+                style={{
+                  marginTop: 2,
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.7)",
+                  fontFamily: "var(--font-display)",
+                }}
+              >
+                {member.nextAppointment.type}
+              </div>
+            </div>
+            <Tooltip
+              label="DEMO MODE"
+              range="Reschedule disabled"
+              hint="Demo mode — reschedule lands when SMART scheduling is wired."
+              source="4UWHAt · sample data"
+            >
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.45)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  padding: "6px 10px",
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 600,
+                  fontSize: 11,
+                  cursor: "not-allowed",
+                }}
+              >
+                Reschedule
+              </button>
+            </Tooltip>
+          </div>
+        ) : (
+          <div
+            style={{
+              border: "1px dashed rgba(255,255,255,0.12)",
+              padding: "10px 12px",
+              fontSize: 12,
+              color: "rgba(255,255,255,0.5)",
+              fontStyle: "italic",
+            }}
+          >
+            (none scheduled)
+          </div>
+        )}
+      </div>
+
+      {/* Items to watch — bullet list of open clinical threads sourced
+          from sample-data.ts. Hidden only when the array is empty (an
+          empty list adds noise; absent appointment is meaningful, but
+          "no items to watch" reads as a status the team didn't author). */}
+      {member.itemsToWatch && member.itemsToWatch.length > 0 && (
+        <div style={drawerSection}>
+          <span style={drawerLabel}>Items to watch</span>
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            {member.itemsToWatch.map((item, i) => (
+              <li
+                key={i}
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  fontSize: 12.5,
+                  lineHeight: 1.45,
+                  color: "rgba(255,255,255,0.85)",
+                }}
+              >
+                <span
+                  aria-hidden
+                  style={{
+                    color: "var(--accent)",
+                    flexShrink: 0,
+                    marginTop: 2,
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  ◆
+                </span>
+                <span style={{ flex: 1 }}>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div style={drawerSection}>
         <span style={drawerLabel}>Subject</span>
