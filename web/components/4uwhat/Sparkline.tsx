@@ -1,9 +1,16 @@
 // 4UWHAt — Sparkline
 // Compact SVG line chart with optional last-point dot. Used in vitals/lab rows.
 // Source: assets/app/atoms.jsx (function Sparkline).
+//
+// Auto-width: the `w` prop now feeds the SVG `viewBox` only; the rendered
+// element fills 100% of its parent's content box. This prevents fixed-pixel
+// SVGs from escaping (or overlapping siblings in) compressed grid cells —
+// e.g. when the AI rail is widened and the 6-column vitals strip narrows.
+// `preserveAspectRatio="none"` lets the line stretch horizontally to fit.
 
 interface SparklineProps {
   data: number[];
+  /** ViewBox max-x. Sets the chart's intrinsic aspect ratio; render width is 100% of parent. */
   w?: number;
   h?: number;
   stroke?: string;
@@ -38,9 +45,11 @@ export function Sparkline({
 
   return (
     <svg
-      width={w}
+      viewBox={`0 0 ${w} ${h}`}
+      width="100%"
       height={h}
-      style={{ display: "block", overflow: "visible" }}
+      preserveAspectRatio="none"
+      style={{ display: "block", maxWidth: "100%", height: "auto", overflow: "hidden" }}
       aria-hidden="true"
     >
       {fill !== "none" && (
@@ -53,8 +62,19 @@ export function Sparkline({
         strokeWidth={strokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
+        // Compensate for non-uniform scaling under preserveAspectRatio="none"
+        // so the stroke doesn't appear stretched horizontally.
+        vectorEffect="non-scaling-stroke"
       />
-      {dot && <circle cx={last[0]} cy={last[1]} r={2} fill={stroke} />}
+      {dot && (
+        <circle
+          cx={last[0]}
+          cy={last[1]}
+          r={2}
+          fill={stroke}
+          vectorEffect="non-scaling-stroke"
+        />
+      )}
     </svg>
   );
 }

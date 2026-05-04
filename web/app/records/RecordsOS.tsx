@@ -12,7 +12,13 @@
 // network calls happen inside the embedded AskYourRecord command bar,
 // which talks to /4UWHAt/api/agent on the same origin.
 
-import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import {
   Avatar,
   DetailDrawer,
@@ -28,6 +34,7 @@ import {
   Wordmark,
 } from "@/components/4uwhat";
 import { AskYourRecord } from "@/components/4uwhat/AskYourRecord";
+import { Resizer, loadPersistedVar } from "@/components/4uwhat/Resizer";
 // Direct import: A2's parallel branch lands the PatientPicker file at
 // this path. Bypassing the barrel keeps this file's imports isolated to
 // what A2 actually exports as a component module.
@@ -832,17 +839,46 @@ export function RecordsOS() {
   const careTeam = SAMPLE_CARE_TEAM;
   const shares = SAMPLE_SHARES;
 
+  // Persisted column widths. SSR-safe: we render the design defaults
+  // first, then hydrate the user's stored sizes from localStorage on
+  // mount via the effect below. Avoids a server/client mismatch.
+  const COL_LEFT_DEFAULT = "220px";
+  const COL_RIGHT_DEFAULT = "360px";
+  useEffect(() => {
+    const grid = document.querySelector(
+      "[data-records-os-grid]",
+    ) as HTMLElement | null;
+    if (!grid) return;
+    grid.style.setProperty(
+      "--col-left",
+      loadPersistedVar("4uwhat:col-left", COL_LEFT_DEFAULT),
+    );
+    grid.style.setProperty(
+      "--col-right",
+      loadPersistedVar("4uwhat:col-right", COL_RIGHT_DEFAULT),
+    );
+  }, []);
+
   return (
     <div
-      style={{
-        background: "#000",
-        color: "#fff",
-        display: "grid",
-        gridTemplateColumns: "220px minmax(0, 1fr) 360px",
-        fontFamily: "var(--font-display)",
-        minHeight: "calc(100vh - 40px)",
-        borderTop: "1px solid #1f1f1f",
-      }}
+      data-records-os-grid
+      style={
+        {
+          background: "#000",
+          color: "#fff",
+          display: "grid",
+          // Two 4px tracks for the drag handles between rails.
+          gridTemplateColumns:
+            "var(--col-left) 4px minmax(0, 1fr) 4px var(--col-right)",
+          // CSS variable defaults — overridden in the mount effect once
+          // localStorage is available.
+          ["--col-left" as string]: COL_LEFT_DEFAULT,
+          ["--col-right" as string]: COL_RIGHT_DEFAULT,
+          fontFamily: "var(--font-display)",
+          minHeight: "calc(100vh - 40px)",
+          borderTop: "1px solid #1f1f1f",
+        } as CSSProperties
+      }
     >
       {/* ── LEFT RAIL ───────────────────────────────────────────────── */}
       <aside
@@ -939,6 +975,17 @@ export function RecordsOS() {
           </div>
         </div>
       </aside>
+
+      {/* Drag handle between left rail and main content */}
+      <Resizer
+        targetSelector="[data-records-os-grid]"
+        varName="--col-left"
+        edge="right"
+        min={180}
+        max={280}
+        storageKey="4uwhat:col-left"
+        label="Resize navigation rail"
+      />
 
       {/* ── MAIN ────────────────────────────────────────────────────── */}
       <main style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
@@ -1550,6 +1597,17 @@ export function RecordsOS() {
           </div>
         </div>
       </main>
+
+      {/* Drag handle between main content and right rail */}
+      <Resizer
+        targetSelector="[data-records-os-grid]"
+        varName="--col-right"
+        edge="left"
+        min={280}
+        max={560}
+        storageKey="4uwhat:col-right"
+        label="Resize AI rail"
+      />
 
       {/* ── RIGHT RAIL — AI command bar + activity ─────────────────── */}
       <aside

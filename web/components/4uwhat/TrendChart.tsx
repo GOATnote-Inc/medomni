@@ -3,6 +3,9 @@
 // per-point dots, and an emphasized last-point dot.
 // Used in the mobile lab-detail 24-month trend card.
 // Source: assets/app/atoms.jsx (function TrendChart).
+//
+// Auto-width: see Sparkline.tsx — same fix. `w`/`h` now feed the SVG
+// `viewBox` only; render width is 100% of the parent's content box.
 
 interface TrendChartProps {
   data: number[];
@@ -33,11 +36,15 @@ export function TrendChart({
     .map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`))
     .join(" ");
 
+  const totalH = h + 24;
+
   return (
     <svg
-      width={w}
-      height={h + 24}
-      style={{ display: "block" }}
+      viewBox={`0 0 ${w} ${totalH}`}
+      width="100%"
+      height={totalH}
+      preserveAspectRatio="none"
+      style={{ display: "block", maxWidth: "100%", height: "auto" }}
       aria-hidden="true"
     >
       {[0, 0.25, 0.5, 0.75, 1].map((t, i) => (
@@ -49,6 +56,7 @@ export function TrendChart({
           y2={h * t + 0.5}
           stroke="rgba(255,255,255,0.06)"
           strokeWidth={1}
+          vectorEffect="non-scaling-stroke"
         />
       ))}
       <path
@@ -57,6 +65,7 @@ export function TrendChart({
         stroke={accent}
         strokeWidth={1.75}
         strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
       />
       {pts.map((p, i) => (
         <circle
@@ -67,6 +76,7 @@ export function TrendChart({
           fill={i === pts.length - 1 ? accent : "#000"}
           stroke={accent}
           strokeWidth={1.5}
+          vectorEffect="non-scaling-stroke"
         />
       ))}
       {dates &&
