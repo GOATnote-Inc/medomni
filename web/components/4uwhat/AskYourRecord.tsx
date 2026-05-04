@@ -38,7 +38,6 @@ import { PrismMark } from "./PrismMark";
 import { AudioRecorder } from "@/components/AudioRecorder";
 import { VoiceOutToggle } from "@/components/VoiceOutToggle";
 import { useTts } from "@/hooks/useTts";
-import { VoicePicker } from "@/components/4uwhat/VoicePicker";
 
 const VOICE_SELECT_STORAGE_KEY = "medomni:tts:voice";
 import { usePatientId } from "@/hooks/usePatientId";
@@ -146,6 +145,30 @@ export function AskYourRecord({
   // Voice-out toggle state. Default off; persists via localStorage to
   // match /agent so flipping the toggle on either surface carries to
   // the other on the next mount.
+  // ONE voice. No picker. The user shouldn't have to pick a voice or
+  // approve a 160MB download for a clinical demo — it should just sound
+  // good. Default = Kokoro `af_heart` (TTS-Arena #2, A-grade voice on
+  // the v1.0 model card). Lazy-loaded on toggle ON; subsequent loads
+  // hit the IndexedDB / Cache Storage.
+  //
+  // Architectural note: the right long-term answer is Nemotron-Omni
+  // native audio output via vllm (single forward pass, no separate TTS
+  // model). Research is in flight; until that lands, Kokoro is the
+  // sovereign-friendly bridge that doesn't need cloud keys.
+  const DEFAULT_VOICE = "kokoro:af_heart";
+  const [selectedVoice, setSelectedVoice] = useState<string>(DEFAULT_VOICE);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(VOICE_SELECT_STORAGE_KEY);
+      if (raw && (raw.startsWith("kokoro:") || raw.startsWith("browser:"))) {
+        setSelectedVoice(raw);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const [voiceOutEnabled, setVoiceOutEnabled] = useState(false);
   useEffect(() => {
     try {
@@ -155,47 +178,39 @@ export function AskYourRecord({
       // localStorage can throw in strict privacy modes; fail silent.
     }
   }, []);
-  const handleVoiceOutChange = (next: boolean) => {
+  // Toggle handler. We cancel any in-flight playback BEFORE flipping the
+  // enabled bit so we don't leak utterances across the off→on→off boundary
+  // (which was the "multiple voices on turn 1" symptom — half-spoken Kokoro
+  // chunks colliding with browser fallback).
+  const handleVoiceOutChange = useCallback((next: boolean) => {
+    if (!next) {
+      ttsCancelRef.current?.();
+    }
     setVoiceOutEnabled(next);
     try {
       window.localStorage.setItem(VOICE_OUT_STORAGE_KEY, String(next));
     } catch {
       // ignore
     }
-  };
+  }, []);
 
-  // Persist + read voice selection across surfaces (the /agent route uses
-  // the same key so toggling on either page carries over).
-  const [selectedVoice, setSelectedVoice] = useState<string>("");
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = window.localStorage.getItem(VOICE_SELECT_STORAGE_KEY);
-      if (raw) setSelectedVoice(raw);
-    } catch {
-      // ignore
-    }
-  }, []);
-  const handleVoiceChange = useCallback((v: string) => {
-    setSelectedVoice(v);
-    try {
-      window.localStorage.setItem(VOICE_SELECT_STORAGE_KEY, v);
-    } catch {
-      // ignore
-    }
-  }, []);
+  // No public voice-change handler — voice is fixed for the demo. If the
+  // user wants to switch (e.g. to a male voice), it's a future setting
+  // page; not in the AskBar header.
 
   const {
     speak: ttsSpeak,
     cancel: ttsCancel,
     state: ttsState,
-    loaded: ttsLoaded,
-    loadProgress: ttsLoadProgress,
-    tier: ttsTier,
-    browserVoices,
-    webgpuSupported,
   } = useTts({ enabled: voiceOutEnabled, selectedVoice });
   const ttsSupported = true; // useTts always supported (browser fallback)
+
+  // Stable ref for the cancel function so the toggle handler (memoized
+  // with empty deps) can call the latest cancel without re-binding.
+  const ttsCancelRef = useRef(ttsCancel);
+  useEffect(() => {
+    ttsCancelRef.current = ttsCancel;
+  }, [ttsCancel]);
 
   // Spoken-offset bookkeeping per assistant text-part. Same shape as
   // /agent — keys are `${messageId}#${partIdx}`.
@@ -337,10 +352,12 @@ export function AskYourRecord({
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
-        // Hard cap so even a stray un-bounded parent can't make us grow into
-        // siblings. The rail's other sections (care team, recent activity)
-        // get their own scroll regions; this just keeps the chat sane.
-        maxHeight: "min(70vh, 640px)",
+        // Tighter cap (was 70vh, 640px). The user reported the input box
+        // ending up "far down the screen" once messages stream in — at
+        // 70vh the chat panel pushed care team + recent activity below
+        // the fold. 48vh leaves the input visible inside the rail's
+        // initial viewport on every laptop screen >= 800px tall.
+        maxHeight: "min(48vh, 520px)",
         gap: 12,
         ...style,
       }}
@@ -371,15 +388,6 @@ export function AskYourRecord({
             onChange={handleVoiceOutChange}
             state={ttsState === "loading" ? "speaking" : ttsState}
             supported={ttsSupported}
-          />
-          <VoicePicker
-            selectedVoice={selectedVoice}
-            onChange={handleVoiceChange}
-            browserVoices={browserVoices}
-            kokoroLoaded={ttsLoaded}
-            kokoroLoadProgress={ttsLoadProgress}
-            activeTier={ttsTier}
-            webgpuSupported={webgpuSupported}
           />
           <Mono size={9}>
             {patientId ? `PT · ${patientId.slice(0, 16)}` : "NO PATIENT SELECTED"}
