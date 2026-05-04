@@ -18,6 +18,7 @@
 // Tap-to-toggle (NOT push-and-hold; that was the prior bug).
 
 import { useEffect, useRef, useState } from "react";
+import { BASE_PATH } from "@/lib/basePath";
 
 const TARGET_SAMPLE_RATE = 16000; // Parakeet target
 const MAX_DURATION_MS = 60000; // 60 sec → ~2.56 MB base64, under Vercel 4.5 MB cap
@@ -79,15 +80,10 @@ export function AudioRecorder({ onAudio, onError, disabled }: AudioRecorderProps
       ctxRef.current = ctx;
       inputSampleRateRef.current = ctx.sampleRate;
 
-      // Public-asset paths must include the Next.js `basePath` prefix
-      // (`/4UWHAt`, set in next.config.ts). Without it the URL resolves
-      // to `https://www.thegoatnote.com/pcm-recorder-worklet.js`, which
-      // falls outside the v0-goat-note-landing-page-3c project's
-      // `/4UWHAt(/*) → medomni` rewrite and returns v0's static 404
-      // page. AudioWorklet.addModule then fails with "Unable to load a
-      // worklet's module." Verified 2026-05-04 against
-      // www.thegoatnote.com/4UWHAt voice mode.
-      await ctx.audioWorklet.addModule("/4UWHAt/pcm-recorder-worklet.js");
+      // BASE_PATH prefix required: AudioWorklet.addModule does NOT
+      // auto-prefix the Next.js basePath. See lib/basePath.ts for the
+      // full incident note.
+      await ctx.audioWorklet.addModule(`${BASE_PATH}/pcm-recorder-worklet.js`);
 
       const src = ctx.createMediaStreamSource(stream);
       const node = new AudioWorkletNode(ctx, "pcm-recorder");
