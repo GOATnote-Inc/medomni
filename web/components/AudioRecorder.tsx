@@ -12,7 +12,8 @@
 //  - RMS sanity check before send (silence rejected client-side)
 //  - feature-gate AudioWorklet (graceful fallback message if undefined)
 //  - track.onended + visibilitychange handlers (BT disconnect / background tab recovery)
-//  - new URL() worklet path (Vercel public/ asset routing)
+//  - basePath-prefixed worklet path (next.config basePath: "/4UWHAt"
+//    means /public assets must be requested at /4UWHAt/<file>)
 //  - Blob + FileReader.readAsDataURL (no String.fromCharCode loop)
 // Tap-to-toggle (NOT push-and-hold; that was the prior bug).
 
@@ -78,8 +79,15 @@ export function AudioRecorder({ onAudio, onError, disabled }: AudioRecorderProps
       ctxRef.current = ctx;
       inputSampleRateRef.current = ctx.sampleRate;
 
-      const workletUrl = new URL("/pcm-recorder-worklet.js", window.location.origin).toString();
-      await ctx.audioWorklet.addModule(workletUrl);
+      // Public-asset paths must include the Next.js `basePath` prefix
+      // (`/4UWHAt`, set in next.config.ts). Without it the URL resolves
+      // to `https://www.thegoatnote.com/pcm-recorder-worklet.js`, which
+      // falls outside the v0-goat-note-landing-page-3c project's
+      // `/4UWHAt(/*) → medomni` rewrite and returns v0's static 404
+      // page. AudioWorklet.addModule then fails with "Unable to load a
+      // worklet's module." Verified 2026-05-04 against
+      // www.thegoatnote.com/4UWHAt voice mode.
+      await ctx.audioWorklet.addModule("/4UWHAt/pcm-recorder-worklet.js");
 
       const src = ctx.createMediaStreamSource(stream);
       const node = new AudioWorkletNode(ctx, "pcm-recorder");
