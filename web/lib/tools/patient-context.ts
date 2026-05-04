@@ -1,0 +1,558 @@
+// Patient context lookup. Spike-only tool ("Pattern B": dual lookup, no merge
+// into PrimeKG). Pulls active conditions, recent vitals/labs, active meds,
+// allergies, and recent diagnostic reports for ONE patient from a local
+// Medplum FHIR R4 server, then renders a ~200-600 token Markdown block the
+// agent loop can consume in parallel with knowledge-base tools.
+//
+// Server-side only. Reads:
+//   MEDOMNI_FHIR_BASE_URL   e.g. http://localhost:8103/fhir/R4
+//   MEDOMNI_FHIR_TOKEN      bearer token for the Medplum sandbox
+//
+// During the spike Medplum is fed Synthea synthetic data ONLY. The
+// DemoBanner stays on the UI per medomni/CLAUDE.md until v1 architecture
+// review. No PHI ever flows through this code path.
+//
+// Failure model: per-resource fetches fail soft. If the Patient read 404s
+// (or the env vars are missing) we throw, matching primekg.ts — the
+// dispatcher in app/api/agent/route.ts converts the throw into an
+// {error: string} tool result. Per-resource subordinate fetches degrade
+// in place: the section gets a "*(unavailable: ...)*" note rather than
+// crashing the agent loop.
+
+const TIMEOUT_MS = 8_000;
+
+const DEFAULT_SCOPES = [
+  "Patient",
+  "Condition",
+  "Observation",
+  "MedicationRequest",
+  "AllergyIntolerance",
+  "DiagnosticReport",
+] as const;
+
+export type FhirScope = (typeof DEFAULT_SCOPES)[number];
+
+const CAPS = {
+  Condition: 8,
+  Observation: 12,
+  MedicationRequest: 8,
+  AllergyIntolerance: 6,
+  DiagnosticReport: 4,
+} as const;
+
+const OBS_LOOKBACK_MS = 365 * 24 * 60 * 60 * 1000; // 12 months
+
+export interface PatientContextResult {
+  block: string;
+  elapsedMs: number;
+  resourceCounts: {
+    Patient: number;
+    Condition: number;
+    Observation: number;
+    MedicationRequest: number;
+    AllergyIntolerance: number;
+    DiagnosticReport: number;
+  };
+  truncated: boolean;
+}
+
+// --- minimal FHIR shape stubs (just what we read) -------------------------
+
+interface Coding {
+  system?: string;
+  code?: string;
+  display?: string;
+}
+interface CodeableConcept {
+  coding?: Coding[];
+  text?: string;
+}
+interface FhirPatient {
+  resourceType: "Patient";
+  id?: string;
+  name?: Array<{ given?: string[]; family?: string; text?: string }>;
+  gender?: string;
+  birthDate?: string;
+}
+interface FhirCondition {
+  resourceType: "Condition";
+  id?: string;
+  code?: CodeableConcept;
+  clinicalStatus?: CodeableConcept;
+  onsetDateTime?: string;
+  recordedDate?: string;
+}
+interface FhirQuantity {
+  value?: number;
+  unit?: string;
+  code?: string;
+}
+interface FhirObservation {
+  resourceType: "Observation";
+  id?: string;
+  code?: CodeableConcept;
+  category?: CodeableConcept[];
+  effectiveDateTime?: string;
+  issued?: string;
+  valueQuantity?: FhirQuantity;
+  valueString?: string;
+  valueCodeableConcept?: CodeableConcept;
+  component?: Array<{ code?: CodeableConcept; valueQuantity?: FhirQuantity }>;
+  status?: string;
+}
+interface FhirMedicationRequest {
+  resourceType: "MedicationRequest";
+  id?: string;
+  status?: string;
+  medicationCodeableConcept?: CodeableConcept;
+  medicationReference?: { display?: string };
+  dosageInstruction?: Array<{ text?: string }>;
+  authoredOn?: string;
+}
+interface FhirAllergyIntolerance {
+  resourceType: "AllergyIntolerance";
+  id?: string;
+  code?: CodeableConcept;
+  reaction?: Array<{ manifestation?: CodeableConcept[]; severity?: string }>;
+  criticality?: string;
+  clinicalStatus?: CodeableConcept;
+}
+interface FhirDiagnosticReport {
+  resourceType: "DiagnosticReport";
+  id?: string;
+  code?: CodeableConcept;
+  effectiveDateTime?: string;
+  issued?: string;
+  conclusion?: string;
+  status?: string;
+}
+
+interface BundleEntry<T> {
+  resource?: T;
+}
+interface Bundle<T> {
+  resourceType: "Bundle";
+  entry?: BundleEntry<T>[];
+  total?: number;
+}
+
+// --- helpers --------------------------------------------------------------
+
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms}ms`)),
+      ms,
+    );
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      },
+    );
+  });
+}
+
+function ccLabel(cc?: CodeableConcept): string {
+  if (!cc) return "";
+  if (cc.text) return cc.text;
+  const c = cc.coding?.[0];
+  if (!c) return "";
+  return c.display || c.code || "";
+}
+
+function fmtDate(s?: string): string {
+  if (!s) return "";
+  // Already ISO; just take YYYY-MM-DD prefix.
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : s;
+}
+
+function patientName(p: FhirPatient): string {
+  const n = p.name?.[0];
+  if (!n) return p.id ?? "(unknown)";
+  if (n.text) return n.text;
+  const given = (n.given ?? []).join(" ").trim();
+  return [given, n.family].filter(Boolean).join(" ").trim() || (p.id ?? "(unknown)");
+}
+
+function ageYears(birthDate?: string, now: Date = new Date()): number | null {
+  if (!birthDate) return null;
+  const m = birthDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  const dob = new Date(`${birthDate}T00:00:00Z`);
+  if (Number.isNaN(dob.getTime())) return null;
+  let age = now.getUTCFullYear() - dob.getUTCFullYear();
+  const md = now.getUTCMonth() - dob.getUTCMonth();
+  if (md < 0 || (md === 0 && now.getUTCDate() < dob.getUTCDate())) age -= 1;
+  return age;
+}
+
+function obsCategory(obs: FhirObservation): string {
+  for (const cat of obs.category ?? []) {
+    for (const c of cat.coding ?? []) {
+      if (c.code) return c.code;
+    }
+  }
+  return "";
+}
+
+function isVitalOrLab(obs: FhirObservation): boolean {
+  const cat = obsCategory(obs);
+  return cat === "vital-signs" || cat === "laboratory";
+}
+
+function obsTimestamp(obs: FhirObservation): number {
+  const s = obs.effectiveDateTime || obs.issued;
+  if (!s) return 0;
+  const t = Date.parse(s);
+  return Number.isNaN(t) ? 0 : t;
+}
+
+function fmtQuantity(q?: FhirQuantity): string {
+  if (!q || q.value === undefined) return "";
+  const unit = q.unit || q.code || "";
+  return unit ? `${q.value} ${unit}` : `${q.value}`;
+}
+
+function obsValue(obs: FhirObservation): string {
+  if (obs.valueQuantity) return fmtQuantity(obs.valueQuantity);
+  if (obs.valueString) return obs.valueString;
+  if (obs.valueCodeableConcept) return ccLabel(obs.valueCodeableConcept);
+  if (obs.component && obs.component.length > 0) {
+    return obs.component
+      .map((c) => {
+        const lbl = ccLabel(c.code);
+        const v = fmtQuantity(c.valueQuantity);
+        return lbl && v ? `${lbl} ${v}` : v || lbl;
+      })
+      .filter(Boolean)
+      .join(", ");
+  }
+  return "";
+}
+
+function medLabel(mr: FhirMedicationRequest): string {
+  return (
+    ccLabel(mr.medicationCodeableConcept) ||
+    mr.medicationReference?.display ||
+    "(unnamed medication)"
+  );
+}
+
+function dosage(mr: FhirMedicationRequest): string {
+  return (mr.dosageInstruction ?? [])
+    .map((d) => d.text)
+    .filter((s): s is string => !!s && s.trim() !== "")
+    .join("; ");
+}
+
+function allergyLabel(a: FhirAllergyIntolerance): string {
+  const lbl = ccLabel(a.code) || "(unknown allergen)";
+  const reactions = (a.reaction ?? [])
+    .flatMap((r) => (r.manifestation ?? []).map(ccLabel))
+    .filter(Boolean);
+  const r = reactions.length > 0 ? ` — reaction: ${reactions.join(", ")}` : "";
+  const crit = a.criticality ? ` [${a.criticality}]` : "";
+  return `${lbl}${crit}${r}`;
+}
+
+// --- HTTP layer -----------------------------------------------------------
+
+async function fhirGet<T>(
+  baseUrl: string,
+  token: string,
+  path: string,
+): Promise<T> {
+  const url = `${baseUrl.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  const res = await withTimeout(
+    fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/fhir+json",
+      },
+    }),
+    TIMEOUT_MS,
+    `fhir GET ${path.split("?")[0]}`,
+  );
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "(no body)");
+    throw new Error(`${res.status} ${res.statusText}: ${txt.slice(0, 200)}`);
+  }
+  return (await res.json()) as T;
+}
+
+function bundleResources<T>(b: Bundle<T> | null | undefined): T[] {
+  return (b?.entry ?? [])
+    .map((e) => e.resource)
+    .filter((r): r is T => r !== undefined && r !== null);
+}
+
+// --- main -----------------------------------------------------------------
+
+export async function getPatientContext(args: {
+  patientId: string;
+  queryHint?: string;
+  scopes?: string[];
+}): Promise<PatientContextResult> {
+  const start = Date.now();
+
+  const baseUrl = process.env.MEDOMNI_FHIR_BASE_URL;
+  const token = process.env.MEDOMNI_FHIR_TOKEN;
+  if (!baseUrl || !token) {
+    throw new Error(
+      "MEDOMNI_FHIR_BASE_URL and MEDOMNI_FHIR_TOKEN are not configured on " +
+        "this deployment. Patient-context lookup is unavailable; answer " +
+        "from the question as posed and the knowledge tools.",
+    );
+  }
+  const patientId = (args.patientId ?? "").trim();
+  if (!patientId) {
+    throw new Error("patientId is required");
+  }
+  // Defensive: don't let the LLM smuggle in a path traversal.
+  if (!/^[A-Za-z0-9._-]{1,64}$/.test(patientId)) {
+    throw new Error(`patientId failed validation: ${patientId.slice(0, 32)}`);
+  }
+
+  const scopeSet = new Set<string>(
+    args.scopes && args.scopes.length > 0 ? args.scopes : (DEFAULT_SCOPES as readonly string[]),
+  );
+
+  // Patient is the gate; if this fails we bubble. The other scopes degrade
+  // in place.
+  const patient = await fhirGet<FhirPatient>(
+    baseUrl,
+    token,
+    `Patient/${encodeURIComponent(patientId)}`,
+  );
+  if (!patient || patient.resourceType !== "Patient") {
+    throw new Error(`Patient/${patientId}: unexpected response shape`);
+  }
+
+  const enc = (s: string) => encodeURIComponent(s);
+
+  const conditionsP = scopeSet.has("Condition")
+    ? fhirGet<Bundle<FhirCondition>>(
+        baseUrl,
+        token,
+        `Condition?patient=${enc(patientId)}&clinical-status=active&_count=20`,
+      ).catch((e: Error) => ({ _error: e.message }) as { _error: string })
+    : Promise.resolve(null);
+
+  const observationsP = scopeSet.has("Observation")
+    ? fhirGet<Bundle<FhirObservation>>(
+        baseUrl,
+        token,
+        `Observation?patient=${enc(patientId)}&_sort=-date&_count=30`,
+      ).catch((e: Error) => ({ _error: e.message }) as { _error: string })
+    : Promise.resolve(null);
+
+  const medsP = scopeSet.has("MedicationRequest")
+    ? fhirGet<Bundle<FhirMedicationRequest>>(
+        baseUrl,
+        token,
+        `MedicationRequest?patient=${enc(patientId)}&status=active&_count=20`,
+      ).catch((e: Error) => ({ _error: e.message }) as { _error: string })
+    : Promise.resolve(null);
+
+  const allergiesP = scopeSet.has("AllergyIntolerance")
+    ? fhirGet<Bundle<FhirAllergyIntolerance>>(
+        baseUrl,
+        token,
+        `AllergyIntolerance?patient=${enc(patientId)}&_count=10`,
+      ).catch((e: Error) => ({ _error: e.message }) as { _error: string })
+    : Promise.resolve(null);
+
+  const reportsP = scopeSet.has("DiagnosticReport")
+    ? fhirGet<Bundle<FhirDiagnosticReport>>(
+        baseUrl,
+        token,
+        `DiagnosticReport?patient=${enc(patientId)}&_sort=-date&_count=10`,
+      ).catch((e: Error) => ({ _error: e.message }) as { _error: string })
+    : Promise.resolve(null);
+
+  const [condRaw, obsRaw, medsRaw, allergiesRaw, reportsRaw] = await Promise.all([
+    conditionsP,
+    observationsP,
+    medsP,
+    allergiesP,
+    reportsP,
+  ]);
+
+  const sectionErr = (
+    raw: Bundle<unknown> | null | { _error: string },
+  ): string | null =>
+    raw && typeof raw === "object" && "_error" in raw ? raw._error : null;
+
+  // ---- normalize each resource set -----------------------------------------
+
+  let truncated = false;
+
+  const conditions: FhirCondition[] = (() => {
+    if (!condRaw || sectionErr(condRaw)) return [];
+    const all = bundleResources<FhirCondition>(condRaw as Bundle<FhirCondition>);
+    if (all.length > CAPS.Condition) truncated = true;
+    return all.slice(0, CAPS.Condition);
+  })();
+
+  const cutoffMs = Date.now() - OBS_LOOKBACK_MS;
+  const observations: FhirObservation[] = (() => {
+    if (!obsRaw || sectionErr(obsRaw)) return [];
+    const all = bundleResources<FhirObservation>(obsRaw as Bundle<FhirObservation>);
+    const filtered = all
+      .filter(isVitalOrLab)
+      .filter((o) => obsTimestamp(o) >= cutoffMs)
+      .sort((a, b) => obsTimestamp(b) - obsTimestamp(a));
+    if (filtered.length > CAPS.Observation) truncated = true;
+    return filtered.slice(0, CAPS.Observation);
+  })();
+
+  const meds: FhirMedicationRequest[] = (() => {
+    if (!medsRaw || sectionErr(medsRaw)) return [];
+    const all = bundleResources<FhirMedicationRequest>(
+      medsRaw as Bundle<FhirMedicationRequest>,
+    );
+    if (all.length > CAPS.MedicationRequest) truncated = true;
+    return all.slice(0, CAPS.MedicationRequest);
+  })();
+
+  const allergies: FhirAllergyIntolerance[] = (() => {
+    if (!allergiesRaw || sectionErr(allergiesRaw)) return [];
+    const all = bundleResources<FhirAllergyIntolerance>(
+      allergiesRaw as Bundle<FhirAllergyIntolerance>,
+    );
+    if (all.length > CAPS.AllergyIntolerance) truncated = true;
+    return all.slice(0, CAPS.AllergyIntolerance);
+  })();
+
+  const reports: FhirDiagnosticReport[] = (() => {
+    if (!reportsRaw || sectionErr(reportsRaw)) return [];
+    const all = bundleResources<FhirDiagnosticReport>(
+      reportsRaw as Bundle<FhirDiagnosticReport>,
+    );
+    if (all.length > CAPS.DiagnosticReport) truncated = true;
+    return all.slice(0, CAPS.DiagnosticReport);
+  })();
+
+  // ---- render -------------------------------------------------------------
+
+  const out: string[] = [];
+
+  out.push("## Patient");
+  const age = ageYears(patient.birthDate);
+  const demo = [
+    `Name: ${patientName(patient)}`,
+    age !== null ? `${age}y` : null,
+    patient.gender ?? null,
+    patient.birthDate ? `DOB ${fmtDate(patient.birthDate)}` : null,
+    `id: ${patient.id ?? patientId}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  out.push(`- ${demo}`);
+  if (args.queryHint) {
+    out.push(`- Context hint: ${args.queryHint.slice(0, 200)}`);
+  }
+
+  out.push("");
+  out.push("## Active Conditions");
+  const condErr = sectionErr(condRaw);
+  if (condErr) {
+    out.push(`*(Conditions unavailable: ${condErr.slice(0, 120)})*`);
+  } else if (conditions.length === 0) {
+    out.push("- (none recorded)");
+  } else {
+    for (const c of conditions) {
+      const lbl = ccLabel(c.code) || "(unspecified)";
+      const onset = fmtDate(c.onsetDateTime || c.recordedDate);
+      out.push(`- ${lbl}${onset ? ` (onset ${onset})` : ""}`);
+    }
+  }
+
+  out.push("");
+  out.push("## Recent Vitals/Labs");
+  const obsErr = sectionErr(obsRaw);
+  if (obsErr) {
+    out.push(`*(Observations unavailable: ${obsErr.slice(0, 120)})*`);
+  } else if (observations.length === 0) {
+    out.push("- (no vitals or labs in the last 12 months)");
+  } else {
+    for (const o of observations) {
+      const lbl = ccLabel(o.code) || "(unspecified)";
+      const v = obsValue(o);
+      const d = fmtDate(o.effectiveDateTime || o.issued);
+      out.push(`- ${lbl}: ${v || "(no value)"}${d ? ` [${d}]` : ""}`);
+    }
+  }
+
+  out.push("");
+  out.push("## Active Medications");
+  const medsErr = sectionErr(medsRaw);
+  if (medsErr) {
+    out.push(`*(Medications unavailable: ${medsErr.slice(0, 120)})*`);
+  } else if (meds.length === 0) {
+    out.push("- (none active)");
+  } else {
+    for (const m of meds) {
+      const lbl = medLabel(m);
+      const dose = dosage(m);
+      out.push(`- ${lbl}${dose ? ` — ${dose}` : ""}`);
+    }
+  }
+
+  out.push("");
+  out.push("## Allergies");
+  const allergiesErr = sectionErr(allergiesRaw);
+  if (allergiesErr) {
+    out.push(`*(Allergies unavailable: ${allergiesErr.slice(0, 120)})*`);
+  } else if (allergies.length === 0) {
+    out.push("- (none recorded — confirm with patient)");
+  } else {
+    for (const a of allergies) {
+      out.push(`- ${allergyLabel(a)}`);
+    }
+  }
+
+  out.push("");
+  out.push("## Recent Diagnostic Reports");
+  const reportsErr = sectionErr(reportsRaw);
+  if (reportsErr) {
+    out.push(`*(Diagnostic reports unavailable: ${reportsErr.slice(0, 120)})*`);
+  } else if (reports.length === 0) {
+    out.push("- (none in record)");
+  } else {
+    for (const r of reports) {
+      const lbl = ccLabel(r.code) || "(unspecified)";
+      const d = fmtDate(r.effectiveDateTime || r.issued);
+      const concl = r.conclusion ? ` — ${r.conclusion.slice(0, 200)}` : "";
+      out.push(`- ${lbl}${d ? ` [${d}]` : ""}${concl}`);
+    }
+  }
+
+  out.push("");
+  out.push(
+    "_Source: local Medplum FHIR R4 sandbox · Synthea synthetic data · spike Pattern B (no PrimeKG merge)._",
+  );
+
+  const block = out.join("\n");
+
+  return {
+    block,
+    elapsedMs: Date.now() - start,
+    resourceCounts: {
+      Patient: 1,
+      Condition: conditions.length,
+      Observation: observations.length,
+      MedicationRequest: meds.length,
+      AllergyIntolerance: allergies.length,
+      DiagnosticReport: reports.length,
+    },
+    truncated,
+  };
+}

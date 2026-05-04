@@ -35,6 +35,10 @@ import {
   SUPPORTED_SCORES,
   type CalculatorResult,
 } from "@/lib/tools/clinical-calculator";
+import {
+  getPatientContext,
+  type PatientContextResult,
+} from "@/lib/tools/patient-context";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -158,6 +162,46 @@ const TOOL_SPEC = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "get_patient_context",
+      description:
+        "Retrieve a concise summary of the current patient's active conditions, recent labs, vitals, medications, allergies, and diagnostic reports from their EHR (FHIR R4). Call this in parallel with knowledge-base tools (pubmed_search, primekg_lookup) when the question involves the specific patient. Requires patientId from session context. SCOPE: this tool only fires if MEDOMNI_FHIR_BASE_URL is configured.",
+      parameters: {
+        type: "object",
+        properties: {
+          patientId: {
+            type: "string",
+            description:
+              "FHIR Patient resource id for the current patient. In the spike this comes from the request body's `patientId` field; in v1 it'll come from SMART launch context.",
+          },
+          queryHint: {
+            type: "string",
+            description:
+              "Optional free-text hint about which slice of the chart matters for the current question (e.g. 'AFib management', 'preop clearance'). Surfaces in the rendered block; does not change which resources are pulled.",
+          },
+          scopes: {
+            type: "array",
+            description:
+              "Optional list of FHIR resource types to pull. Defaults to all six: Patient, Condition, Observation, MedicationRequest, AllergyIntolerance, DiagnosticReport.",
+            items: {
+              type: "string",
+              enum: [
+                "Patient",
+                "Condition",
+                "Observation",
+                "MedicationRequest",
+                "AllergyIntolerance",
+                "DiagnosticReport",
+              ],
+            },
+          },
+        },
+        required: ["patientId"],
+      },
+    },
+  },
 ];
 
 const SYSTEM_PROMPT = `You are MedOmni, a medical reasoning assistant served sovereign on NVIDIA Blackwell B300 hardware. You help clinicians (RNs, NPs, PAs, MDs) and trained healthcare workers think through clinical scenarios.
@@ -184,6 +228,7 @@ Tool use:
 - Call clinical_calculate whenever the user gives enough patient detail to compute a standard score (CHA2DS2-VASc, HAS-BLED, MELD-Na, Wells DVT, PERC). Do NOT estimate these scores in your head — the tool is exact.
 - Call pubmed_search when recent literature would meaningfully change your answer.
 - Call primekg_lookup when the question turns on relationships between named medical entities — drug-drug interactions, drug-disease contraindications, gene-disease associations, pathway membership. Especially valuable for polypharmacy questions.
+- Call get_patient_context when the question concerns a SPECIFIC patient and the harness has provided a patientId. Fire it in parallel with primekg_lookup / pubmed_search — patient slice and KB slice are independent, so one round-trip handles both. Skip it if no patientId is available or the question is purely general clinical knowledge.
 - You have a generous tool-call budget (up to 8 calls per query). Use parallel calls when independent (e.g. PubMed + PrimeKG + currency check on the same question can all fire in one step). The budget is a safety net, not a target — most questions resolve in 1-2 calls.
 - If a tool returns an "error" field or zero matches, do not retry — answer from prior knowledge and note what was unavailable.
 
@@ -426,9 +471,21 @@ type ToolResult =
   | PrimeKGSubgraphResult
   | GuidelineCurrencyResult
   | CalculatorResult
+  | PatientContextResult
   | { error: string };
 
-async function runTool(name: string, argsRaw: string): Promise<ToolResult> {
+interface ToolContext {
+  // patientId from the request body; used as a fallback when the model
+  // omits it from the tool-call args. In v1 this'll come from SMART launch
+  // context; for the spike the harness sets it as a top-level body field.
+  patientId?: string;
+}
+
+async function runTool(
+  name: string,
+  argsRaw: string,
+  ctx: ToolContext = {},
+): Promise<ToolResult> {
   let parsed: Record<string, unknown>;
   try {
     parsed = JSON.parse(argsRaw || "{}") as Record<string, unknown>;
@@ -465,6 +522,29 @@ async function runTool(name: string, argsRaw: string): Promise<ToolResult> {
     if (!query.trim()) return { error: "query is required" };
     try {
       return await guidelineCurrencyCheck({ query, maxResults });
+    } catch (e) {
+      return { error: (e as Error).message };
+    }
+  }
+
+  if (name === "get_patient_context") {
+    const patientId =
+      typeof parsed.patientId === "string" && parsed.patientId.trim()
+        ? parsed.patientId.trim()
+        : ctx.patientId ?? "";
+    const queryHint =
+      typeof parsed.queryHint === "string" ? parsed.queryHint : undefined;
+    const scopes = Array.isArray(parsed.scopes)
+      ? (parsed.scopes.filter((s) => typeof s === "string") as string[])
+      : undefined;
+    if (!patientId) {
+      return {
+        error:
+          "patientId is required. The agent harness must include `patientId` in the request body, or the model must pass it explicitly.",
+      };
+    }
+    try {
+      return await getPatientContext({ patientId, queryHint, scopes });
     } catch (e) {
       return { error: (e as Error).message };
     }
@@ -509,7 +589,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { messages?: UIMessage[] };
+  let body: { messages?: UIMessage[]; patientId?: string };
   try {
     body = await req.json();
   } catch {
@@ -520,6 +600,10 @@ export async function POST(req: NextRequest) {
   }
 
   const incoming = body.messages ?? [];
+  const requestPatientId =
+    typeof body.patientId === "string" && body.patientId.trim()
+      ? body.patientId.trim()
+      : undefined;
   if (incoming.length === 0) {
     return new Response(JSON.stringify({ error: "messages array is required" }), {
       status: 400,
@@ -608,7 +692,9 @@ export async function POST(req: NextRequest) {
               };
             }
             try {
-              const output = await runTool(tc.name, tc.argsRaw);
+              const output = await runTool(tc.name, tc.argsRaw, {
+                patientId: requestPatientId,
+              });
               return { tc, output };
             } catch (e) {
               return { tc, output: { error: (e as Error).message } };
