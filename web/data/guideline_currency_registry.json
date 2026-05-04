@@ -586,6 +586,62 @@
       ],
       "current_default": "American Society of Breast Surgeons resource guide is copyright 2024. It states that endocrine therapy should be offered for risk reduction in ADH/ALH/LCIS or model-based elevated risk; lists tamoxifen as an option and notes tamoxifen is the ONLY one of these endocrine options for premenopausal women.",
       "citation": "ASBrS Risk Reduction Resource Guide 2024"
+    },
+    {
+      "id": "GCR-045-statin-ascvd-primary-prevention",
+      "fixture_id": "MEDOMNI-AGENT-STATIN-PRIMARY",
+      "rubric_id": "R2",
+      "concept": "Statin therapy for ASCVD primary prevention",
+      "stale_default": "Routine statin initiation in primary prevention based on LDL alone, without 10-year ASCVD risk estimation, or universal use of low/moderate-intensity therapy regardless of risk band.",
+      "trigger_patterns": [
+        "(?i)\\bstatin\\b.{0,40}\\b(primary\\s+prevention|all\\s+adults|everyone)",
+        "(?i)\\b(LDL|cholesterol)\\b.{0,40}\\bstatin\\b.{0,40}\\b(only|alone)",
+        "(?i)\\bASCVD\\b.{0,40}\\b(no\\s+risk\\s+calc|without\\s+calculator)"
+      ],
+      "current_default": "Use the ACC/AHA Pooled Cohort Equation (or PREVENT, AHA 2023) for 10-year ASCVD risk in adults 40-75. Moderate-intensity statin if 10-yr risk >=7.5% with risk-enhancing factors; high-intensity if >=20% or LDL >=190 mg/dL or diabetes with risk enhancers. Shared decision-making in the 5-7.5% borderline band; consider CAC scoring when uncertain. AHA 2025 prevention update reaffirms risk-based selection and adds Lp(a) as a risk-enhancing factor.",
+      "citation": "2018 ACC/AHA Cholesterol Guideline; AHA 2023 PREVENT equations; AHA 2025 Primary Prevention Update"
+    },
+    {
+      "id": "GCR-046-asthma-controller-gina",
+      "fixture_id": "MEDOMNI-AGENT-ASTHMA-CONTROLLER",
+      "rubric_id": "R2",
+      "concept": "Asthma controller therapy",
+      "stale_default": "SABA-only (albuterol) reliever monotherapy for mild asthma, or scheduled low-dose ICS plus SABA-only reliever without ICS-formoterol option.",
+      "trigger_patterns": [
+        "(?i)\\b(asthma)\\b.{0,40}\\b(albuterol|SABA)\\b.{0,40}\\b(only|alone|monotherapy)",
+        "(?i)\\b(mild\\s+asthma|step\\s+1)\\b.{0,40}\\b(SABA|albuterol)",
+        "(?i)\\basthma\\b.{0,40}\\b(controller|maintenance)\\b.{0,40}\\b(SABA|albuterol)"
+      ],
+      "current_default": "GINA 2024 recommends ICS-formoterol (e.g. budesonide-formoterol) as both reliever and maintenance across Steps 1-5 (MART/AIR regimens) for adults and adolescents. SABA-only therapy is no longer recommended at any step because it raises exacerbation and mortality risk without addressing underlying inflammation.",
+      "citation": "GINA Global Strategy for Asthma Management and Prevention, 2024 update"
+    },
+    {
+      "id": "GCR-047-htn-bp-target-acc-aha",
+      "fixture_id": "MEDOMNI-AGENT-HTN-BP-TARGET",
+      "rubric_id": "R2",
+      "concept": "Hypertension BP target for most adults",
+      "stale_default": "BP target <140/90 mm Hg for most non-diabetic adults; loosened targets <150/90 for adults >=60 years per JNC 8.",
+      "trigger_patterns": [
+        "(?i)\\b(blood\\s+pressure|BP)\\s+(goal|target).{0,40}\\b140\\b",
+        "(?i)\\b(JNC\\s*8|140/90)\\b.{0,80}\\b(target|goal|first[- ]line)",
+        "(?i)\\bhypertension\\b.{0,80}\\b150/90\\b"
+      ],
+      "current_default": "ACC/AHA recommend a BP target <130/80 mm Hg for most adults including those with diabetes, CKD, established ASCVD, or 10-year ASCVD risk >=10%. Stage 1 hypertension is now defined as 130-139/80-89. The 2023 ACC/AHA hypertension update reaffirmed the <130/80 target and emphasized home BP monitoring for diagnosis and titration.",
+      "citation": "2017 ACC/AHA Hypertension Guideline; 2023 ACC/AHA Hypertension Update"
+    },
+    {
+      "id": "GCR-048-vitamin-d-supplementation-endocrine",
+      "fixture_id": "MEDOMNI-AGENT-VITAMIN-D",
+      "rubric_id": "R2",
+      "concept": "Vitamin D supplementation in healthy adults",
+      "stale_default": "Routine 25(OH)D screening in healthy adults and empiric vitamin D supplementation across the general population for fracture or chronic-disease prevention.",
+      "trigger_patterns": [
+        "(?i)\\bvitamin\\s*D\\b.{0,40}\\b(screen|measure|check)\\b.{0,40}\\b(everyone|all\\s+adults|routine)",
+        "(?i)\\b25-?OH-?D\\b.{0,40}\\b(routine|screening)",
+        "(?i)\\bvitamin\\s*D\\b.{0,40}\\b(supplement|prophylaxis)\\b.{0,40}\\b(everyone|all\\s+adults)"
+      ],
+      "current_default": "Endocrine Society 2024 recommends AGAINST routine 25(OH)D testing in healthy adults and AGAINST empiric supplementation above the IOM RDA (600 IU adults <70, 800 IU >=70) for the general population. Empiric supplementation IS suggested for: children/adolescents 1-18 (rickets prevention), pregnancy, adults >=75 (mortality benefit), and adults with prediabetes (progression to T2DM). No threshold-based titration; treat clinical indication, not the lab number.",
+      "citation": "Endocrine Society Clinical Practice Guideline on Vitamin D for Disease Prevention, 2024"
     }
   ]
 }

@@ -120,7 +120,7 @@ const TOOL_SPEC = [
     function: {
       name: "guideline_currency_check",
       description:
-        "Check whether a clinical default the user mentions (or that you are about to recommend) is the CURRENT standard or a stale recommendation that has been superseded since 2023. Returns matched entries from a curated registry with the stale default, the current default, and the citing guideline body+year. Use early in your reasoning whenever the question touches a topic where guidance has shifted recently (DOAC vs warfarin, H. pylori first-line, adult pneumococcal vaccination, BPH therapy, opioid taper, GLP-1 contraindications, denosumab discontinuation, SGLT2 in non-diabetic HFrEF, etc.) — call once with the clinical concept, then incorporate the current default into your final answer.",
+        "Look up whether a specific clinical guideline (e.g. 'statin therapy 2024', 'BP target hypertension', 'H. pylori first-line', 'asthma controller GINA') is still current vs superseded. Returns the stale default, the current default, the citing body+year, and a publication/update pointer when the topic is in our small curated registry (~48 entries: DOAC vs warfarin, H. pylori, adult pneumococcal vaccination, BPH, opioid taper, GLP-1, denosumab, SGLT2 HFrEF, statin primary prevention, asthma controller, BP target, vitamin D, etc.). Returns `notInRegistry: true` with a `registryTopics` summary for topics outside the registry — when you see that, do NOT cite the (empty) result; fall back to `pubmed_search` for a literature search. Use this tool ONLY for guideline-currency questions, not for general clinical reasoning.",
       parameters: {
         type: "object",
         properties: {
