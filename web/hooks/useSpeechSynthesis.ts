@@ -26,17 +26,83 @@ export interface UseSpeechSynthesisReturn {
   supported: boolean;
 }
 
-// Names ranked by clinical credibility (clear, neutral en-US neural voices).
-// First match wins.
-const PREFERRED_VOICE_NAMES = [
-  "Google US English",
-  "Microsoft Aria Online (Natural) - English (United States)",
-  "Microsoft Aria",
-  "Microsoft Jenny",
-  "Samantha",
-  "Karen",
-  "Alex",
+// Quality scoring for browser-native voices. The browser exposes whatever
+// the OS makes available; quality varies wildly. We score by markers in
+// the voice name (Premium / Enhanced / Neural / Online — these are the
+// modern neural voices Apple/Microsoft/Google ship) plus a few known-good
+// names, then break ties on language. Higher score wins.
+//
+// On macOS Safari + Chrome: "Samantha (Premium)", "Daniel (Premium)" if
+// the user has downloaded enhanced voices via System Settings → Spoken
+// Content → System Voice → Customize. Without that download, Samantha
+// reads as the legacy 1990s formant voice.
+//
+// On Edge + Chrome (recent): Microsoft "Aria Online (Natural)", "Jenny",
+// "Guy", "Davis" — neural cloud voices that ship with the browser.
+//
+// On Chrome (no Edge): Google US English / UK English — neural.
+//
+// Older fallback: Karen, Alex (en-AU/en-US legacy voices).
+//
+// If everything is missing or low-quality, the Tier 1 hook
+// (Kokoro.js WebGPU) is the proper upgrade path — see useKokoroTts.ts.
+
+interface ScoredVoice {
+  voice: SpeechSynthesisVoice;
+  score: number;
+}
+
+const QUALITY_MARKERS: Array<{ pattern: RegExp; bonus: number }> = [
+  { pattern: /\bPremium\b/i, bonus: 100 },
+  { pattern: /\bEnhanced\b/i, bonus: 90 },
+  { pattern: /\bNeural\b/i, bonus: 90 },
+  { pattern: /\bNatural\b/i, bonus: 85 },
+  { pattern: /\bOnline\b/i, bonus: 80 },
+  { pattern: /\bPlus\b/i, bonus: 50 },
+  // Known good defaults (no marker but high baseline quality on their platforms)
+  { pattern: /^Google US English$/i, bonus: 70 },
+  { pattern: /^Google UK English/i, bonus: 60 },
+  { pattern: /^Microsoft Aria/i, bonus: 70 },
+  { pattern: /^Microsoft Jenny/i, bonus: 65 },
+  { pattern: /^Microsoft Guy/i, bonus: 60 },
+  { pattern: /^Microsoft Davis/i, bonus: 60 },
+  // Apple Siri voices are higher quality than the legacy named voices on macOS
+  { pattern: /^Siri\b/i, bonus: 80 },
+  { pattern: /^Samantha$/i, bonus: 25 }, // legacy without Premium marker
+  { pattern: /^Daniel$/i, bonus: 20 },
+  { pattern: /^Alex$/i, bonus: 20 },
+  { pattern: /^Karen$/i, bonus: 18 },
 ];
+
+function langBonus(lang: string): number {
+  if (!lang) return 0;
+  if (lang === "en-US") return 10;
+  if (lang === "en-GB" || lang === "en-AU") return 7;
+  if (lang.startsWith("en")) return 5;
+  return 0;
+}
+
+export function scoreVoice(voice: SpeechSynthesisVoice): number {
+  let score = langBonus(voice.lang);
+  for (const { pattern, bonus } of QUALITY_MARKERS) {
+    if (pattern.test(voice.name)) score += bonus;
+  }
+  // localService: voices that ship with the OS sound more reliable than
+  // network voices for short utterances (no startup lag). Tiny tiebreaker.
+  if (voice.localService) score += 1;
+  return score;
+}
+
+/** Sorted descending by quality score. Useful for surfacing in a UI picker. */
+export function rankVoices(
+  voices: SpeechSynthesisVoice[],
+): SpeechSynthesisVoice[] {
+  const scored: ScoredVoice[] = voices
+    .filter((v) => v.lang.startsWith("en")) // English only for the medical demo
+    .map((voice) => ({ voice, score: scoreVoice(voice) }));
+  scored.sort((a, b) => b.score - a.score);
+  return scored.map((s) => s.voice);
+}
 
 function pickVoice(
   voices: SpeechSynthesisVoice[],
@@ -47,20 +113,18 @@ function pickVoice(
     const match = voices.find((v) => v.voiceURI === voiceURI);
     if (match) return match;
   }
-  for (const name of PREFERRED_VOICE_NAMES) {
-    const match = voices.find((v) => v.name === name || v.name.startsWith(name));
-    if (match) return match;
-  }
-  // Prefer any en-US voice over a non-English default.
-  const enUS = voices.find((v) => v.lang === "en-US");
-  if (enUS) return enUS;
-  return voices.find((v) => v.lang.startsWith("en"));
+  const ranked = rankVoices(voices);
+  if (ranked.length > 0) return ranked[0];
+  // No English voices at all — last resort, return the first available.
+  return voices[0];
 }
 
 export function useSpeechSynthesis(
   opts: UseSpeechSynthesisOptions,
 ): UseSpeechSynthesisReturn {
-  const { enabled, rate = 1.05, pitch = 1.0, voiceURI } = opts;
+  // Default rate is 1.0 (was 1.05 — slight rush made already-robotic voices
+  // sound more rushed). Pitch 1.0 is neutral.
+  const { enabled, rate = 1.0, pitch = 1.0, voiceURI } = opts;
 
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [state, setState] = useState<SpeechState>("idle");
