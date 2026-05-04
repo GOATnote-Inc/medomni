@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { AudioRecorder } from "@/components/AudioRecorder";
 import { ImageUpload, processImage } from "@/components/ImageUpload";
+import { BASE_PATH } from "@/lib/basePath";
 
 const SAMPLE_PROMPT =
   "lactate of 25 after housefire and altered mental status — what am I missing?";
@@ -58,7 +59,7 @@ export function Composer() {
     }
 
     try {
-      const res = await fetch("/api/ask", {
+      const res = await fetch(`${BASE_PATH}/api/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

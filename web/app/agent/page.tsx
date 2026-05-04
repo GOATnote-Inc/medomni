@@ -8,6 +8,7 @@ import remarkGfm from "remark-gfm";
 import { AudioRecorder } from "@/components/AudioRecorder";
 import { VoiceOutToggle } from "@/components/VoiceOutToggle";
 import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
+import { BASE_PATH } from "@/lib/basePath";
 import type { PubMedSearchResult } from "@/lib/tools/pubmed";
 import type { PrimeKGSubgraphResult } from "@/lib/tools/primekg";
 import type { GuidelineCurrencyResult } from "@/lib/tools/guideline-currency";
@@ -130,7 +131,11 @@ export default function AgentPage() {
   const speechBufferRef = useRef<Map<string, string>>(new Map());
 
   const { messages, sendMessage, status, stop } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/agent" }),
+    // BASE_PATH prefix required: useChat's DefaultChatTransport calls
+    // raw fetch() with this URL, which does NOT auto-prefix the Next.js
+    // basePath. Without /4UWHAt, the request lands at the v0 proxy
+    // origin root and 404s. See lib/basePath.ts.
+    transport: new DefaultChatTransport({ api: `${BASE_PATH}/api/agent` }),
   });
 
   const busy = status === "submitted" || status === "streaming";
