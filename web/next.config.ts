@@ -8,20 +8,16 @@ import type { NextConfig } from "next";
 // paths, the agent route) all carry the prefix so the rewrite catches
 // them and Next.js wires them up correctly under proxy.
 //
-// medomni.vercel.app/ (no path) returns 404 — that is acceptable for
-// a basePath app. A previous `{source: "/", destination: "/4UWHAt"}`
-// redirect caused a loop with the basePath rewrite (medomni.vercel.app/4UWHAt
-// → 307 → /4UWHAt?cb=…). Removed.
+// No `redirects()` block: Next.js redirect matching is case-insensitive,
+// so a `/4uwhat → /4UWHAt` rule fires on the canonical /4UWHAt URL too
+// and produces an infinite 307 self-loop. Lowercase typo recovery lives
+// exclusively at the v0-goat-note-landing-page-3c edge layer (where the
+// canonical user traffic enters); medomni.vercel.app/4uwhat returns 404
+// as a result, which is acceptable — the medomni-direct URL is a
+// fallback, not a primary surface.
 const nextConfig: NextConfig = {
   reactCompiler: true,
   basePath: "/4UWHAt",
-  async redirects() {
-    return [
-      // Lowercase typo recovery (also done at the v0 landing edge)
-      { source: "/4uwhat", destination: "/4UWHAt", permanent: false, basePath: false },
-      { source: "/4uwhat/:path*", destination: "/4UWHAt/:path*", permanent: false, basePath: false },
-    ];
-  },
 };
 
 export default nextConfig;
