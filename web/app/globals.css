@@ -1,8 +1,190 @@
 @import "tailwindcss";
 
+/* =========================================================================
+   4UWHAt design tokens — ported from /Users/kiteboard/medomni/assets/lib/colors_and_type.css
+   Source of truth: assets/README.md §Design Tokens.
+   The default theme is DARK; .theme-light flips semantic foreground/background.
+   ========================================================================= */
+
+:root {
+  /* Color: raw palette */
+  --p42-black: #000000;
+  --p42-ink: #0a0a0a;
+  --p42-graphite: #141414;
+  --p42-coal: #1f1f1f;
+  --p42-iron: #2a2a2a;
+  --p42-steel: #3d3d3d;
+  --p42-ash: #6e6e6e;
+  --p42-fog: #a3a3a3;
+  --p42-bone: #d4d4d4;
+  --p42-paper: #f4f4f4;
+  --p42-snow: #fafafa;
+  --p42-white: #ffffff;
+
+  /* Single brand accent — hot magenta. */
+  --p42-pink: #ff0096;
+  --p42-pink-bright: #ff33ad;
+  --p42-pink-dim: #cc0078;
+  --p42-pink-deep: #99005a;
+
+  /* Semantic signals */
+  --p42-danger: #ff3355;
+  --p42-warn: #ffaa00;
+  --p42-info: #66aaff;
+
+  /* Semantic foreground/background (dark-default) */
+  --p42-bg: var(--p42-black);
+  --p42-bg-raised: var(--p42-graphite);
+  --p42-bg-card: var(--p42-coal);
+  --p42-bg-overlay: rgba(0, 0, 0, 0.72);
+
+  --p42-fg: var(--p42-white);
+  --p42-fg-muted: var(--p42-fog);
+  --p42-fg-subtle: var(--p42-ash);
+  --p42-fg-inverse: var(--p42-black);
+
+  --p42-border: var(--p42-iron);
+  --p42-border-strong: var(--p42-steel);
+  --p42-hairline: rgba(255, 255, 255, 0.08);
+
+  --accent: var(--p42-pink);
+  --accent-fg: var(--p42-white);
+  --accent-hover: var(--p42-pink-bright);
+  --accent-press: var(--p42-pink-dim);
+
+  /* Type: families (provided by next/font in layout.tsx) */
+  --font-display: var(--font-space-grotesk), "Inter", system-ui, sans-serif;
+  --font-body: var(--font-space-grotesk), "Inter", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Type: scale */
+  --fs-12: 0.75rem;
+  --fs-14: 0.875rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-20: 1.25rem;
+  --fs-24: 1.5rem;
+  --fs-30: 1.875rem;
+  --fs-36: 2.25rem;
+  --fs-48: 3rem;
+  --fs-64: 4rem;
+  --fs-96: 6rem;
+  --fs-128: 8rem;
+
+  /* Type: weights / leading / tracking */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --lh-tight: 1.05;
+  --lh-snug: 1.2;
+  --lh-normal: 1.5;
+  --lh-loose: 1.7;
+
+  --tr-tight: -0.03em;
+  --tr-snug: -0.015em;
+  --tr-normal: 0;
+  --tr-wide: 0.04em;
+  --tr-eyebrow: 0.16em;
+
+  /* Spacing (4-pt grid) */
+  --sp-0: 0;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+  --sp-24: 96px;
+  --sp-32: 128px;
+
+  /* Radii — 4UWHAt leans sharp. */
+  --r-0: 0;
+  --r-1: 2px;
+  --r-2: 4px;
+  --r-pill: 9999px;
+
+  /* Borders */
+  --bw-1: 1px;
+  --bw-2: 2px;
+  --bw-3: 3px;
+
+  /* Shadows / glow */
+  --shadow-1: 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 8px rgba(0, 0, 0, 0.6);
+  --shadow-2: 0 4px 24px rgba(0, 0, 0, 0.7);
+  --shadow-3: 0 16px 48px rgba(0, 0, 0, 0.8);
+  --glow-pink: 0 0 0 2px rgba(255, 0, 150, 0.4), 0 0 32px rgba(255, 0, 150, 0.4);
+  --glow-soft: 0 0 24px rgba(255, 0, 150, 0.18);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.6, 0, 0.4, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --dur-fast: 120ms;
+  --dur-base: 220ms;
+  --dur-slow: 420ms;
+}
+
+.theme-light,
+[data-theme="light"] {
+  --p42-bg: var(--p42-white);
+  --p42-bg-raised: var(--p42-snow);
+  --p42-bg-card: var(--p42-paper);
+  --p42-bg-overlay: rgba(255, 255, 255, 0.78);
+
+  --p42-fg: var(--p42-black);
+  --p42-fg-muted: var(--p42-ash);
+  --p42-fg-subtle: #888;
+  --p42-fg-inverse: var(--p42-white);
+
+  --p42-border: #e5e5e5;
+  --p42-border-strong: #cfcfcf;
+  --p42-hairline: rgba(0, 0, 0, 0.08);
+
+  --accent: var(--p42-pink-deep);
+  --accent-fg: var(--p42-white);
+  --accent-hover: #b30069;
+  --accent-press: #800049;
+}
+
+/* =========================================================================
+   Tailwind v4 @theme block — exposes 4UWHAt tokens as Tailwind utilities.
+   Existing app keeps geist sans/mono + accent vars; 4UWHAt tokens are
+   additive (color-ink, color-paper, color-magenta, font-display, font-mono4).
+   ========================================================================= */
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-accent: #0F4C5C;
-  --color-accent-hover: #0A3A47;
+  --color-accent: #0f4c5c;
+  --color-accent-hover: #0a3a47;
+
+  /* 4UWHAt fonts (loaded via next/font in layout.tsx) */
+  --font-display: var(--font-space-grotesk), "Inter", system-ui, sans-serif;
+  --font-mono4: var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* 4UWHAt colors — `color-` prefix surfaces them as bg-/text-/border- utilities */
+  --color-ink: #0a0a0a;
+  --color-paper: #f4f4f4;
+  --color-magenta: #ff0096;
+  --color-magenta-bright: #ff33ad;
+  --color-magenta-dim: #cc0078;
+  --color-magenta-deep: #99005a;
+  --color-graphite: #141414;
+  --color-coal: #1f1f1f;
+  --color-iron: #2a2a2a;
+  --color-steel: #3d3d3d;
+  --color-ash: #6e6e6e;
+  --color-fog: #a3a3a3;
+  --color-bone: #d4d4d4;
+  --color-snow: #fafafa;
+  --color-warn: #ffaa00;
+  --color-danger: #ff3355;
+  --color-info: #66aaff;
 }
