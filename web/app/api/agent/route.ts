@@ -26,6 +26,7 @@ import {
 import type { NextRequest } from "next/server";
 import { pubmedSearch, type PubMedSearchResult } from "@/lib/tools/pubmed";
 import { primekgLookup, type PrimeKGSubgraphResult } from "@/lib/tools/primekg";
+import { buildPatientContextForSystemPrompt } from "@/lib/tools/patient-context";
 import {
   guidelineCurrencyCheck,
   type GuidelineCurrencyResult,
@@ -611,10 +612,25 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Pre-load patient context into the system prompt when a patientId is
+  // present. Design-mode (patientId === "design-sample-patient") renders
+  // synchronously from sample-data.ts; live-mode calls the FHIR fetch.
+  // Failures fall back to a vanilla system prompt — the agent still
+  // answers, just without patient-specific data. See lib/tools/patient-context.ts
+  // for the rationale (the public demo at /4UWHAt must be able to reason
+  // about the patient already on the page even when MEDOMNI_FHIR_BASE_URL
+  // is unset).
+  const patientContextBlock = await buildPatientContextForSystemPrompt(
+    requestPatientId,
+  );
+  const systemContent = patientContextBlock
+    ? `${SYSTEM_PROMPT}\n\n---\n\n# Active patient session\n\nThe user is currently viewing the following patient's record. Reason from this context whenever the question concerns this patient. Do NOT ask for "patient ID" — the patient is already loaded.\n\n${patientContextBlock}`
+    : SYSTEM_PROMPT;
+
   const stream = createUIMessageStream({
     async execute({ writer }) {
       const history: ChatMessage[] = [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemContent },
         ...uiMessagesToChat(incoming),
       ];
 

@@ -556,3 +556,144 @@ export async function getPatientContext(args: {
     truncated,
   };
 }
+
+// --- design-mode renderer -------------------------------------------------
+//
+// When MEDOMNI_FHIR_BASE_URL is unset, the live tool throws (no FHIR server
+// to read). For the public demo at www.thegoatnote.com/4UWHAt the request
+// body still carries `patientId: "design-sample-patient"` from the patient
+// picker auto-select, and the page already shows Maya Okafor's record from
+// `lib/4uwhat/sample-data.ts`. The agent should be able to reason about the
+// SAME data the user is looking at — so we render a parallel Markdown block
+// from sample-data.ts and inject it into the system prompt at request time.
+//
+// Same shape, same renderer style as the live block, so the model behaves
+// identically in design-mode and live-mode. When env vars get set later
+// for a Medplum-backed deployment, this fallback simply stops firing.
+//
+// IMPORT STRATEGY: dynamic import inside the function. sample-data.ts is
+// imported by the React UI layer (lib/4uwhat/...); keeping the static
+// import out of the agent route avoids dragging UI-layer types into the
+// server bundle's static graph.
+
+import {
+  SAMPLE_PATIENT,
+  SAMPLE_VITALS,
+  SAMPLE_CONDITIONS,
+  SAMPLE_MEDS,
+  SAMPLE_LABS,
+} from "@/lib/4uwhat/sample-data";
+
+const DESIGN_PATIENT_ID = "design-sample-patient";
+
+export function isDesignPatientId(id: string | undefined | null): boolean {
+  return id === DESIGN_PATIENT_ID;
+}
+
+export function buildDesignPatientContextBlock(): string {
+  const out: string[] = [];
+
+  out.push("## Patient");
+  const demo = [
+    `Name: ${SAMPLE_PATIENT.name}`,
+    `${SAMPLE_PATIENT.age}y`,
+    SAMPLE_PATIENT.pronouns,
+    `DOB ${SAMPLE_PATIENT.dob}`,
+    `MRN: ${SAMPLE_PATIENT.mrn}`,
+    `Blood: ${SAMPLE_PATIENT.bloodType}`,
+    `Ht: ${SAMPLE_PATIENT.height}`,
+    `Wt: ${SAMPLE_PATIENT.weight}`,
+    `Primary care: ${SAMPLE_PATIENT.primaryCare}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  out.push(`- ${demo}`);
+
+  out.push("");
+  out.push("## Active Conditions");
+  const active = SAMPLE_CONDITIONS.filter((c) => c.status === "active");
+  if (active.length === 0) {
+    out.push("- (none recorded)");
+  } else {
+    for (const c of active) {
+      out.push(`- ${c.name} (onset ${c.onset}; ICD-10 ${c.icd})`);
+    }
+  }
+
+  out.push("");
+  out.push("## Recent Vitals");
+  for (const [key, v] of Object.entries(SAMPLE_VITALS)) {
+    const recent = v.spark.length > 0 ? ` (recent trend: ${v.spark.join(", ")})` : "";
+    const range = v.range ? ` [${v.range}]` : "";
+    const delta = v.delta ? ` ${v.delta}` : "";
+    out.push(`- ${v.label} (${key}): ${v.value} ${v.unit}${range}${delta}${recent}`);
+  }
+
+  out.push("");
+  out.push("## Recent Labs");
+  for (const lab of SAMPLE_LABS) {
+    const flag = lab.flag !== "normal" ? ` [${lab.flag.toUpperCase()}]` : "";
+    const trend = lab.trend.length > 0 ? ` (last ${lab.trend.length}: ${lab.trend.join(", ")})` : "";
+    out.push(`- ${lab.name}: ${lab.value} ${lab.unit}${flag} (range ${lab.range}; ${lab.date})${trend}`);
+  }
+
+  out.push("");
+  out.push("## Active Medications");
+  if (SAMPLE_MEDS.length === 0) {
+    out.push("- (none active)");
+  } else {
+    for (const m of SAMPLE_MEDS) {
+      const adh = m.adherence !== null ? ` · adherence ${m.adherence}%` : "";
+      const refills = m.refills !== null ? ` · ${m.refills} refills` : "";
+      out.push(`- ${m.name} ${m.dose} ${m.freq} (since ${m.since}; prescriber ${m.prescriber}${adh}${refills})`);
+    }
+  }
+
+  out.push("");
+  out.push(
+    "_Source: design-sample synthetic patient (Maya Okafor) shipped with the public demo. " +
+      "When MEDOMNI_FHIR_BASE_URL is configured, this block is replaced by live FHIR reads " +
+      "from the configured Medplum server via Pattern B's get_patient_context tool._",
+  );
+
+  return out.join("\n");
+}
+
+/**
+ * Build a patient-context block suitable for prefixing the system prompt.
+ * Returns null if no usable context can be loaded (caller should proceed
+ * without patient context).
+ *
+ * - Design mode (patientId === "design-sample-patient"): synchronous render
+ *   from sample-data.ts. Always succeeds.
+ * - Live mode (env vars set, any other patientId): calls getPatientContext.
+ *   Returns null on failure rather than throwing — the agent should still
+ *   respond, just without patient context.
+ */
+export async function buildPatientContextForSystemPrompt(
+  patientId: string | undefined | null,
+): Promise<string | null> {
+  if (!patientId) return null;
+
+  if (isDesignPatientId(patientId)) {
+    return buildDesignPatientContextBlock();
+  }
+
+  if (!process.env.MEDOMNI_FHIR_BASE_URL || !process.env.MEDOMNI_FHIR_TOKEN) {
+    // Live mode requested but not configured. Skip silently — the model
+    // will see no patient block and the user-facing answer will fall back
+    // to general knowledge. (Better than crashing the request.)
+    return null;
+  }
+
+  try {
+    const result = await getPatientContext({ patientId });
+    return result.block;
+  } catch (err) {
+    console.error(
+      "[patient-context] live FHIR fetch failed for system-prompt injection:",
+      (err as Error).message,
+    );
+    return null;
+  }
+}
