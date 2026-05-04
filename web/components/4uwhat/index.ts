@@ -4,6 +4,7 @@
 
 // Atoms
 export { Avatar } from "./Avatar";
+export { DetailDrawer } from "./DetailDrawer";
 export { Dot } from "./Dot";
 export { Eyebrow } from "./Eyebrow";
 export { Mono } from "./Mono";

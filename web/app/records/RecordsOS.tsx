@@ -12,16 +12,19 @@
 // network calls happen inside the embedded AskYourRecord command bar,
 // which talks to /4UWHAt/api/agent on the same origin.
 
-import { useState, type CSSProperties } from "react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import {
   Avatar,
+  DetailDrawer,
   Dot,
   Eyebrow,
   Mono,
+  RangeBar,
   Sparkline,
   Stripe,
   Tag,
   Tooltip,
+  TrendChart,
   Wordmark,
 } from "@/components/4uwhat";
 import { AskYourRecord } from "@/components/4uwhat/AskYourRecord";
@@ -39,29 +42,24 @@ import {
   SAMPLE_SHARES,
   SAMPLE_TIMELINE,
   SAMPLE_VITALS,
+  type SampleCareTeamMember,
+  type SampleCondition,
+  type SampleLab,
+  type SampleMed,
+  type SampleTimelineEntry,
+  type SampleVital,
 } from "@/lib/4uwhat/sample-data";
 
 // ── Shared inline styles (copied from variant-records-os.jsx) ─────────
-// `minWidth: 0` on every card lets long medication names / lab analyte
-// names wrap inside the card instead of forcing the parent grid column to
-// expand and collide with siblings. `overflow: hidden` is the second guard
-// for any absolutely-positioned child or oversized SVG that tries to
-// escape (sparklines occasionally overshoot by 1-2px due to stroke caps).
 const cardBase: CSSProperties = {
   background: "var(--p42-bg-card, #0e0e0e)",
   border: "1px solid rgba(255,255,255,0.07)",
   padding: 18,
-  minWidth: 0,
-  overflow: "hidden",
 };
 
 const tableHead: CSSProperties = {
   display: "grid",
-  // minmax(0, …) on every column — long analyte names ("Lipoprotein(a)
-  // mass") otherwise force the analyte column wider than its share and
-  // shove value/range/trend off-edge.
-  gridTemplateColumns:
-    "minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 0.5fr)",
+  gridTemplateColumns: "minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 0.5fr)",
   gap: 12,
   padding: "8px 0",
   borderBottom: "1px solid rgba(255,255,255,0.08)",
@@ -71,23 +69,16 @@ const tableHead: CSSProperties = {
   letterSpacing: "0.12em",
   color: "rgba(255,255,255,0.4)",
   textTransform: "uppercase",
-  minWidth: 0,
 };
 
 const tableRow: CSSProperties = {
   display: "grid",
-  gridTemplateColumns:
-    "minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 0.5fr)",
+  gridTemplateColumns: "minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 0.5fr)",
   gap: 12,
   padding: "10px 0",
   borderBottom: "1px solid rgba(255,255,255,0.04)",
   fontSize: 12.5,
   alignItems: "center",
-  minWidth: 0,
-  // Cell content (analyte name, range string, sparkline) wraps inside
-  // its column rather than overflowing into the next.
-  overflowWrap: "anywhere",
-  wordBreak: "break-word",
 };
 
 const medRow: CSSProperties = {
@@ -96,7 +87,6 @@ const medRow: CSSProperties = {
   alignItems: "center",
   padding: "8px 10px",
   border: "1px solid rgba(255,255,255,0.06)",
-  minWidth: 0,
 };
 
 const timelineRow: CSSProperties = {
@@ -105,7 +95,6 @@ const timelineRow: CSSProperties = {
   alignItems: "center",
   padding: "10px 0",
   borderBottom: "1px solid rgba(255,255,255,0.05)",
-  minWidth: 0,
 };
 
 const btnGhost: CSSProperties = {
@@ -169,11 +158,37 @@ interface ActivityRowProps {
   verb: string;
   obj: string;
   accent?: boolean;
+  /** When set, the row becomes clickable + opens the supplied drawer target. */
+  onClick?: () => void;
 }
 
-function ActivityRow({ time, actor, verb, obj, accent = false }: ActivityRowProps) {
-  return (
-    <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+function ActivityRow({
+  time,
+  actor,
+  verb,
+  obj,
+  accent = false,
+  onClick,
+}: ActivityRowProps) {
+  const [hover, setHover] = useState(false);
+  const interactive = !!onClick;
+  const inner = (
+    <div
+      style={{
+        display: "flex",
+        gap: 10,
+        alignItems: "flex-start",
+        padding: "2px 4px",
+        background:
+          interactive && hover ? "rgba(255,0,150,0.06)" : "transparent",
+        outline:
+          interactive && hover
+            ? "1px solid rgba(255,0,150,0.18)"
+            : "1px solid transparent",
+        transition: "background 120ms ease, outline-color 120ms ease",
+        opacity: interactive ? 1 : 0.78,
+      }}
+    >
       <Mono size={9} style={{ width: 36, flexShrink: 0, paddingTop: 2 }}>
         {time.toUpperCase()}
       </Mono>
@@ -196,10 +211,615 @@ function ActivityRow({ time, actor, verb, obj, accent = false }: ActivityRowProp
       </div>
     </div>
   );
+  if (!interactive) return inner;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onFocus={() => setHover(true)}
+      onBlur={() => setHover(false)}
+      style={{
+        all: "unset",
+        cursor: "pointer",
+        display: "block",
+        width: "100%",
+      }}
+      aria-label={`${actor} ${verb} ${obj}`}
+    >
+      {inner}
+    </button>
+  );
+}
+
+// ── Drawer target discriminated union ────────────────────────────────
+// Centralizing the open-drawer-target state keeps RecordsOS rendering
+// only one DetailDrawer at a time. `null` = closed.
+type DrawerTarget =
+  | { kind: "lab"; id: string }
+  | { kind: "vital"; id: string }
+  | { kind: "med"; id: string }
+  | { kind: "condition"; id: string }
+  | { kind: "careTeam"; id: string }
+  | null;
+
+// ── Hover-affordance interactive wrapper ────────────────────────────
+// Adds cursor:pointer + a subtle hover tint without re-implementing
+// every clickable surface. Renders a <button> for keyboard a11y.
+interface ClickableProps {
+  onClick: () => void;
+  children: ReactNode;
+  ariaLabel: string;
+  style?: CSSProperties;
+  /** Hover tint color override; defaults to a faint magenta. */
+  tint?: string;
+}
+
+function Clickable({
+  onClick,
+  children,
+  ariaLabel,
+  style,
+  tint = "rgba(255,0,150,0.06)",
+}: ClickableProps) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onFocus={() => setHover(true)}
+      onBlur={() => setHover(false)}
+      aria-label={ariaLabel}
+      style={{
+        // Reset native button chrome so it inherits its parent's slot.
+        all: "unset",
+        boxSizing: "border-box",
+        cursor: "pointer",
+        display: "block",
+        width: "100%",
+        background: hover ? tint : "transparent",
+        outline: hover ? "1px solid rgba(255,0,150,0.18)" : "1px solid transparent",
+        transition: "background 120ms ease, outline-color 120ms ease",
+        ...style,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ── Drawer body renderers ───────────────────────────────────────────
+// Each renderer takes the resolved entity and returns ready-to-render
+// JSX scoped to the drawer surface. Sample-data only.
+
+const drawerSection: CSSProperties = {
+  marginBottom: 18,
+};
+
+const drawerLabel: CSSProperties = {
+  fontFamily: "var(--font-mono)",
+  fontSize: 9,
+  fontWeight: 700,
+  letterSpacing: "0.16em",
+  color: "rgba(255,255,255,0.4)",
+  textTransform: "uppercase",
+  marginBottom: 8,
+  display: "block",
+};
+
+function LabDrawerBody({ lab }: { lab: SampleLab }) {
+  // Parse range string ("<100", ">40", "30–100", "0.4–4.0") into
+  // numeric bounds for RangeBar. Unknown shapes degrade gracefully.
+  const bounds = useMemo(() => {
+    const r = lab.range.trim();
+    const dash = r.match(/([\d.]+)\s*[–-]\s*([\d.]+)/);
+    if (dash) return { low: parseFloat(dash[1]), high: parseFloat(dash[2]) };
+    const lt = r.match(/^<\s*([\d.]+)/);
+    if (lt) return { low: 0, high: parseFloat(lt[1]) };
+    const gt = r.match(/^>\s*([\d.]+)/);
+    if (gt) return { low: parseFloat(gt[1]), high: parseFloat(gt[1]) * 2 };
+    return null;
+  }, [lab.range]);
+
+  const trendRows = lab.trend.map((v, i) => ({
+    value: v,
+    date: lab.dates?.[i] ?? `T-${lab.trend.length - 1 - i}`,
+  }));
+
+  return (
+    <div>
+      <div style={drawerSection}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 10,
+            marginBottom: 6,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: 40,
+              fontWeight: 700,
+              letterSpacing: "-0.025em",
+              color: lab.flag === "low" ? "#ffaa00" : "#fff",
+            }}
+          >
+            {lab.value}
+          </span>
+          <Mono size={10} color="rgba(255,255,255,0.55)">
+            {lab.unit} · ref {lab.range}
+          </Mono>
+        </div>
+        {bounds ? (
+          <div style={{ marginTop: 4 }}>
+            <RangeBar
+              value={lab.value}
+              low={bounds.low}
+              high={bounds.high}
+              w={420}
+            />
+          </div>
+        ) : null}
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>Trend · {lab.trend.length} draws</span>
+        <div style={{ color: "var(--accent)" }}>
+          <TrendChart
+            data={lab.trend}
+            dates={lab.dates}
+            w={420}
+            h={130}
+            accent="#ff0096"
+          />
+        </div>
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>Recent values</span>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {[...trendRows]
+            .reverse()
+            .slice(0, 5)
+            .map((row, i) => (
+              <div
+                key={`${row.date}-${i}`}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "6px 0",
+                  borderBottom: "1px solid rgba(255,255,255,0.05)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 12,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                <span style={{ color: "rgba(255,255,255,0.55)" }}>
+                  {row.date}
+                </span>
+                <span style={{ color: "#fff" }}>
+                  {row.value} {lab.unit}
+                </span>
+              </div>
+            ))}
+        </div>
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>AI insight</span>
+        <p
+          style={{
+            margin: 0,
+            fontSize: 13,
+            lineHeight: 1.5,
+            color: "rgba(255,255,255,0.85)",
+          }}
+        >
+          {lab.hint}
+        </p>
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>Source</span>
+        <Mono size={11} color="rgba(255,255,255,0.7)">
+          {lab.source}
+        </Mono>
+      </div>
+    </div>
+  );
+}
+
+function VitalDrawerBody({ vital }: { vital: SampleVital }) {
+  return (
+    <div>
+      <div style={drawerSection}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 10,
+            marginBottom: 6,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: 40,
+              fontWeight: 700,
+              letterSpacing: "-0.025em",
+            }}
+          >
+            {vital.value}
+          </span>
+          <Mono size={10} color="rgba(255,255,255,0.55)">
+            {vital.unit} · {vital.delta}
+          </Mono>
+        </div>
+        <Mono size={10} color="rgba(255,255,255,0.45)">
+          Reference: {vital.range}
+        </Mono>
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>Last {vital.spark.length} readings</span>
+        <div style={{ color: "var(--accent)" }}>
+          <TrendChart data={vital.spark} w={420} h={120} accent="#ff0096" />
+        </div>
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>Recent values</span>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {[...vital.spark]
+            .map((v, i) => ({
+              v,
+              tMinus: vital.spark.length - 1 - i,
+            }))
+            .reverse()
+            .slice(0, 7)
+            .map((row, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "6px 0",
+                  borderBottom: "1px solid rgba(255,255,255,0.05)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 12,
+                }}
+              >
+                <span style={{ color: "rgba(255,255,255,0.55)" }}>
+                  {row.tMinus === 0 ? "now" : `t-${row.tMinus}`}
+                </span>
+                <span style={{ color: "#fff" }}>
+                  {row.v} {vital.unit}
+                </span>
+              </div>
+            ))}
+        </div>
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>What this means</span>
+        <p
+          style={{
+            margin: 0,
+            fontSize: 13,
+            lineHeight: 1.5,
+            color: "rgba(255,255,255,0.85)",
+          }}
+        >
+          {vital.hint}
+        </p>
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>Source</span>
+        <Mono size={11} color="rgba(255,255,255,0.7)">
+          {vital.source}
+        </Mono>
+      </div>
+    </div>
+  );
+}
+
+function MedDrawerBody({ med }: { med: SampleMed }) {
+  return (
+    <div>
+      <div style={drawerSection}>
+        <div
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: 22,
+            fontWeight: 700,
+            marginBottom: 4,
+          }}
+        >
+          {med.dose} · {med.freq}
+        </div>
+        <Mono size={10} color="rgba(255,255,255,0.55)">
+          Since {med.since}
+        </Mono>
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>Adherence</span>
+        {med.adherence != null ? (
+          <div>
+            <div
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 28,
+                fontWeight: 700,
+                color: med.adherence >= 0.85 ? "var(--accent)" : "#ffaa00",
+                marginBottom: 6,
+              }}
+            >
+              {Math.round(med.adherence * 100)}%
+            </div>
+            <div
+              style={{
+                width: "100%",
+                height: 4,
+                background: "rgba(255,255,255,0.08)",
+              }}
+            >
+              <div
+                style={{
+                  width: `${med.adherence * 100}%`,
+                  height: "100%",
+                  background:
+                    med.adherence >= 0.85 ? "var(--accent)" : "#ffaa00",
+                }}
+              />
+            </div>
+          </div>
+        ) : (
+          <Mono size={11} color="rgba(255,255,255,0.55)">
+            Not tracked (PRN / OTC)
+          </Mono>
+        )}
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>Refills</span>
+        <Mono
+          size={12}
+          color={
+            med.refills != null && med.refills <= 1
+              ? "#ffaa00"
+              : "rgba(255,255,255,0.85)"
+          }
+        >
+          {med.refills != null
+            ? `${med.refills} remaining`
+            : "OTC · no refill schedule"}
+        </Mono>
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>Prescriber</span>
+        <Mono size={12} color="rgba(255,255,255,0.85)">
+          {med.prescriber}
+        </Mono>
+      </div>
+    </div>
+  );
+}
+
+function ConditionDrawerBody({
+  condition,
+  timeline,
+}: {
+  condition: SampleCondition;
+  timeline: SampleTimelineEntry[];
+}) {
+  // Surface timeline entries that mention this condition by name token.
+  const token = condition.name.split(",")[0].split(" ")[0].toLowerCase();
+  const related = timeline.filter((e) =>
+    `${e.title} ${e.who} ${e.loc}`.toLowerCase().includes(token),
+  );
+
+  return (
+    <div>
+      <div style={drawerSection}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 4,
+          }}
+        >
+          <Dot
+            color={
+              condition.status === "active"
+                ? "var(--accent)"
+                : "rgba(255,255,255,0.35)"
+            }
+            size={8}
+            glow={condition.status === "active"}
+          />
+          <Mono size={10} color="rgba(255,255,255,0.55)">
+            {condition.status.toUpperCase()}
+          </Mono>
+        </div>
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>Onset</span>
+        <Mono size={12} color="rgba(255,255,255,0.85)">
+          {condition.onset}
+        </Mono>
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>ICD-10</span>
+        <Mono size={12} color="rgba(255,255,255,0.85)">
+          {condition.icd}
+        </Mono>
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>
+          Recent encounters · {related.length}
+        </span>
+        {related.length === 0 ? (
+          <Mono size={11} color="rgba(255,255,255,0.45)">
+            No recent encounters reference this condition.
+          </Mono>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {related.slice(0, 6).map((e, i) => (
+              <div
+                key={`${e.date}-${i}`}
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  padding: "6px 0",
+                  borderBottom: "1px solid rgba(255,255,255,0.05)",
+                  fontSize: 12,
+                  alignItems: "baseline",
+                }}
+              >
+                <Mono
+                  size={10}
+                  color="rgba(255,255,255,0.45)"
+                  style={{ width: 70, flexShrink: 0 }}
+                >
+                  {e.date}
+                </Mono>
+                <span style={{ color: "#fff", flex: 1 }}>{e.title}</span>
+                <Mono size={10} color="rgba(255,255,255,0.45)">
+                  {e.who}
+                </Mono>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CareTeamDrawerBody({
+  member,
+  onClose,
+}: {
+  member: SampleCareTeamMember;
+  onClose: () => void;
+}) {
+  const [subject, setSubject] = useState(`Question for ${member.name}`);
+  const [body, setBody] = useState("");
+
+  const inputBase: CSSProperties = {
+    width: "100%",
+    background: "#000",
+    color: "#fff",
+    border: "1px solid rgba(255,255,255,0.12)",
+    padding: "8px 10px",
+    fontFamily: "var(--font-display)",
+    fontSize: 13,
+    boxSizing: "border-box",
+  };
+
+  return (
+    <div>
+      <div style={drawerSection}>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <Avatar initials={member.avatar} size={40} online={member.online} />
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 14 }}>{member.name}</div>
+            <Mono size={10} color="rgba(255,255,255,0.55)">
+              {member.role.toUpperCase()} · {member.org}
+            </Mono>
+          </div>
+        </div>
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>Subject</span>
+        <input
+          type="text"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          style={inputBase}
+        />
+      </div>
+
+      <div style={drawerSection}>
+        <span style={drawerLabel}>Message</span>
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={6}
+          placeholder="Write a short note. Don't include sensitive details until SMART OAuth ships."
+          style={{ ...inputBase, resize: "vertical", minHeight: 120 }}
+        />
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          alignItems: "center",
+          marginTop: 18,
+        }}
+      >
+        <Tooltip
+          label="DEMO MODE"
+          range="Send disabled"
+          hint="Demo mode — enable when SMART OAuth lands."
+          source="4UWHAt · sample data"
+        >
+          <button
+            type="button"
+            disabled
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              color: "rgba(255,255,255,0.45)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              padding: "8px 14px",
+              fontFamily: "var(--font-display)",
+              fontWeight: 600,
+              fontSize: 12,
+              cursor: "not-allowed",
+            }}
+          >
+            Send (demo)
+          </button>
+        </Tooltip>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            background: "transparent",
+            color: "rgba(255,255,255,0.7)",
+            border: "1px solid #2a2a2a",
+            padding: "8px 14px",
+            fontFamily: "var(--font-display)",
+            fontWeight: 600,
+            fontSize: 12,
+            cursor: "pointer",
+          }}
+        >
+          Discard
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function RecordsOS() {
   const [activeModule, setActiveModule] = useState("overview");
+  const [drawer, setDrawer] = useState<DrawerTarget>(null);
+  const closeDrawer = () => setDrawer(null);
 
   // Design fallback. When patientId is set but no live patient feed has
   // been wired in, render the sample slice so the page is never blank.
@@ -218,27 +838,9 @@ export function RecordsOS() {
         background: "#000",
         color: "#fff",
         display: "grid",
-        // Three-column desktop layout. Both rails are explicit fixed widths
-        // (220px nav, 360px AI rail) so they cannot squeeze the fluid
-        // center column. `minmax(0, 1fr)` on the center column is the CSS
-        // Grid gotcha fix: bare `1fr` defaults to `minmax(auto, 1fr)`,
-        // which lets oversized children (long lab names, wide tables,
-        // sparklines) push the column wider than the viewport. `minmax(0,
-        // 1fr)` clamps it to the available space so children honor it.
         gridTemplateColumns: "220px minmax(0, 1fr) 360px",
         fontFamily: "var(--font-display)",
         minHeight: "calc(100vh - 40px)",
-        // Bound the dashboard to the viewport height so the rails (nav +
-        // AI rail) can scroll internally instead of pushing the page taller
-        // than the screen, which is what was making the chat panel input
-        // appear "mid-scroll" when reasoning streamed in.
-        height: "calc(100vh - 40px)",
-        // No horizontal page scroll, ever. The rails are fixed widths so
-        // the only way to break out is via a runaway grid child; the
-        // overflow-x guard catches that.
-        overflowX: "hidden",
-        overflowY: "hidden",
-        maxWidth: "100vw",
         borderTop: "1px solid #1f1f1f",
       }}
     >
@@ -249,21 +851,9 @@ export function RecordsOS() {
           display: "flex",
           flexDirection: "column",
           background: "#000",
-          // Grid item — without min-height:0 the inner `<nav>` cannot
-          // actually scroll (the flex column would expand the rail to fit
-          // every nav item).
-          minHeight: 0,
-          minWidth: 0,
-          overflow: "hidden",
         }}
       >
-        <div
-          style={{
-            padding: "20px 20px 16px",
-            borderBottom: "1px solid #1f1f1f",
-            flexShrink: 0,
-          }}
-        >
+        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #1f1f1f" }}>
           <Wordmark size={13} />
           <Mono size={9} style={{ marginTop: 10, display: "block" }} color="rgba(255,255,255,0.35)">
             HEALTH / v4.2
@@ -271,14 +861,7 @@ export function RecordsOS() {
         </div>
 
         {/* Patient picker */}
-        <div
-          style={{
-            padding: "12px 20px",
-            borderBottom: "1px solid #1f1f1f",
-            flexShrink: 0,
-            minWidth: 0,
-          }}
-        >
+        <div style={{ padding: "12px 20px", borderBottom: "1px solid #1f1f1f" }}>
           <Mono size={9} color="rgba(255,255,255,0.4)" style={{ marginBottom: 6, display: "block" }}>
             PATIENT
           </Mono>
@@ -286,15 +869,8 @@ export function RecordsOS() {
         </div>
 
         {/* Patient identity */}
-        <div
-          style={{
-            padding: "16px 20px",
-            borderBottom: "1px solid #1f1f1f",
-            flexShrink: 0,
-            minWidth: 0,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #1f1f1f" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Avatar
               initials={patient.name
                 .split(" ")
@@ -305,13 +881,7 @@ export function RecordsOS() {
               size={32}
               accent={true}
             />
-            <div
-              style={{
-                minWidth: 0,
-                overflowWrap: "anywhere",
-                wordBreak: "break-word",
-              }}
-            >
+            <div>
               <div style={{ fontWeight: 600, fontSize: 13, lineHeight: 1.2 }}>{patient.name}</div>
               <Mono size={9} color="rgba(255,255,255,0.4)">
                 {patient.mrn}
@@ -321,7 +891,7 @@ export function RecordsOS() {
         </div>
 
         {/* Nav */}
-        <nav style={{ padding: "8px 8px", flex: 1, overflowY: "auto", overflowX: "hidden", minHeight: 0 }}>
+        <nav style={{ padding: "8px 8px", flex: 1, overflowY: "auto" }}>
           {NAV.map((n) => {
             const active = n.id === activeModule;
             return (
@@ -362,13 +932,7 @@ export function RecordsOS() {
         </nav>
 
         {/* Footer status */}
-        <div
-          style={{
-            padding: "12px 20px",
-            borderTop: "1px solid #1f1f1f",
-            flexShrink: 0,
-          }}
-        >
+        <div style={{ padding: "12px 20px", borderTop: "1px solid #1f1f1f" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Dot color="var(--accent)" glow={true} size={6} />
             <Mono size={9}>SYNCED · 2 MIN AGO</Mono>
@@ -377,17 +941,7 @@ export function RecordsOS() {
       </aside>
 
       {/* ── MAIN ────────────────────────────────────────────────────── */}
-      <main
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          // `min-width: 0` (already present) is the grid gotcha fix; pair
-          // with `min-height: 0` so the inner content scroll region works.
-          minWidth: 0,
-          minHeight: 0,
-          overflow: "hidden",
-        }}
-      >
+      <main style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
         {/* Top bar */}
         <div
           style={{
@@ -419,34 +973,14 @@ export function RecordsOS() {
         </div>
 
         {/* Content scroll area */}
-        <div
-          style={{
-            padding: "24px 28px",
-            flex: 1,
-            minHeight: 0,
-            minWidth: 0,
-            // The dashboard content (hero row, vitals strip, labs/meds row,
-            // timeline) is taller than the viewport. Without a scroll
-            // container here, the whole page would grow and the rails
-            // would lose their internal-scroll behavior.
-            overflowY: "auto",
-            overflowX: "hidden",
-          }}
-        >
+        <div style={{ padding: "24px 28px", flex: 1, minHeight: 0 }}>
           {/* Hero row */}
           <div
             style={{
               display: "grid",
-              // `minmax(0, …fr)` everywhere a grid child renders content
-              // that could be wider than the column (long names, big
-              // numerics, sparklines). Without this, `1.2fr 1fr` defaults
-              // to `minmax(auto, …)` and any oversized inline element
-              // (like the 36px display name "Maya Okafor") stretches the
-              // column past the available width.
               gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 1fr)",
               gap: 16,
               marginBottom: 16,
-              minWidth: 0,
             }}
           >
             <div style={cardBase}>
@@ -602,65 +1136,96 @@ export function RecordsOS() {
               <Eyebrow>VITALS · LAST 12 READINGS</Eyebrow>
               <Mono>FROM APPLE WATCH · OURA · CLINIC</Mono>
             </div>
-            <div
-              style={{
-                display: "grid",
-                // minmax(0, 1fr) prevents a single oversized vital reading
-                // (e.g. a long unit string) from squeezing the other five.
-                gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-                minWidth: 0,
-              }}
-            >
-              {Object.values(vitals).map((v, i) => (
-                <div
-                  key={v.label}
-                  style={{
-                    padding: "16px 20px",
-                    borderRight: i < 5 ? "1px solid rgba(255,255,255,0.06)" : "none",
-                    minWidth: 0,
-                    // Sparkline below uses w={120} which is wider than the
-                    // column at sub-1280px viewports; clip rather than
-                    // expand the cell.
-                    overflow: "hidden",
-                  }}
-                >
-                  <Mono size={9}>{v.label.toUpperCase()}</Mono>
-                  <Tooltip label={v.label} range={v.range} hint={v.hint} source={v.source}>
-                    <span style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 6 }}>
-                      <span
-                        style={{
-                          fontFamily: "var(--font-display)",
-                          fontSize: 24,
-                          fontWeight: 700,
-                          letterSpacing: "-0.02em",
-                        }}
-                      >
-                        {v.value}
-                      </span>
-                      <Mono size={9} style={{ fontWeight: 500 }}>
-                        {v.unit}
-                      </Mono>
-                    </span>
-                  </Tooltip>
-                  <div style={{ marginTop: 8, height: 22, color: "var(--accent)" }}>
-                    <Sparkline data={v.spark} w={120} h={22} stroke="var(--accent)" strokeWidth={1.25} />
-                  </div>
-                  <div
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))" }}>
+              {Object.entries(vitals).map(([key, v], i) => {
+                // Build trend hint: last 7 readings with relative time labels.
+                const last7 = [...v.spark]
+                  .map((value, idx) => ({
+                    value,
+                    tMinus: v.spark.length - 1 - idx,
+                  }))
+                  .reverse()
+                  .slice(0, 7)
+                  .map((row) =>
+                    row.tMinus === 0
+                      ? `${row.value} (now)`
+                      : `${row.value} (t-${row.tMinus})`,
+                  )
+                  .join(" ← ");
+                return (
+                  <Clickable
+                    key={key}
+                    onClick={() => setDrawer({ kind: "vital", id: key })}
+                    ariaLabel={`Open ${v.label} details`}
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginTop: 4,
+                      borderRight:
+                        i < 5 ? "1px solid rgba(255,255,255,0.06)" : "none",
                     }}
                   >
-                    <Mono size={9} color="var(--accent)">
-                      {v.delta}
-                    </Mono>
-                    <Mono size={9} color="rgba(255,255,255,0.3)">
-                      {v.range.split(" · ")[0].split(" typical")[0]}
-                    </Mono>
-                  </div>
-                </div>
-              ))}
+                    <div style={{ padding: "16px 20px" }}>
+                      <Mono size={9}>{v.label.toUpperCase()}</Mono>
+                      <Tooltip
+                        label={v.label}
+                        range={v.range}
+                        hint={`${v.hint}\nLast 7: ${last7}`}
+                        source={`${v.source} · click to expand`}
+                      >
+                        <span
+                          style={{
+                            display: "flex",
+                            alignItems: "baseline",
+                            gap: 5,
+                            marginTop: 6,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: "var(--font-display)",
+                              fontSize: 24,
+                              fontWeight: 700,
+                              letterSpacing: "-0.02em",
+                            }}
+                          >
+                            {v.value}
+                          </span>
+                          <Mono size={9} style={{ fontWeight: 500 }}>
+                            {v.unit}
+                          </Mono>
+                        </span>
+                      </Tooltip>
+                      <div
+                        style={{
+                          marginTop: 8,
+                          height: 22,
+                          color: "var(--accent)",
+                        }}
+                      >
+                        <Sparkline
+                          data={v.spark}
+                          w={120}
+                          h={22}
+                          stroke="var(--accent)"
+                          strokeWidth={1.25}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          marginTop: 4,
+                        }}
+                      >
+                        <Mono size={9} color="var(--accent)">
+                          {v.delta}
+                        </Mono>
+                        <Mono size={9} color="rgba(255,255,255,0.3)">
+                          {v.range.split(" · ")[0].split(" typical")[0]}
+                        </Mono>
+                      </div>
+                    </div>
+                  </Clickable>
+                );
+              })}
             </div>
           </div>
 
@@ -671,7 +1236,6 @@ export function RecordsOS() {
               gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)",
               gap: 16,
               marginBottom: 16,
-              minWidth: 0,
             }}
           >
             {/* Labs table */}
@@ -695,123 +1259,158 @@ export function RecordsOS() {
                   <span>TREND</span>
                   <span style={{ textAlign: "right" }}>FLAG</span>
                 </div>
-                {labs.map((l) => (
-                  <div key={l.id} style={tableRow}>
-                    <Tooltip
-                      label={l.name}
-                      range={`Reference: ${l.range} ${l.unit}`}
-                      hint={l.hint}
-                      source={l.source}
+                {labs.map((l) => {
+                  // Build a richer hover hint: trend values paired with dates
+                  // (or T-N labels), most-recent first.
+                  const trendLine = [...l.trend]
+                    .map((v, i) => ({
+                      v,
+                      d: l.dates?.[i] ?? `T-${l.trend.length - 1 - i}`,
+                    }))
+                    .reverse()
+                    .slice(0, 4)
+                    .map((row) => `${row.v} (${row.d})`)
+                    .join(" ← ");
+                  return (
+                    <Clickable
+                      key={l.id}
+                      onClick={() => setDrawer({ kind: "lab", id: l.id })}
+                      ariaLabel={`Open ${l.name} details`}
+                      style={{ display: "block" }}
                     >
-                      <span style={{ fontWeight: 500 }}>{l.name}</span>
-                    </Tooltip>
-                    <span
-                      style={{
-                        textAlign: "right",
-                        fontFamily: "var(--font-mono)",
-                        fontVariantNumeric: "tabular-nums",
-                        color: l.flag === "low" ? "#ffaa00" : "#fff",
-                      }}
-                    >
-                      {l.value} <Mono size={9}>{l.unit}</Mono>
-                    </span>
-                    <Mono>{l.range}</Mono>
-                    <span
-                      style={{
-                        color: l.flag === "low" ? "#ffaa00" : "var(--accent)",
-                        display: "inline-block",
-                        minWidth: 0,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <Sparkline
-                        data={l.trend}
-                        w={70}
-                        h={18}
-                        stroke="currentColor"
-                        strokeWidth={1.25}
-                        dot={false}
-                      />
-                    </span>
-                    <span style={{ textAlign: "right" }}>
-                      {l.flag === "normal" ? (
-                        <Mono size={9} color="rgba(255,255,255,0.45)">
-                          OK
-                        </Mono>
-                      ) : (
-                        <Tag color="#ffaa00" style={{ fontSize: 8.5, padding: "2px 5px" }}>
-                          LOW
-                        </Tag>
-                      )}
-                    </span>
-                  </div>
-                ))}
+                      <div style={tableRow}>
+                        <Tooltip
+                          label={l.name}
+                          range={`Reference: ${l.range} ${l.unit}`}
+                          hint={`${l.hint}\nTrend: ${trendLine}`}
+                          source={`${l.source} · click to expand`}
+                        >
+                          <span style={{ fontWeight: 500 }}>{l.name}</span>
+                        </Tooltip>
+                        <span
+                          style={{
+                            textAlign: "right",
+                            fontFamily: "var(--font-mono)",
+                            fontVariantNumeric: "tabular-nums",
+                            color: l.flag === "low" ? "#ffaa00" : "#fff",
+                          }}
+                        >
+                          {l.value} <Mono size={9}>{l.unit}</Mono>
+                        </span>
+                        <Mono>{l.range}</Mono>
+                        <span
+                          style={{
+                            color: l.flag === "low" ? "#ffaa00" : "var(--accent)",
+                          }}
+                        >
+                          <Sparkline
+                            data={l.trend}
+                            w={70}
+                            h={18}
+                            stroke="currentColor"
+                            strokeWidth={1.25}
+                            dot={false}
+                          />
+                        </span>
+                        <span style={{ textAlign: "right" }}>
+                          {l.flag === "normal" ? (
+                            <Mono size={9} color="rgba(255,255,255,0.45)">
+                              OK
+                            </Mono>
+                          ) : (
+                            <Tag
+                              color="#ffaa00"
+                              style={{ fontSize: 8.5, padding: "2px 5px" }}
+                            >
+                              LOW
+                            </Tag>
+                          )}
+                        </span>
+                      </div>
+                    </Clickable>
+                  );
+                })}
               </div>
             </div>
 
             {/* Meds + conditions stacked */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateRows: "minmax(0, 1fr) minmax(0, 1fr)",
-                gap: 16,
-                minWidth: 0,
-              }}
-            >
+            <div style={{ display: "grid", gridTemplateRows: "1fr 1fr", gap: 16 }}>
               <div style={cardBase}>
                 <Eyebrow style={{ marginBottom: 12 }}>MEDICATIONS · 4 ACTIVE</Eyebrow>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {meds.slice(0, 4).map((m) => (
-                    <div key={m.id} style={medRow}>
-                      <div
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          overflowWrap: "anywhere",
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        <Tooltip
-                          label={m.name}
-                          range={`${m.dose} · ${m.freq}`}
-                          hint={`Prescriber: ${m.prescriber} · since ${m.since}`}
-                          source={m.refills != null ? `${m.refills} refills remaining` : "OTC"}
-                        >
-                          <span style={{ fontWeight: 600, fontSize: 13 }}>{m.name}</span>
-                        </Tooltip>
-                        <Mono size={9} style={{ marginTop: 2, display: "block" }}>
-                          {m.dose} · {m.freq}
-                        </Mono>
-                      </div>
-                      {m.adherence != null && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <Mono size={9}>{Math.round(m.adherence * 100)}%</Mono>
+                    <Clickable
+                      key={m.id}
+                      onClick={() => setDrawer({ kind: "med", id: m.id })}
+                      ariaLabel={`Open ${m.name} details`}
+                    >
+                      <div style={medRow}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <Tooltip
+                            label={m.name}
+                            range={`${m.dose} · ${m.freq}`}
+                            hint={`Prescriber: ${m.prescriber} · since ${m.since}${
+                              m.adherence != null
+                                ? ` · adherence ${Math.round(m.adherence * 100)}%`
+                                : ""
+                            }`}
+                            source={
+                              m.refills != null
+                                ? `${m.refills} refills · click to expand`
+                                : "OTC · click to expand"
+                            }
+                          >
+                            <span style={{ fontWeight: 600, fontSize: 13 }}>
+                              {m.name}
+                            </span>
+                          </Tooltip>
+                          <Mono
+                            size={9}
+                            style={{ marginTop: 2, display: "block" }}
+                          >
+                            {m.dose} · {m.freq}
+                          </Mono>
+                        </div>
+                        {m.adherence != null && (
                           <div
                             style={{
-                              width: 36,
-                              height: 3,
-                              background: "rgba(255,255,255,0.08)",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
                             }}
                           >
+                            <Mono size={9}>
+                              {Math.round(m.adherence * 100)}%
+                            </Mono>
                             <div
                               style={{
-                                width: `${m.adherence * 100}%`,
-                                height: "100%",
-                                background: "var(--accent)",
+                                width: 36,
+                                height: 3,
+                                background: "rgba(255,255,255,0.08)",
                               }}
-                            />
+                            >
+                              <div
+                                style={{
+                                  width: `${m.adherence * 100}%`,
+                                  height: "100%",
+                                  background: "var(--accent)",
+                                }}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {m.refills != null && (
-                        <Mono
-                          size={9}
-                          color={m.refills <= 1 ? "#ffaa00" : "rgba(255,255,255,0.45)"}
-                        >
-                          {m.refills} REFILL{m.refills !== 1 ? "S" : ""}
-                        </Mono>
-                      )}
-                    </div>
+                        )}
+                        {m.refills != null && (
+                          <Mono
+                            size={9}
+                            color={
+                              m.refills <= 1 ? "#ffaa00" : "rgba(255,255,255,0.45)"
+                            }
+                          >
+                            {m.refills} REFILL{m.refills !== 1 ? "S" : ""}
+                          </Mono>
+                        )}
+                      </div>
+                    </Clickable>
                   ))}
                 </div>
               </div>
@@ -820,50 +1419,65 @@ export function RecordsOS() {
                 <Eyebrow style={{ marginBottom: 12 }}>PROBLEM LIST</Eyebrow>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   {conditions.map((c) => (
-                    <div
+                    <Clickable
                       key={c.id}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "12px minmax(0, 1fr) auto auto",
-                        alignItems: "center",
-                        gap: 10,
-                        padding: "8px 0",
-                        borderBottom: "1px solid rgba(255,255,255,0.05)",
-                        minWidth: 0,
-                      }}
+                      onClick={() =>
+                        setDrawer({ kind: "condition", id: c.id })
+                      }
+                      ariaLabel={`Open ${c.name} details`}
                     >
-                      <Dot
-                        color={
-                          c.status === "active"
-                            ? "var(--accent)"
-                            : "rgba(255,255,255,0.3)"
-                        }
-                        size={6}
-                        glow={c.status === "active"}
-                      />
-                      <span
-                        style={{
-                          fontSize: 13,
-                          color: c.status === "active" ? "#fff" : "rgba(255,255,255,0.5)",
-                          minWidth: 0,
-                          overflowWrap: "anywhere",
-                          wordBreak: "break-word",
-                        }}
+                      <Tooltip
+                        label={c.name}
+                        range={`ICD-10 ${c.icd} · onset ${c.onset}`}
+                        hint={`Status: ${c.status}. Click to see related encounters.`}
+                        source="Problem list"
                       >
-                        {c.name}
-                      </span>
-                      <Mono size={9}>{c.icd}</Mono>
-                      <Mono
-                        size={9}
-                        color={
-                          c.status === "active"
-                            ? "var(--accent)"
-                            : "rgba(255,255,255,0.4)"
-                        }
-                      >
-                        SINCE {c.onset}
-                      </Mono>
-                    </div>
+                        <span
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "12px minmax(0, 1fr) auto auto",
+                            alignItems: "center",
+                            gap: 10,
+                            padding: "8px 0",
+                            borderBottom:
+                              "1px solid rgba(255,255,255,0.05)",
+                            width: "100%",
+                          }}
+                        >
+                          <Dot
+                            color={
+                              c.status === "active"
+                                ? "var(--accent)"
+                                : "rgba(255,255,255,0.3)"
+                            }
+                            size={6}
+                            glow={c.status === "active"}
+                          />
+                          <span
+                            style={{
+                              fontSize: 13,
+                              color:
+                                c.status === "active"
+                                  ? "#fff"
+                                  : "rgba(255,255,255,0.5)",
+                            }}
+                          >
+                            {c.name}
+                          </span>
+                          <Mono size={9}>{c.icd}</Mono>
+                          <Mono
+                            size={9}
+                            color={
+                              c.status === "active"
+                                ? "var(--accent)"
+                                : "rgba(255,255,255,0.4)"
+                            }
+                          >
+                            SINCE {c.onset}
+                          </Mono>
+                        </span>
+                      </Tooltip>
+                    </Clickable>
                   ))}
                 </div>
               </div>
@@ -871,14 +1485,7 @@ export function RecordsOS() {
           </div>
 
           {/* Bottom row: timeline preview + sharing */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)",
-              gap: 16,
-              minWidth: 0,
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)", gap: 16 }}>
             <div style={cardBase}>
               <div
                 style={{
@@ -908,18 +1515,7 @@ export function RecordsOS() {
                     >
                       {e.tag}
                     </Tag>
-                    <span
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 500,
-                        flex: 1,
-                        minWidth: 0,
-                        overflowWrap: "anywhere",
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {e.title}
-                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 500, flex: 1 }}>{e.title}</span>
                     <Mono color="rgba(255,255,255,0.45)">{e.who}</Mono>
                   </div>
                 ))}
@@ -936,27 +1532,15 @@ export function RecordsOS() {
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      gap: 10,
                       padding: "10px 12px",
                       border: "1px solid rgba(255,255,255,0.06)",
-                      minWidth: 0,
                     }}
                   >
-                    <div
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        overflowWrap: "anywhere",
-                        wordBreak: "break-word",
-                      }}
-                    >
+                    <div>
                       <div style={{ fontSize: 13, fontWeight: 500 }}>{s.who}</div>
                       <Mono size={9}>{s.scope.toUpperCase()}</Mono>
                     </div>
-                    <button
-                      type="button"
-                      style={{ ...btnGhost, padding: "4px 8px", fontSize: 10, flexShrink: 0 }}
-                    >
+                    <button type="button" style={{ ...btnGhost, padding: "4px 8px", fontSize: 10 }}>
                       REVOKE
                     </button>
                   </div>
@@ -974,101 +1558,210 @@ export function RecordsOS() {
           display: "flex",
           flexDirection: "column",
           background: "#000",
-          // Bound the rail to the grid track height so its three sections
-          // (chat, care team, recent activity) can each scroll internally
-          // without pushing the page taller than the viewport.
-          minHeight: 0,
-          minWidth: 0,
-          overflow: "hidden",
         }}
       >
-        {/* Ask your record (AI) — flex:1 so the chat panel takes the
-            largest share of the rail; AskYourRecord itself caps to a
-            sensible viewport-bounded max. */}
-        <div
-          style={{
-            padding: "20px 22px",
-            borderBottom: "1px solid #1f1f1f",
-            display: "flex",
-            flexDirection: "column",
-            flex: "1 1 auto",
-            minHeight: 0,
-            minWidth: 0,
-          }}
-        >
+        {/* Ask your record (AI) */}
+        <div style={{ padding: "20px 22px", borderBottom: "1px solid #1f1f1f" }}>
           <AskYourRecord suggestions={SAMPLE_AI_SUGGESTIONS} />
         </div>
 
         {/* Care team */}
-        <div
-          style={{
-            padding: "18px 22px",
-            borderBottom: "1px solid #1f1f1f",
-            flexShrink: 0,
-            minWidth: 0,
-          }}
-        >
+        <div style={{ padding: "18px 22px", borderBottom: "1px solid #1f1f1f" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
             <Eyebrow>CARE TEAM</Eyebrow>
             <Mono>{careTeam.filter((c) => c.online).length} ONLINE</Mono>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {careTeam.map((c) => (
-              <div
+              <Clickable
                 key={c.id}
-                style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}
+                onClick={() => setDrawer({ kind: "careTeam", id: c.id })}
+                ariaLabel={`Message ${c.name}`}
               >
-                <Avatar initials={c.avatar} online={c.online} size={28} />
                 <div
                   style={{
-                    flex: 1,
-                    minWidth: 0,
-                    overflowWrap: "anywhere",
-                    wordBreak: "break-word",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "4px 6px",
                   }}
                 >
-                  <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.3 }}>
-                    {c.name}
+                  <Tooltip
+                    label={c.name}
+                    range={`${c.role} · ${c.org}`}
+                    hint={
+                      c.online
+                        ? "Online now. Click to draft a message."
+                        : "Offline. Click to draft a message."
+                    }
+                    source={c.online ? "Available" : "Last seen recently"}
+                  >
+                    <Avatar
+                      initials={c.avatar}
+                      online={c.online}
+                      size={28}
+                    />
+                  </Tooltip>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {c.name}
+                    </div>
+                    <Mono size={9}>{c.role.toUpperCase()}</Mono>
                   </div>
-                  <Mono size={9}>{c.role.toUpperCase()}</Mono>
+                  <span
+                    style={{
+                      ...btnGhost,
+                      padding: "3px 7px",
+                      fontSize: 10,
+                      // Render as a static label inside the Clickable wrapper
+                      // (nested <button> inside <button> is invalid HTML).
+                      pointerEvents: "none",
+                    }}
+                  >
+                    MSG
+                  </span>
                 </div>
-                <button
-                  type="button"
-                  style={{ ...btnGhost, padding: "3px 7px", fontSize: 10, flexShrink: 0 }}
-                >
-                  MSG
-                </button>
-              </div>
+              </Clickable>
             ))}
           </div>
         </div>
 
         {/* Recent activity */}
-        <div
-          style={{
-            padding: "18px 22px",
-            // Cap at a fraction of the rail so it doesn't crowd out the
-            // chat panel. Internal scroll lets the activity list grow.
-            flex: "0 1 auto",
-            maxHeight: "30vh",
-            overflowY: "auto",
-            overflowX: "hidden",
-            minWidth: 0,
-          }}
-        >
+        <div style={{ padding: "18px 22px", flex: 1, overflowY: "auto" }}>
           <Eyebrow style={{ marginBottom: 12 }}>RECENT ACTIVITY</Eyebrow>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <ActivityRow time="2 min" actor="4UWHAt" verb="synced" obj="Apple Health · 47 entries" />
-            <ActivityRow time="11 min" actor="Dr. Patel" verb="signed" obj="Visit note · Feb 19" accent />
-            <ActivityRow time="4h" actor="4UWHAt" verb="flagged" obj="Vitamin D · 28 ng/mL · low" />
-            <ActivityRow time="1d" actor="Quest" verb="released" obj="Lipid panel + CBC + CMP" />
-            <ActivityRow time="2d" actor="You" verb="shared" obj="Pulmonary record → Dr. Patel" />
-            <ActivityRow time="6d" actor="CVS" verb="filled" obj="Rosuvastatin · 30 day" />
+            <ActivityRow
+              time="2 min"
+              actor="4UWHAt"
+              verb="synced"
+              obj="Apple Health · 47 entries"
+              onClick={() => setDrawer({ kind: "vital", id: "hr" })}
+            />
+            <ActivityRow
+              time="11 min"
+              actor="Dr. Patel"
+              verb="signed"
+              obj="Visit note · Feb 19"
+              accent
+            />
+            <ActivityRow
+              time="4h"
+              actor="4UWHAt"
+              verb="flagged"
+              obj="Vitamin D · 28 ng/mL · low"
+              onClick={() => setDrawer({ kind: "lab", id: "vitd" })}
+            />
+            <ActivityRow
+              time="1d"
+              actor="Quest"
+              verb="released"
+              obj="Lipid panel + CBC + CMP"
+              onClick={() => setDrawer({ kind: "lab", id: "ldl" })}
+            />
+            <ActivityRow
+              time="2d"
+              actor="You"
+              verb="shared"
+              obj="Pulmonary record → Dr. Patel"
+            />
+            <ActivityRow
+              time="6d"
+              actor="CVS"
+              verb="filled"
+              obj="Rosuvastatin · 30 day"
+              onClick={() => setDrawer({ kind: "med", id: "rosu" })}
+            />
           </div>
         </div>
 
-        <div style={{ height: 4, background: "var(--accent)", flexShrink: 0 }} />
+        <div style={{ height: 4, background: "var(--accent)" }} />
       </aside>
+
+      {/* ── DETAIL DRAWER ─────────────────────────────────────────────
+        Renders into a portal at document.body, so it does not perturb
+        the three-column grid layout (A1's domain). One drawer at a time;
+        target selected by `drawer` state above. */}
+      {drawer?.kind === "lab" &&
+        (() => {
+          const lab = labs.find((l) => l.id === drawer.id);
+          if (!lab) return null;
+          return (
+            <DetailDrawer
+              open={true}
+              onClose={closeDrawer}
+              title={lab.name}
+              kicker={`Lab · ${lab.date} · ${lab.flag.toUpperCase()}`}
+            >
+              <LabDrawerBody lab={lab} />
+            </DetailDrawer>
+          );
+        })()}
+      {drawer?.kind === "vital" &&
+        (() => {
+          const vital = vitals[drawer.id];
+          if (!vital) return null;
+          return (
+            <DetailDrawer
+              open={true}
+              onClose={closeDrawer}
+              title={vital.label}
+              kicker={`Vital · ${vital.source}`}
+            >
+              <VitalDrawerBody vital={vital} />
+            </DetailDrawer>
+          );
+        })()}
+      {drawer?.kind === "med" &&
+        (() => {
+          const med = meds.find((m) => m.id === drawer.id);
+          if (!med) return null;
+          return (
+            <DetailDrawer
+              open={true}
+              onClose={closeDrawer}
+              title={med.name}
+              kicker={`Medication · since ${med.since}`}
+            >
+              <MedDrawerBody med={med} />
+            </DetailDrawer>
+          );
+        })()}
+      {drawer?.kind === "condition" &&
+        (() => {
+          const cond = conditions.find((c) => c.id === drawer.id);
+          if (!cond) return null;
+          return (
+            <DetailDrawer
+              open={true}
+              onClose={closeDrawer}
+              title={cond.name}
+              kicker={`Condition · ${cond.icd}`}
+            >
+              <ConditionDrawerBody condition={cond} timeline={timeline} />
+            </DetailDrawer>
+          );
+        })()}
+      {drawer?.kind === "careTeam" &&
+        (() => {
+          const member = careTeam.find((c) => c.id === drawer.id);
+          if (!member) return null;
+          return (
+            <DetailDrawer
+              open={true}
+              onClose={closeDrawer}
+              title={`Message ${member.name}`}
+              kicker="Demo · SMART OAuth pending"
+            >
+              <CareTeamDrawerBody member={member} onClose={closeDrawer} />
+            </DetailDrawer>
+          );
+        })()}
     </div>
   );
 }
