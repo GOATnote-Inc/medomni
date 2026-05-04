@@ -75,6 +75,7 @@ export default function AgentPage() {
   async function submit() {
     if (busy) return;
     const trimmed = input.trim();
+    // Voice + audio attached: send the audio with optional text follow-up.
     if (mode === "voice" && pendingAudio) {
       const followup = trimmed ||
         "Transcribe the audio and answer the clinical question it contains. Cite guidelines and PMIDs where they meaningfully change the answer.";
@@ -93,7 +94,10 @@ export default function AgentPage() {
       setPendingAudio(null);
       return;
     }
-    if (mode === "text" && trimmed) {
+    // Text-only: fires in either mode as long as there's text and no pending
+    // audio. This is the follow-up path after a voice turn — the user types
+    // a follow-up question without clicking the mode toggle.
+    if (trimmed) {
       await sendMessage({ text: trimmed });
       setInput("");
     }

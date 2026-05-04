@@ -535,6 +535,57 @@
       ],
       "current_default": "ONJ at osteoporosis (not oncology) doses is rare: ~1-10 per 100,000 patient-years on oral bisphosphonates; risk is concentrated in patients with active dental disease, invasive dental procedures, or oncology-dose IV bisphosphonates.",
       "citation": "ASBMR 2014 ONJ position paper; AAOMS 2022 update"
+    },
+    {
+      "id": "GCR-041-tamoxifen-bca-prevention-uspstf-version",
+      "fixture_id": "MEDOMNI-AGENT-TAMOXIFEN",
+      "rubric_id": "R1",
+      "concept": "Tamoxifen / SERM / AI for breast-cancer risk reduction (USPSTF version)",
+      "stale_default": "USPSTF 2022 (or any other un-cited year) for tamoxifen/raloxifene/AI as breast-cancer chemoprevention",
+      "trigger_patterns": [
+        "(?i)USPSTF\\s+202[0-6]\\b.{0,80}(tamoxifen|raloxifene|aromatase|breast\\s+cancer\\s+(risk|prevention))",
+        "(?i)(tamoxifen|raloxifene|aromatase).{0,80}USPSTF\\s+202[0-6]"
+      ],
+      "current_default": "The current USPSTF recommendation on Medication Use to Reduce Risk of Breast Cancer is dated September 3, 2019. It recommends offering tamoxifen, raloxifene, or aromatase inhibitors to women aged 35+ at increased breast-cancer risk and low risk of medication harms (Grade B), and recommends AGAINST routine use in women not at increased risk (Grade D). There is no superseding USPSTF statement through 2026.",
+      "citation": "USPSTF 2019: Medication Use to Reduce Risk of Breast Cancer (JAMA 2019;322(9):857-867)"
+    },
+    {
+      "id": "GCR-042-tamoxifen-bca-prevention-asco-version",
+      "fixture_id": "MEDOMNI-AGENT-TAMOXIFEN",
+      "rubric_id": "R1",
+      "concept": "ASCO endocrine therapy for breast-cancer risk reduction (version)",
+      "stale_default": "ASCO 2020 (or '2023 update') chemoprevention guideline",
+      "trigger_patterns": [
+        "(?i)ASCO\\s+202[0-6]\\b.{0,80}(chemoprevention|risk\\s+reduction|tamoxifen|raloxifene|aromatase)",
+        "(?i)(chemoprevention|risk\\s+reduction).{0,80}ASCO\\s+202[0-6]"
+      ],
+      "current_default": "The relevant ASCO update is 'Use of Endocrine Therapy for Breast Cancer Risk Reduction', 2019 update (Visvanathan et al, J Clin Oncol 2019;37(33):3152-3165). It added anastrozole as an option alongside exemestane, raloxifene, and tamoxifen. There is no superseding ASCO update through 2026.",
+      "citation": "ASCO 2019 update: Endocrine Therapy for Breast Cancer Risk Reduction (J Clin Oncol 2019;37:3152-3165)"
+    },
+    {
+      "id": "GCR-043-tamoxifen-low-dose-tam01",
+      "fixture_id": "MEDOMNI-AGENT-TAMOXIFEN",
+      "rubric_id": "R1",
+      "concept": "Low-dose tamoxifen (5 mg/day) for noninvasive breast neoplasia",
+      "stale_default": "tamoxifen for breast-cancer prevention requires standard 20 mg/day dose, or low-dose evidence is insufficient",
+      "trigger_patterns": [
+        "(?i)tamoxifen.{0,40}20\\s*mg.{0,40}(only|standard|required).{0,40}prevention",
+        "(?i)(low[- ]dose|5\\s*mg)\\s+tamoxifen.{0,80}(insufficient|not\\s+supported)"
+      ],
+      "current_default": "Low-dose tamoxifen 5 mg/day for 3 years reduces invasive recurrence ~52% (HR 0.58) and contralateral breast cancer ~64% (HR 0.36) at 10-year follow-up in women with ADH, LCIS, or DCIS, with no significant increase in serious adverse events. Indication is noninvasive neoplasia / atypia — NOT family history alone (which still uses standard-dose 20 mg per Gail-model risk thresholds). 2026 evidence: PMID 41795346 (Maturitas 2026) on adherence/tolerance.",
+      "citation": "Lazzeroni M et al, JCO 2023;41(17):3116-3125 (TAM-01 10-year, PMID 36917758); Maturitas 2026 (PMID 41795346)"
+    },
+    {
+      "id": "GCR-044-asbrs-risk-reduction-resource",
+      "fixture_id": "MEDOMNI-AGENT-TAMOXIFEN",
+      "rubric_id": "R2",
+      "concept": "ASBrS breast-cancer risk-reduction resource (version)",
+      "stale_default": "ASBrS lacks a current risk-reduction resource",
+      "trigger_patterns": [
+        "(?i)ASBrS.{0,80}(no\\s+resource|outdated|2018|2019|2020)"
+      ],
+      "current_default": "American Society of Breast Surgeons resource guide is copyright 2024. It states that endocrine therapy should be offered for risk reduction in ADH/ALH/LCIS or model-based elevated risk; lists tamoxifen as an option and notes tamoxifen is the ONLY one of these endocrine options for premenopausal women.",
+      "citation": "ASBrS Risk Reduction Resource Guide 2024"
     }
   ]
 }
