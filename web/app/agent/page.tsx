@@ -1,15 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { AudioRecorder } from "@/components/AudioRecorder";
+import { VoiceOutToggle } from "@/components/VoiceOutToggle";
+import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 import type { PubMedSearchResult } from "@/lib/tools/pubmed";
 import type { PrimeKGSubgraphResult } from "@/lib/tools/primekg";
 import type { GuidelineCurrencyResult } from "@/lib/tools/guideline-currency";
 import type { CalculatorResult } from "@/lib/tools/clinical-calculator";
+
+const VOICE_OUT_STORAGE_KEY = "medomni:voiceOut";
+
+// Stripped-down markdown -> speech text. The TTS engine doesn't need
+// asterisks, hashes, code fences, or link syntax read aloud; remove them
+// before queueing chunks to `speechSynthesis`.
+function stripMarkdownForSpeech(s: string): string {
+  return s
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/(\*\*|__)(.*?)\1/g, "$2")
+    .replace(/(\*|_)(.*?)\1/g, "$2")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/^\s*\d+\.\s+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Flush at sentence boundaries so utterances sound natural rather than
+// chopping mid-phrase. Returns [chunks-to-speak, leftover-buffer].
+function splitForSpeech(buffer: string): { chunks: string[]; rest: string } {
+  // Match through end-of-sentence punctuation (incl. trailing close-quote).
+  const re = /[^.!?\n]+[.!?\n]+["')\]]?\s*/g;
+  const chunks: string[] = [];
+  let lastEnd = 0;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(buffer)) !== null) {
+    chunks.push(match[0]);
+    lastEnd = re.lastIndex;
+  }
+  return { chunks, rest: buffer.slice(lastEnd) };
+}
 
 interface PubMedToolPart {
   type: "tool-pubmed_search";
@@ -58,12 +95,92 @@ export default function AgentPage() {
   const [pendingAudio, setPendingAudio] = useState<{ url: string; durationMs: number } | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
 
+  // Voice-out: browser-native TTS that reads streamed assistant deltas.
+  // Default off; persists across reloads via localStorage. Reading the
+  // value lives in an effect so SSR doesn't trip on `window`.
+  const [voiceOutEnabled, setVoiceOutEnabled] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(VOICE_OUT_STORAGE_KEY);
+      if (raw === "true") setVoiceOutEnabled(true);
+    } catch {
+      // localStorage can throw in strict privacy modes; fail silent.
+    }
+  }, []);
+  const handleVoiceOutChange = (next: boolean) => {
+    setVoiceOutEnabled(next);
+    try {
+      window.localStorage.setItem(VOICE_OUT_STORAGE_KEY, String(next));
+    } catch {
+      // ignore
+    }
+  };
+
+  const {
+    speak: ttsSpeak,
+    cancel: ttsCancel,
+    state: ttsState,
+    supported: ttsSupported,
+  } = useSpeechSynthesis({ enabled: voiceOutEnabled });
+
+  // Per-text-part bookkeeping: how many characters of each assistant text
+  // part have already been spoken, plus a small leftover buffer that
+  // hasn't crossed a sentence boundary yet. Keyed by `${messageId}#${partIdx}`.
+  const spokenLenRef = useRef<Map<string, number>>(new Map());
+  const speechBufferRef = useRef<Map<string, string>>(new Map());
+
   const { messages, sendMessage, status, stop } = useChat({
     transport: new DefaultChatTransport({ api: "/api/agent" }),
   });
 
   const busy = status === "submitted" || status === "streaming";
   const hasAudio = pendingAudio !== null;
+
+  // Walk every assistant text-part each render, queue only the NEW
+  // characters (everything past the last spoken offset), and flush at
+  // sentence boundaries. Cheap: O(deltas) since we slice once per part.
+  useEffect(() => {
+    if (!voiceOutEnabled) return;
+    for (const m of messages) {
+      if (m.role !== "assistant") continue;
+      m.parts.forEach((part, i) => {
+        if (part.type !== "text") return;
+        const key = `${m.id}#${i}`;
+        const fullText = part.text ?? "";
+        const prev = spokenLenRef.current.get(key) ?? 0;
+        if (fullText.length <= prev) return;
+        const delta = fullText.slice(prev);
+        spokenLenRef.current.set(key, fullText.length);
+        const cleaned = stripMarkdownForSpeech(delta);
+        if (!cleaned) return;
+        const buf = (speechBufferRef.current.get(key) ?? "") + cleaned + " ";
+        const { chunks, rest } = splitForSpeech(buf);
+        speechBufferRef.current.set(key, rest);
+        for (const c of chunks) {
+          const trimmed = c.trim();
+          if (trimmed) ttsSpeak(trimmed);
+        }
+      });
+    }
+  }, [messages, voiceOutEnabled, ttsSpeak]);
+
+  // When streaming finishes, flush any leftover buffer (last sentence may
+  // not end with terminal punctuation).
+  useEffect(() => {
+    if (busy) return;
+    if (!voiceOutEnabled) return;
+    for (const [key, rest] of speechBufferRef.current.entries()) {
+      const trimmed = rest.trim();
+      if (trimmed) ttsSpeak(trimmed);
+      speechBufferRef.current.set(key, "");
+    }
+  }, [busy, voiceOutEnabled, ttsSpeak]);
+
+  // Switching to voice-input mode should silence any ongoing TTS so the
+  // mic doesn't pick up the speaker. Doesn't disable the toggle.
+  useEffect(() => {
+    if (mode === "voice") ttsCancel();
+  }, [mode, ttsCancel]);
 
   function handleAudio(url: string, durationMs: number) {
     setPendingAudio({ url, durationMs });
@@ -76,6 +193,8 @@ export default function AgentPage() {
 
   async function submit() {
     if (busy) return;
+    // Any new turn cancels in-flight TTS — the user has the floor again.
+    ttsCancel();
     const trimmed = input.trim();
     // Voice + audio attached: send the audio with optional text follow-up.
     if (mode === "voice" && pendingAudio) {
@@ -112,7 +231,15 @@ export default function AgentPage() {
           <p className="text-xs tracking-widest uppercase text-slate-500 font-medium">
             GOATnote · MedOmni · agent
           </p>
-          <ModeToggle mode={mode} onChange={setMode} disabled={busy} />
+          <div className="flex items-center gap-2">
+            <VoiceOutToggle
+              enabled={voiceOutEnabled}
+              onChange={handleVoiceOutChange}
+              state={ttsState}
+              supported={ttsSupported}
+            />
+            <ModeToggle mode={mode} onChange={setMode} disabled={busy} />
+          </div>
         </div>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">
           Clinical agent · 4 sovereign tools
