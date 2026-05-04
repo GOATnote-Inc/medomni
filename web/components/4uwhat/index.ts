@@ -23,3 +23,6 @@ export { PatientPicker } from "./PatientPicker";
 
 // Ask-your-record command bar (A1)
 export { AskYourRecord } from "./AskYourRecord";
+
+// Share + FHIR R4 Bundle export (B2)
+export { ShareDrawer } from "./ShareDrawer";

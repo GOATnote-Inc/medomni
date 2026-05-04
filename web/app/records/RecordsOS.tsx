@@ -26,6 +26,7 @@ import {
   Eyebrow,
   Mono,
   RangeBar,
+  ShareDrawer,
   Sparkline,
   Stripe,
   Tag,
@@ -826,6 +827,7 @@ function CareTeamDrawerBody({
 export function RecordsOS() {
   const [activeModule, setActiveModule] = useState("overview");
   const [drawer, setDrawer] = useState<DrawerTarget>(null);
+  const [shareOpen, setShareOpen] = useState(false);
   const closeDrawer = () => setDrawer(null);
 
   // Design fallback. When patientId is set but no live patient feed has
@@ -1007,15 +1009,32 @@ export function RecordsOS() {
             <Mono color="rgba(255,255,255,0.55)">YOUR RECORD · APR 22, 2026</Mono>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button type="button" style={btnGhost}>
-              Export
-            </button>
-            <button type="button" style={btnGhost}>
+            {/* B2 — Single working Share button. Replaces the prior
+                cosmetic Export+Share pair. Opens ShareDrawer with a
+                live FHIR R4 Bundle assembled from sample-data. */}
+            <button
+              type="button"
+              style={btnPrimary}
+              onClick={() => setShareOpen(true)}
+              aria-label="Share your FHIR record"
+            >
               Share
             </button>
-            <button type="button" style={btnPrimary}>
-              + New entry
-            </button>
+            <Tooltip
+              label="DEMO MODE"
+              range="New entry disabled"
+              hint="v1.1: surfaces FHIR data-entry forms (vital, lab, message). Sharing the existing record works today via Share → above."
+              source="medomni · sample data"
+            >
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                style={{ ...btnGhost, cursor: "not-allowed", opacity: 0.55 }}
+              >
+                + New entry (demo)
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -1820,6 +1839,11 @@ export function RecordsOS() {
             </DetailDrawer>
           );
         })()}
+
+      {/* B2 — FHIR R4 Bundle share surface. Independent of the
+          per-entity DetailDrawer state above so the user can open
+          Share without losing a focused detail context. */}
+      <ShareDrawer open={shareOpen} onClose={() => setShareOpen(false)} />
     </div>
   );
 }
