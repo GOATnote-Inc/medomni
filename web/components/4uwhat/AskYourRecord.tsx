@@ -22,6 +22,7 @@
 //     state persists across the two surfaces.
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -36,7 +37,10 @@ import { Mono } from "./Mono";
 import { PrismMark } from "./PrismMark";
 import { AudioRecorder } from "@/components/AudioRecorder";
 import { VoiceOutToggle } from "@/components/VoiceOutToggle";
-import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
+import { useTts } from "@/hooks/useTts";
+import { VoicePicker } from "@/components/4uwhat/VoicePicker";
+
+const VOICE_SELECT_STORAGE_KEY = "medomni:tts:voice";
 import { usePatientId } from "@/hooks/usePatientId";
 import { usePersona } from "@/hooks/usePersona";
 
@@ -160,12 +164,38 @@ export function AskYourRecord({
     }
   };
 
+  // Persist + read voice selection across surfaces (the /agent route uses
+  // the same key so toggling on either page carries over).
+  const [selectedVoice, setSelectedVoice] = useState<string>("");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(VOICE_SELECT_STORAGE_KEY);
+      if (raw) setSelectedVoice(raw);
+    } catch {
+      // ignore
+    }
+  }, []);
+  const handleVoiceChange = useCallback((v: string) => {
+    setSelectedVoice(v);
+    try {
+      window.localStorage.setItem(VOICE_SELECT_STORAGE_KEY, v);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const {
     speak: ttsSpeak,
     cancel: ttsCancel,
     state: ttsState,
-    supported: ttsSupported,
-  } = useSpeechSynthesis({ enabled: voiceOutEnabled });
+    loaded: ttsLoaded,
+    loadProgress: ttsLoadProgress,
+    tier: ttsTier,
+    browserVoices,
+    webgpuSupported,
+  } = useTts({ enabled: voiceOutEnabled, selectedVoice });
+  const ttsSupported = true; // useTts always supported (browser fallback)
 
   // Spoken-offset bookkeeping per assistant text-part. Same shape as
   // /agent — keys are `${messageId}#${partIdx}`.
@@ -339,8 +369,17 @@ export function AskYourRecord({
           <VoiceOutToggle
             enabled={voiceOutEnabled}
             onChange={handleVoiceOutChange}
-            state={ttsState}
+            state={ttsState === "loading" ? "speaking" : ttsState}
             supported={ttsSupported}
+          />
+          <VoicePicker
+            selectedVoice={selectedVoice}
+            onChange={handleVoiceChange}
+            browserVoices={browserVoices}
+            kokoroLoaded={ttsLoaded}
+            kokoroLoadProgress={ttsLoadProgress}
+            activeTier={ttsTier}
+            webgpuSupported={webgpuSupported}
           />
           <Mono size={9}>
             {patientId ? `PT · ${patientId.slice(0, 16)}` : "NO PATIENT SELECTED"}
