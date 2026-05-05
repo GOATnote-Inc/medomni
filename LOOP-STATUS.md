@@ -50,6 +50,10 @@ Hard rules below come from CLAUDE.md, user directive, and durable memories:
 
 ## ⚠ ESCALATION (open, user-action) — training pipeline partially stalled
 
+**iter-38 update (2026-05-05 ~11:30 PT):** Stage B prune **lsof safety pre-flight CLEARED** — `sudo lsof +D` on both copies of `models--nvidia--NVIDIA-Nemotron-3-Nano-30B-A3B-BF16` (in `/ephemeral/cache/huggingface/hub` and `/workspace/.hf-cache/hub`) returned empty. Neither copy is held by any process. **Stage B is safe to fire; the rm sequence in `findings/2026-05-05-lobster-disk-forensics/SPEC.md` §"Stage B" recovers ~74 GB without breaking judge-qwen or kokoro.**
+
+Also iter-38: 4-agent improvement-dimensions synthesis landed — see `findings/2026-05-05-improvement-dimensions-roadmap/CARD.md`. 6 surgical PREREG/inference additions identified (PRM channel, Cal-DPO + abstain token, MedAgentBench-v2 system prompt, Best-of-K verifier vote, Semantic Entropy Probes, conformal DDx sets) plus 3 don't-do-this corrections (CoT not audit-trail, verbalized confidence dangerous, no long-context-only RAG).
+
 **iter-35 update (2026-05-05 ~10:55 PT): HF_TOKEN BLOCKER RESOLVED.** User authorized safe transfer from `/Users/kiteboard/prism42-nemotron-med/.env`. Babysitter handled per `feedback_never_read_env` + `feedback_no_secret_value_dumps`: `sed -n` extract → `/tmp/hf_token` (file, never stdout) → scp file→file → installed at `~/.cache/huggingface/token` on lobster (37 bytes, chmod 600) + `.bashrc` deref via `$(cat ~/.cache/huggingface/token)`. Verified with `hf auth whoami` → `user: GOATnote, orgs: bgoatnote`. Token never appeared in any tool result. Future loop probes: `test -s ~/.cache/huggingface/token` (file-existence, not `printenv`). **Remaining blockers: lobster disk + Omni multimodal base download.**
 
 Surfaced iter-14, 2026-05-05. The Karpathy loop on the 3-pod fleet is **80% healthy** but has three concrete handoffs broken simultaneously. Generation is alive (narwhal 100% util, catfish 81% util, both `factory_loop.py` running, narwhal data-queue last write `2026-05-05 09:53 UTC` = 10 min before probe). Judge endpoint alive on lobster. **What's broken:**
