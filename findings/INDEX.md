@@ -26,6 +26,20 @@ Ordered top-to-bottom by relevance for someone landing on the repo cold and aski
 
 10. **[`2026-05-05-hf-model-card-draft/CARD.md`](2026-05-05-hf-model-card-draft/CARD.md)** — draft model card for the planned `huggingface.co/GOATnote-Inc/medomni-nemotron-3-nano-omni-medical` Apache-2.0 release. Apache-2.0 vs MedGemma's HAI-DEF gating is the distribution differentiator.
 
+## Improvement-dimensions augmentation (iter-38, 4-agent synthesis)
+
+The trajectory chain (1-6 above) defines the WHAT (V2.5→V_final). These 5 documents define the HOW for each stage — surgical additions backed by May-2026 SOTA research.
+
+11. **[`2026-05-05-improvement-dimensions-roadmap/CARD.md`](2026-05-05-improvement-dimensions-roadmap/CARD.md)** — synthesis of 4 SPECs below. Maps each technique to V2.5/V2.7/V3/V3.5/V_final stage. 6 surgical additions; 3 don't-do-this errors. **Read this first** for cross-cut.
+12. **[`2026-05-05-clinical-prompt-engineering/SPEC.md`](2026-05-05-clinical-prompt-engineering/SPEC.md)** — V_final inference-time wrappers. MedAgentBench-v2 plan-then-act + Med-PRM verifier-vote + Skills (`/differential`, `/calc`, `/handoff`).
+13. **[`2026-05-05-clinical-rag-architecture/SPEC.md`](2026-05-05-clinical-rag-architecture/SPEC.md)** — Hybrid sparse+dense+ColBERT rerank, MedScore + RAGAS faithfulness gate, MedCAT bridge linking FHIR ↔ PrimeKG ↔ retrieval.
+14. **[`2026-05-05-process-supervision-verifiability/SPEC.md`](2026-05-05-process-supervision-verifiability/SPEC.md)** — V3 PRM channel (Med-PRM +13.5pp), V_final Best-of-K + claim-audit, V3.5 domain-specific Constitutional AI.
+15. **[`2026-05-05-reliability-calibration/SPEC.md`](2026-05-05-reliability-calibration/SPEC.md)** — V3.5 Cal-DPO + `<abstain/>` channel, V_final Semantic Entropy Probes, conformal prediction sets for DDx.
+
+## Lobster disk forensics (iter-36)
+
+16. **[`2026-05-05-lobster-disk-forensics/SPEC.md`](2026-05-05-lobster-disk-forensics/SPEC.md)** — corrects iter-19 phantom byte claims; Stage A+B prune sequence (free 18→~98 GB) + Omni FP8 download recipe (35 GB not 60).
+
 ## Auxiliary
 
 - **[`2026-05-04-pattern-b-spike/RESULTS.md`](2026-05-04-pattern-b-spike/RESULTS.md)** — Pattern B (dual lookup) FHIR-fetch latency benchmark: p95=11ms across 12 patients × 60 samples. Verdict: ships.
