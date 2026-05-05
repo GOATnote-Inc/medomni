@@ -48,7 +48,11 @@ Hard rules below come from CLAUDE.md, user directive, and durable memories:
 - Author email: `b@thegoatnote.com`. One Co-Authored-By per commit.
 - One substantive commit per branch (auto-merger races second pushes — `feedback_auto_merger_squash_race`).
 
-## ⚠ ESCALATION (open, user-action) — training pipeline partially stalled
+## ⚠ ESCALATION (open, user-action) — training pipeline ALL-3 BLOCKERS CLEARED
+
+**iter-45 update (2026-05-05 ~13:10 PT): Omni FP8 DOWNLOAD COMPLETE. 3 of 3 blockers cleared.** All 27 files finalized (0 incomplete), snapshot at `~/.cache/huggingface/hub/models--nvidia--Nemotron-3-Nano-Omni-30B-A3B-Reasoning-FP8/snapshots/6647b845a4b786c6e2c7adb1b6a909e1aa71fac2`, 33 GB on disk (HF blob dedup). Lobster: 190 GB used / 58 GB free (77%). Original `hf download` process hung in finalization with all 4 safetensor blobs at byte-complete state — killed and re-fired in foreground; second invocation checksum-verified instantly and renamed `.incomplete` → finalized. Durable lesson: when hf download stalls with byte-complete `.incomplete` files, kill + re-fire to trigger validation pass.
+
+**Training pipeline is now structurally unblocked.** V2.5 reasoning-SFT can fire per its PREREG (`findings/2026-05-05-v2.5-reasoning-sft/PREREG.yaml`) — base model is on disk, HF auth works, disk has 58 GB headroom for V2.5 LoRA + intermediate checkpoints (~10-15 GB needed). Babysitter cannot fire training per harmony contract — that's user-action. Once user issues training go-ahead, the chain V2.5 → V2.7 → V3 → V3.5 → V_final per existing PREREGs runs.
 
 **iter-44 update (2026-05-05 ~12:55 PT): Stage B FIRED + Omni FP8 download IN PROGRESS.** User authorized babysitter to execute the rm sequence + Omni FP8 download per `findings/2026-05-05-lobster-disk-forensics/SPEC.md`. Stage B required **`sudo`** (caches root-owned by docker bind-mount; SPEC's plain `rm` failed with permission denied — durable lesson saved). Result: **73 GB recovered** (230→157 GB used; 18→91 GB free; 94% → 64%). Omni FP8 download fired immediately after via `hf download nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-FP8` (PID 2410947, nohup background, log at `/tmp/omni-fp8-download.log`). 33 GB cached as of 12:55 PT (~2-3 GB pending of 35.2 GB total). **2 of 3 user-action blockers cleared.** Training pipeline near-unblocked: V2.5 reasoning-SFT can fire as soon as download completes + user issues training go-ahead.
 
