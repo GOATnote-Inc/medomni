@@ -40,6 +40,32 @@ Hard rules below come from CLAUDE.md, user directive, and durable memories:
 
 ## Iteration log (newest first)
 
+### iter-12 · 2026-05-05 02:15 PT — F401 case-by-case ships, lint -69%
+
+**State found:** #52 (UP035) MERGED (`ea51756`). #53 (UP037 SPEC + iter-11 status) MERGED. main clean. F401 sites: 29.
+
+**Action — fourth lint wedge (PR #54):** F401 unused imports, case-by-case as the iter-8 roadmap promised.
+- 27 sites auto-fixed via `ruff --select F401 --fix` — all genuinely dead imports (`sys`, `os`, `typing.Any`, `dataclasses.field`, etc.) where the symbol is never referenced. Anti-check filtered diff confirmed exclusively import-line removal.
+- 2 sites are intentional availability checks inside `try: import … except ImportError` patterns (mla/retrieval.py:228 sentence_transformers, scripts/expand_kg_with_openem.py:238 networkx). Auto-fix would break the runtime feature-flag logic; instead added `F401` to the existing `# noqa: PLC0415` comment style.
+
+**Lint trajectory:**
+| Wedge | PR | Sites | Lint after |
+|---|---|---|---|
+| F541 | #47 | 19 | 102 |
+| I001 | #50 | 22 | 80 |
+| UP035 | #52 | 15 | 65 |
+| **F401** | **#54** | **27 + 2 noqa** | **37** |
+
+Cumulative: 121 → 37, **-84 errors / -69%** in four reviewable per-rule wedges. Zero behavior change. No `--fix .` ever applied.
+
+**Remaining 37 errors:**
+- UP037 forward-ref strip — 20 sites — agent-team SPEC archived (#53), ready to fire iter-13.
+- Manual judgment — 17 sites — B905 (16) + E702 (14) + F841 (6) + E741 (6) + PLC0415 (5) + UP007 (4) + F821 (2). One-at-a-time hand fix.
+
+**Smoke:** /4UWHAt/receipts 200, /4UWHAt/ 308 redirect.
+
+**Next:** iter-13 will check #54 merge, then fire the UP037 agent-team campaign per `findings/2026-05-05-up037-safety-plan/SPEC.md` — scout enumerates 20 sites → 4 parallel validators verify each referenced name is in scope → attacker breaks proposed fixes via `python -c 'import' + pytest --collect-only` → scribe (me) lands fix only on attacker-pass sites with `# noqa: UP037` on the rest.
+
 ### iter-10 · 2026-05-05 01:55 PT — I001 lint wedge + clean main
 
 **State found:** All 3 PRs from iter-8/iter-9 MERGED clean: #47 (F541, 19 sites) → #48 (status) → #49 (gitleaks→TruffleHog OSS swap, NVIDIA bionemo-framework convention). main at `5f628ab`.
