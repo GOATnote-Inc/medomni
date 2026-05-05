@@ -48,6 +48,16 @@ Hard rules below come from CLAUDE.md, user directive, and durable memories:
 - Author email: `b@thegoatnote.com`. One Co-Authored-By per commit.
 - One substantive commit per branch (auto-merger races second pushes — `feedback_auto_merger_squash_race`).
 
+## ⚠ AUTONOMOUS 5-HOUR MISSION ACTIVE (2026-05-05 13:50 → 18:50 PT)
+
+**User stepped away 5 hours; explicitly authorized autonomous execution.** Active plan: `findings/2026-05-05-five-hour-autonomous-plan/PLAN.md` (PR #83).
+
+**Standing instructions for every wake during this window:**
+1. Probe Train stage on lobster: `ssh evil-cyan-lobster 'pgrep -af train_peft_reasoning | head -1; tail -3 /tmp/v2.5-prod.log 2>/dev/null | tr "\r" "\n" | tail -3'`. ESCALATE if process gone, NaN, loss spike >5×, step time >2× smoke.
+2. Probe smoke (until production fired): `ssh evil-cyan-lobster 'pgrep -af train_peft_reasoning; ls -la /workspace/v2.5-smoke/'`. If smoke done + log shows pass → fire production per PLAN.md Tier-1 §2.
+3. Advance Tier-2 priorities (PLAN.md): NVIDIA best-practices research → V3/V3.5 PREREG amendments → V_final inference scaffolding → V2.5 eval CARD scaffold.
+4. **Stop condition:** wake firing ≥18:35 PT → write `findings/2026-05-05-five-hour-autonomous-plan/RESULTS.md` cumulative summary, then DO NOT call ScheduleWakeup (loop expires).
+
 ## ⚠ ESCALATION (open, user-action) — training pipeline ALL-3 BLOCKERS CLEARED
 
 **iter-45 update (2026-05-05 ~13:10 PT): Omni FP8 DOWNLOAD COMPLETE. 3 of 3 blockers cleared.** All 27 files finalized (0 incomplete), snapshot at `~/.cache/huggingface/hub/models--nvidia--Nemotron-3-Nano-Omni-30B-A3B-Reasoning-FP8/snapshots/6647b845a4b786c6e2c7adb1b6a909e1aa71fac2`, 33 GB on disk (HF blob dedup). Lobster: 190 GB used / 58 GB free (77%). Original `hf download` process hung in finalization with all 4 safetensor blobs at byte-complete state — killed and re-fired in foreground; second invocation checksum-verified instantly and renamed `.incomplete` → finalized. Durable lesson: when hf download stalls with byte-complete `.incomplete` files, kill + re-fire to trigger validation pass.
