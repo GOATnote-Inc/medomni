@@ -63,22 +63,39 @@ Surfaced iter-14, 2026-05-05. The Karpathy loop on the 3-pod fleet is **80% heal
 
 Once these land, the loop closes and clinical reasoning starts improving every cycle. Without them, factory data accumulates while the public demo stays on V0.
 
-### Lobster disk pressure (P0, surfaced iter-19; revised iter-20 — stable not trending)
+### Lobster disk pressure (P0, **CORRECTED iter-36 via 4-agent forensics — see [`findings/2026-05-05-lobster-disk-forensics/SPEC.md`](findings/2026-05-05-lobster-disk-forensics/SPEC.md)**)
 
-`/dev/vda1` is **230/247 GB used (94%)** — was 88% in iter-15. **iter-20 re-probe: stable at 94%** (the iter-19 "5 GB/hr trend" was over a 3-hr window of unknowns; instantaneous trend is flat — last-hour file-touch shows only `nv-hostengine.log` minor growth). Concrete consumers:
+`/dev/vda1` is **230/247 GB used (94%, stable 24+ hr)**. iter-19/iter-20 numbers were wrong on three counts; iter-36 forensics replaces them.
 
-| Path | Size | Action |
+**Corrected consumers (verified live ssh probe 2026-05-05 11:00 PT):**
+
+| Path | Size | Status |
 |---|---|---|
-| `/var/lib/docker` | 115 GB | 84.6 GB images (NeMo 48 GB + vllm-openai 22.9 GB + Kokoro 13.7 GB) + 30 GB layers/logs |
-| `/home/ubuntu/medomni` | 15 GB | Likely an old checkout — if a working copy elsewhere is canonical, can be removed |
-| `/home/ubuntu/peft-text-v1` | 4.9 GB | **CORRECTED iter-24:** NOT a duplicate of `/workspace/ckpt/v1-pathd-out` — different training paths. peft-text-v1 has HF/PEFT-eager format (`checkpoint-1000`, `manifest.json`, `train.log`); /workspace has Megatron-Bridge Path D format (`__0_*.distcp`, `metadata.json`, `run_config.yaml`). peft-text-v1 is the **older Path C / HF-PEFT-eager** run that was 12.4× slower per CLAUDE.md, before the Path D pivot. Removable for the 5 GB IF you don't need the Path C comparison artifact; keeping it as a "what we tried" record is also defensible |
+| `/var/lib/docker` | **84 GB** (not 115) | 3 images: NeMo 48 + vllm-openai 22.9 + Kokoro 13.6. Zero dangling, zero stopped containers. Only NeMo (currently unused) safely prunable. |
+| `/ephemeral/cache/huggingface` | **75 GB** | `models--nvidia--NVIDIA-Nemotron-3-Nano-30B-A3B-BF16` = **59 GB** (V0/V1-era TEXT base; V2.5+ uses OMNI — removable). Qwen2.5-7B = 15 GB (LIVE judge — DO NOT TOUCH). |
+| `/workspace/.hf-cache` | **15 GB** | DUPLICATE of the same text-Nemotron-3-Nano-BF16. Removable. |
+| `/ephemeral/cache/pip` | 4.3 GB | safe to clear |
+| `/tmp` (stale) | 1.35 GB | pip-install-* + ansible_env; safe |
+| `/home/ubuntu/medomni` | **~4 KB (NOT 15 GB)** | Phantom — iter-19 claim was wrong. |
+| `/home/ubuntu/peft-text-v1` | **~4 KB (NOT 4.9 GB)** | Phantom — iter-19 claim was wrong. |
 
-User-action remediation (lowest-effort first):
+**`/ephemeral` is on /dev/vda1** (cosmetic symlink). vdb is 1 MiB stub. **Brev volume attach does NOT EXIST** (verified Agent 4: CLI v0.6.322 has no `brev volume` subcommand; `--min-disk` is set-once at create-time). Structural fix = recreate pod.
 
-1. **Free ~5 GB instantly:** `rm -rf /home/ubuntu/peft-text-v1` (verified iter-20: it's `checkpoint-1000` while canonical V1 is `iter_0015594` in `/workspace`)
-2. **Free ~10-15 GB:** `docker image prune -a` once V1 export retry completes (NeMo image becomes prune-candidate after that)
-3. **Free ~15 GB:** investigate `/home/ubuntu/medomni` — appears to be a duplicate medomni repo checkout
-4. **Real headroom:** attach external Brev volume (~$5-10/mo for 100 GB), move HF cache to it. Required for the 60 GB Omni multimodal base download (V2.5 prerequisite).
+**V2.5 base download — sizing corrected:**
+- BF16 Omni: **67.75 GB** (LOOP-STATUS claimed 60 — under-stated)
+- **FP8 Omni: 35.19 GB** (Hopper-native; **recommended for H200**)
+- NVFP4 Omni: 22.43 GB (Blackwell-only — won't load on H200)
+
+**User-action recovery sequence** (per SPEC §"Recommended action sequence"):
+
+1. **Stage A (zero-risk, +5.65 GB):** clear `/tmp/pip-install-*`, `/tmp/ansible_env`, `/ephemeral/cache/pip`
+2. **Stage B (low-risk, +74 GB):** `lsof +D` check then remove duplicate text-Nemotron-BF16 caches at `/ephemeral/cache/huggingface/hub/models--nvidia--NVIDIA-Nemotron-3-Nano-30B-A3B-BF16` AND `/workspace/.hf-cache/hub/models--nvidia--NVIDIA-Nemotron-3-Nano-30B-A3B-BF16`. V0/V1-era TEXT base; V2.5+ uses OMNI variant; re-pullable in ~25 min if V0/V1 paired-eval ever needed.
+3. **Stage C (defer until V2.5 fires):** `docker image rm nvcr.io/nvidia/nemo:26.04.00` (+48 GB).
+4. **Stage D:** `huggingface-cli download nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-FP8` (~35 GB).
+
+Stage A+B alone get free space 18 → **~98 GB** — enough for FP8 download + V2.5 training without touching docker.
+
+**Structural fix (out of scope this iter):** recreate pod with `--min-disk 500` before V2.5+V2.7+V3+V3.5 stack compounds (~120 GB additional demand). User decision; bounded blast radius (factory_loop already designed for off-pod state; HF cache + Docker re-pullable).
 
 iter-19 cleaned up exited `v1-export-2` container (~120 MB). Cannot do destructive cleanup beyond my own containers per harmony contract — user-action required.
 
