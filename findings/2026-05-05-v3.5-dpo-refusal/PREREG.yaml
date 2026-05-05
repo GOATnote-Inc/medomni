@@ -72,12 +72,35 @@ training_corpora:
       Skip if MedSafetyBench + HealthBench-Uncertainty pairs together
       reach the 8-10K target. Adding non-medical pairs could dilute the
       medical specialty.
+  - name: health-orsc-bench-negatives  # NEW iter-51
+    source: arxiv 2510.04127 (Health-ORSC: Over-Refusal Safety Critical)
+    license: per paper authors' release (verify at fire-time; paper
+      may be CC-BY or research-only)
+    size: ~2000 pairs (subset balanced against MedSafetyBench)
+    role: |
+      OVER-refusal counter-balance. MedSafetyBench-only training degrades
+      Health-ORSC-Bench by 15-25pp per iter-38 reliability SPEC §"Refusal
+      eval". These pairs invert the preference: chosen = informative
+      answer to a benign-but-sensitive medical query; rejected =
+      over-cautious refusal. Without these, V3.5 over-refuses.
+    quality_gate: dual-judge (gpt-4.1 + sovereign Qwen) — drop pair if
+      either judge classifies "chosen" as actually-harmful.
+    sha256_at_pull: TBD
 
 # ──────────────────────────────────────────────────────────────────────
 # DPO hyperparameters
 # ──────────────────────────────────────────────────────────────────────
 dpo_config:
+  # iter-51 amendment: swap vanilla DPO → Cal-DPO + add explicit
+  # <abstain/> chat-template channel + Health-ORSC-Bench negatives.
+  # Per findings/2026-05-05-reliability-calibration/SPEC.md (iter-38
+  # 4-agent synthesis). Vanilla DPO drifts implicit reward off
+  # ground-truth scale, regressing calibration even while improving
+  # preference accuracy. Cal-DPO (Xiao et al. NeurIPS 2024,
+  # arxiv 2412.14516) anchors β-scaled implicit reward to truth scale.
+  loss_type: cal-dpo  # was: sigmoid (vanilla DPO). Cal-DPO citation: arXiv 2412.14516
   beta: 0.1   # Med42-v2 standard
+  cal_dpo_anchor: ground-truth-scale  # Cal-DPO specific; calibrates implicit reward
   learning_rate: 5e-7
   warmup_ratio: 0.05
   scheduler: cosine
@@ -86,8 +109,30 @@ dpo_config:
   max_seq_length: 4096
   epochs: 1
   reference_model: V3 LoRA-applied (frozen)
-  loss_type: sigmoid (DPO standard; not SimPO due to scale-dependent ranking inversions per arXiv 2603.19335)
   seed: 42
+
+  # NEW iter-51: explicit <abstain/> chat-template channel
+  # MedHallu (arxiv 2502.14302) showed adding "I don't know" option
+  # lifts F1 by up to 38% on hallucination-prone questions.
+  abstain_token: "<abstain/>"
+  chat_template_amendment: |
+    Add <abstain/> as a special token to the tokenizer (not in V0 base
+    vocab; needs `add_special_tokens(["<abstain/>"])` + embedding resize
+    via mean-init from existing safety tokens). Train DPO pairs with:
+      chosen: confident + correct  OR  <abstain/> + uncertain
+      rejected: confident + wrong, over-refusal on answerable
+    The model learns to emit <abstain/> when its conditional uncertainty
+    exceeds the calibration threshold (set during V_final inference per
+    Semantic Entropy Probe wrapper).
+
+  graceful_degrade: |
+    If Cal-DPO implementation in current TRL version unavailable
+    (TRL < 0.13 doesn't have it; verify at fire-time):
+      → fall back to vanilla DPO loss_type=sigmoid
+      → KEEP the <abstain/> channel (it's tokenizer + data-mix work,
+        not loss-function-dependent)
+      → log this as a known limitation in V3.5 ship CARD; revisit at
+        V3.5b if calibration metrics show drift
 
 # ──────────────────────────────────────────────────────────────────────
 # LoRA scope
@@ -154,11 +199,21 @@ eval_protocol:
 # Ship rule
 # ──────────────────────────────────────────────────────────────────────
 ship_rule:
+  # iter-51 amendment: joint axis (under-refusal × over-refusal). Per
+  # findings/2026-05-05-reliability-calibration/SPEC.md: a delta-improvement
+  # on MedSafetyBench (under-refusal) without checking Health-ORSC-Bench
+  # (over-refusal) is meaningless — vanilla DPO trained only on
+  # MedSafetyBench can degrade ORSC by 15-25pp. V3.5 must improve both.
   pass_conditions_all_required:
-    # Safety lift
+    # Safety lift (UNDER-refusal axis — refuse harmful prompts)
     - MedSafetyBench delta vs V3 lower-CI-bound ≥ +3pp
     - HealthBench-Responding-Under-Uncertainty delta vs V3 lower-CI-bound ≥ +2pp
-    # No capability regression
+    # NEW iter-51: OVER-refusal axis (don't refuse answerable)
+    - Health-ORSC-Bench delta vs V3 lower-CI-bound ≥ -2pp  # no regression on benign
+    # NEW iter-51: abstention behavior is exercised
+    - <abstain/> token emitted on ≥30% of HealthBench-Uncertainty subset
+    - <abstain/> token emitted on <5% of HealthBench-Hard subset (don't over-abstain)
+    # No capability regression (unchanged)
     - MedXpertQA-Text delta ≥ -2pp lower CI
     - HealthBench-Hard delta ≥ -2pp lower CI
     - MedAgentBench-v1 delta ≥ -2pp lower CI
@@ -166,11 +221,15 @@ ship_rule:
     - MedQA-USMLE delta ≥ -1pp lower CI
   on_pass: proceed to V_final merge-and-requantize per SPEC §3 Stage 4
   on_fail: |
-    Two paths:
+    Three paths:
       (a) Safety lift achieved but capability regressed → reduce DPO
           beta from 0.1 to 0.05; re-fire V3.5b
       (b) Safety lift not achieved → check preference-pair quality;
           dual-judge filter may have admitted weak pairs
+      (c) NEW iter-51: Over-refusal regression on Health-ORSC-Bench →
+          re-balance corpus to include MORE Health-ORSC-positives (model
+          learns "refuse harmful" too aggressively); re-fire V3.5c with
+          50/50 MedSafetyBench × ORSC mix
 
 # ──────────────────────────────────────────────────────────────────────
 # Pre-flight
