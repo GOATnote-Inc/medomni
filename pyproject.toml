@@ -7,17 +7,21 @@ requires-python = ">=3.10"
 [tool.pytest.ini_options]
 testpaths = ["tests", "mla/tests"]
 asyncio_mode = "auto"
-# Skip two tests that reference modules not present in the tree:
+# Skip three tests that reference modules not present in the tree:
+#   - tests/test_clinical_case.py imports `validate_artifacts` from scripts/
+#     (`scripts/validate_artifacts.py` doesn't exist; sys.path.insert in
+#     the test points at a non-existent file).
 #   - tests/test_clinical_subset_sampler.py imports `sample_clinical_subset`
 #     (intended to live in scripts/ but never checked in; tracked by task #35).
 #   - mla/tests/test_runpod_provisioner.py imports `runner.runpod_provisioner`
 #     (mla/runner/ has flashinfer / numpy / torch runners, no runpod one).
-# Both are collection errors (ModuleNotFoundError on import), not test
+# All three are collection errors (ModuleNotFoundError on import), not test
 # failures — without ignoring them pytest exits 2 and the whole job is red.
-# Restoring either module will cause the import to succeed; the file-level
-# ignore can come back out at that point. NO --ignore for the test_clinical_*
-# pair — those need `jsonschema` which is added to the workflow's pip install.
+# Restoring any module will cause the import to succeed; the file-level
+# ignore can come back out at that point. test_clinical_demo_fixtures.py
+# is fine once `jsonschema` is in the workflow's pip install (added).
 addopts = [
+    "--ignore=tests/test_clinical_case.py",
     "--ignore=tests/test_clinical_subset_sampler.py",
     "--ignore=mla/tests/test_runpod_provisioner.py",
 ]
