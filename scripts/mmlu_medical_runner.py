@@ -202,9 +202,9 @@ def do_dry_run(args: argparse.Namespace, run_id: str) -> int:
         print(f"(dry-run) warning: manifest missing subsets: {', '.join(missing)}")
 
     print("(dry-run) mmlu_medical_runner.py plan:")
-    print(f"  benchmark        : mmlu_medical")
-    print(f"  role             : null-result breadth control "
-          f"(same |delta| <= 0.01 gate as B2)")
+    print("  benchmark        : mmlu_medical")
+    print("  role             : null-result breadth control "
+          "(same |delta| <= 0.01 gate as B2)")
     print(f"  manifest         : {manifest_path}")
     print(f"  out              : {out_path}")
     print(f"  seed             : {args.seed}")
@@ -217,7 +217,7 @@ def do_dry_run(args: argparse.Namespace, run_id: str) -> int:
     print(f"  planned api calls: {planned_calls}")
     print(f"  est cost usd     : ~{est_cost:.2f}")
     print(f"  model            : {MODEL_ID}")
-    print(f"  grader           : exact-match (A/B/C/D, micro-avg across subsets)")
+    print("  grader           : exact-match (A/B/C/D, micro-avg across subsets)")
     print(f"  manifest status  : {'ok' if manifest_ok else 'placeholder'}")
     print("(dry-run) no network activity; no anthropic SDK import")
 

@@ -72,7 +72,7 @@ def main() -> int:
     print(f"  median   = {best['median_ns']:,.0f} ns")
     print(f"  stability= {best['stability']:.3f}")
     if best["reasoning"]:
-        print(f"  reasoning:\n    " + "\n    ".join(best["reasoning"].splitlines()[:4]))
+        print("  reasoning:\n    " + "\n    ".join(best["reasoning"].splitlines()[:4]))
     print(f"\n[log] {log}")
     return 0
 

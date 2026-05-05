@@ -58,7 +58,7 @@ def main() -> int:
 
     parent_src = get_parent_source()
     print(f"[parent] baseline_bf16, {len(parent_src)} chars")
-    print(f"[client] AnthropicClient (claude-opus-4-7)")
+    print("[client] AnthropicClient (claude-opus-4-7)")
     client = AnthropicClient(allow_real_calls=True)
 
     records: list[dict] = []

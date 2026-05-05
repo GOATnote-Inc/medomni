@@ -151,9 +151,9 @@ def do_dry_run(args: argparse.Namespace, run_id: str) -> int:
     est_cost = planned_calls * 0.013
 
     print("(dry-run) pubmedqa_runner.py plan:")
-    print(f"  benchmark        : pubmedqa")
-    print(f"  role             : RAG-validator anchor "
-          f"(R1/R2 ship only when lift >= 10pp over no-retrieval baseline)")
+    print("  benchmark        : pubmedqa")
+    print("  role             : RAG-validator anchor "
+          "(R1/R2 ship only when lift >= 10pp over no-retrieval baseline)")
     print(f"  manifest         : {manifest_path}")
     print(f"  out              : {out_path}")
     print(f"  seed             : {args.seed}")
@@ -162,7 +162,7 @@ def do_dry_run(args: argparse.Namespace, run_id: str) -> int:
     print(f"  planned api calls: {planned_calls}")
     print(f"  est cost usd     : ~{est_cost:.2f}")
     print(f"  model            : {MODEL_ID}")
-    print(f"  grader           : exact-match (yes/no/maybe)")
+    print("  grader           : exact-match (yes/no/maybe)")
     print(f"  manifest status  : {'ok' if manifest_ok else 'placeholder'}")
     print("(dry-run) no network activity; no anthropic SDK import")
 
