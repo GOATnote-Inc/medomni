@@ -1,0 +1,220 @@
+---
+# V3.5 DPO Refusal Calibration — Pre-Registration Manifest
+#
+# Per the world-class trajectory SPEC at
+# findings/2026-05-05-world-class-medomni-strategy/SPEC.md §3 Stage 3.5.
+# Last training stage before V_final merge-and-requantize. Scope reduced
+# from the original V3-DPO plan: capability lift now comes from V3-GRPO;
+# V3.5 is safety/refusal calibration only.
+
+name: v3.5-dpo-refusal
+sequence: V0 → V2.5 → V2.7 → V3 (GRPO) → V3.5 (this stage) → V_final → HF release
+depends_on: V3 PASS per findings/2026-05-05-v3-grpo/PREREG.yaml ship_rule
+
+# ──────────────────────────────────────────────────────────────────────
+# Hypothesis
+# ──────────────────────────────────────────────────────────────────────
+hypothesis: |
+  DPO on 5-10K refusal/safety preference pairs lifts MedSafetyBench
+  harm-avoidance by ≥+5pp and HealthBench Responding-Under-Uncertainty
+  by ≥+3pp vs V3, with paired-bootstrap 95% CI lower bound above V3
+  point estimate, AND no capability regression on MedXpertQA / MedQA /
+  MedAgentBench / BFCL / HealthBench-Hard (all at -2pp lower-CI no-regress).
+
+  Empirical anchor: Med42-v2 ablation showed safety-axis DPO is
+  effective for refusal calibration but does not move capability
+  metrics (the GRPO stage above is the capability-lift vehicle).
+
+# ──────────────────────────────────────────────────────────────────────
+# Why this stage exists at all (scope reduced from original plan)
+# ──────────────────────────────────────────────────────────────────────
+why_reduced_scope: |
+  Original recipe had V3-DPO as the capability-lift vehicle. Per cross-
+  team synthesis (2026-05-05): GRPO (now V3) does that better. DPO at
+  V3.5 is purely safety/refusal calibration — the axis where Med42-v2's
+  ablation showed DPO IS effective ("responding under uncertainty"
+  axis) and where GRPO's verifiable rewards don't directly apply.
+
+  Could this be skipped? Per Team #3: "Med42-v2 ablation: MCQA deltas
+  +0.2-1.2 (nothing) vs Clinical Elo +121 (1643→1764, exceeded GPT-4
+  1426). The DPO/preference-tuning stage is what makes the model 'good
+  at open-ended clinical answers' — exactly the user's stated goal of
+  'verifiable medical answers.' DPO is mandatory for V3, not optional."
+  → Keep, but scoped to refusal/safety pairs only.
+
+# ──────────────────────────────────────────────────────────────────────
+# Inputs
+# ──────────────────────────────────────────────────────────────────────
+base_model:
+  hf_id: nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning
+  starting_weights: V3 LoRA adapter applied (cumulative on V2.5 + V2.7)
+  precision_for_training: bf16
+
+training_corpora:
+  - name: medsafetybench-pairs
+    source: AI4LIFE-GROUP/MedSafetyBench preference pairs
+    license: per upstream (MedSafetyBench paper, NeurIPS 2024)
+    size: ~5000 chosen/rejected pairs
+    role: harm-avoidance preference data (medical-specific)
+    sha256_at_pull: TBD
+  - name: healthbench-uncertainty-pairs
+    source: synthetic — generated via factory_loop with HealthBench
+      Responding-Under-Uncertainty rubric scoring
+    size: ~5000 pairs
+    role: "responds-with-confidence-when-it-shouldn't" axis
+    quality_gate: dual-judge (gpt-4.1 + sovereign Qwen) ≥ 0.6 disagreement → drop
+    sha256_at_pull: TBD
+  - name: openai_safety_harms_v3 (optional)
+    source: OpenAI moderation-style refusal pairs
+    role: general harm-avoidance baseline (non-medical)
+    optional: true
+    rationale: |
+      Skip if MedSafetyBench + HealthBench-Uncertainty pairs together
+      reach the 8-10K target. Adding non-medical pairs could dilute the
+      medical specialty.
+
+# ──────────────────────────────────────────────────────────────────────
+# DPO hyperparameters
+# ──────────────────────────────────────────────────────────────────────
+dpo_config:
+  beta: 0.1   # Med42-v2 standard
+  learning_rate: 5e-7
+  warmup_ratio: 0.05
+  scheduler: cosine
+  per_device_batch_size: 2
+  gradient_accumulation_steps: 16  # effective 32
+  max_seq_length: 4096
+  epochs: 1
+  reference_model: V3 LoRA-applied (frozen)
+  loss_type: sigmoid (DPO standard; not SimPO due to scale-dependent ranking inversions per arXiv 2603.19335)
+  seed: 42
+
+# ──────────────────────────────────────────────────────────────────────
+# LoRA scope
+# ──────────────────────────────────────────────────────────────────────
+lora_config:
+  rank: 32  # smaller than V3 — refusal calibration needs fewer parameters
+  alpha: 64
+  dropout: 0.0
+  target_modules:
+    - q_proj, k_proj, v_proj, o_proj
+    - in_proj, out_proj
+  init_from: V3 LoRA adapter
+  modules_excluded:
+    - moe_experts.*
+    - lm_head, embed_tokens
+    - vision_projector, audio_projector  # refusal calibration doesn't need to retrain projectors
+
+estimated_cost:
+  wall_hours: 4
+  usd: ~40
+  decision_kill_switches:
+    - capability_regression_at_step_500: revert to V3 LoRA
+    - reward_margin_above: 5.0  # over-fitting on refusal pairs
+
+# ──────────────────────────────────────────────────────────────────────
+# Eval
+# ──────────────────────────────────────────────────────────────────────
+eval_protocol:
+  comparator: V3 (incremental safety lift only)
+  benchmarks:
+    primary_safety:
+      - name: MedSafetyBench
+        script: AI4LIFE-GROUP/MedSafetyBench
+        n_trials: 3
+        seeds: [42, 123, 7919]
+        role: HEADLINE — harm-avoidance metric
+      - name: HealthBench Responding-Under-Uncertainty
+        script: openai/simple-evals --axes responding-under-uncertainty
+        n_trials: 3
+        role: confidence-calibration on uncertain medical questions
+    capability_no_regression:
+      - name: MedXpertQA-Text
+        script: TsinghuaC3I/MedXpertQA
+        n_trials: 3
+        role: regression check (V3 GRPO lift must hold)
+      - name: HealthBench-Hard
+        script: openai/simple-evals
+        n_trials: 3
+      - name: MedAgentBench v1
+        script: stanford-crfm/MedAgentBench
+        n_trials: 3
+      - name: BFCL v3
+        script: gorilla-llm
+        n_trials: 3
+      - name: MedQA-USMLE
+        script: lm-evaluation-harness
+        n_trials: 3
+  graders:
+    primary: gpt-4.1
+    cross_family_backup: Qwen2.5-7B-Instruct
+  ci_method: paired bootstrap, 10000 resamples, 95% CI
+
+# ──────────────────────────────────────────────────────────────────────
+# Ship rule
+# ──────────────────────────────────────────────────────────────────────
+ship_rule:
+  pass_conditions_all_required:
+    # Safety lift
+    - MedSafetyBench delta vs V3 lower-CI-bound ≥ +3pp
+    - HealthBench-Responding-Under-Uncertainty delta vs V3 lower-CI-bound ≥ +2pp
+    # No capability regression
+    - MedXpertQA-Text delta ≥ -2pp lower CI
+    - HealthBench-Hard delta ≥ -2pp lower CI
+    - MedAgentBench-v1 delta ≥ -2pp lower CI
+    - BFCL-v3 delta ≥ -2pp lower CI
+    - MedQA-USMLE delta ≥ -1pp lower CI
+  on_pass: proceed to V_final merge-and-requantize per SPEC §3 Stage 4
+  on_fail: |
+    Two paths:
+      (a) Safety lift achieved but capability regressed → reduce DPO
+          beta from 0.1 to 0.05; re-fire V3.5b
+      (b) Safety lift not achieved → check preference-pair quality;
+          dual-judge filter may have admitted weak pairs
+
+# ──────────────────────────────────────────────────────────────────────
+# Pre-flight
+# ──────────────────────────────────────────────────────────────────────
+preflight:
+  - blocker: V3 LoRA adapter shipped per ship_rule
+    state: pending V3 fire
+  - blocker: MedSafetyBench preference pairs in lobster /workspace/data
+    state: not yet — needs HF download (~50 MB, low risk)
+  - blocker: synthetic HealthBench-uncertainty pairs generated
+    state: factory_loop on narwhal needs prompt expansion to generate
+      these; ~24 hr at current rate-cap
+  - blocker: V3 reference model frozen
+    state: ~60 GB GPU memory for KL term (DPO is the same as GRPO here)
+
+# ──────────────────────────────────────────────────────────────────────
+# What this PREREG explicitly does NOT do
+# ──────────────────────────────────────────────────────────────────────
+not_in_scope:
+  - Capability lift (that was V3 GRPO)
+  - SimPO / KTO / IPO comparison (DPO is the proven safety-axis tool)
+  - Multi-iteration DPO (Med42-v2 found single-pass sufficient)
+  - PPO with separate reward model
+
+# ──────────────────────────────────────────────────────────────────────
+# After V3.5 ships
+# ──────────────────────────────────────────────────────────────────────
+next_stage_v_final:
+  step_1: Merge V3.5 LoRA into BF16 weights (Megatron-Bridge merge_lora utility)
+  step_2: Quantize merged-BF16 → NVFP4 via TensorRT Model Optimizer (modelopt.torch.quantization)
+  step_3: Smoke-test merged-NVFP4 on 30 fixtures from corpus/pins/healthbench-hard-1000.yaml
+  step_4: Pre-flight catfish swap (during a maintenance window)
+  step_5: Replace catfish vllm-omni-b300 served model with merged-NVFP4
+  step_6: Smoke /4UWHAt/api/agent post-swap
+  step_7: HF push to huggingface.co/GOATnote-Inc/medomni-nemotron-3-nano-omni-medical (Apache-2.0)
+  estimated_wall: ~4 hr laptop + B300 quantization
+
+references:
+  spec: findings/2026-05-05-world-class-medomni-strategy/SPEC.md
+  v2_5_prereg: findings/2026-05-05-v2.5-reasoning-sft/PREREG.yaml
+  v2_7_prereg: findings/2026-05-05-v2.7-tool-call-sft/PREREG.yaml
+  v3_prereg: findings/2026-05-05-v3-grpo/PREREG.yaml
+  citations:
+    - "Med42-v2 (arXiv 2408.06142) — DPO ablation, Clinical Elo lift"
+    - "MedSafetyBench (Han et al., NeurIPS 2024)"
+    - "HealthBench Responding-Under-Uncertainty axis (OpenAI)"
+    - "Do Post-Training Algorithms Actually Differ? — DPO vs SimPO at scale (arXiv 2603.19335)"
