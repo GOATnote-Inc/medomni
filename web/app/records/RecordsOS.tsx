@@ -24,6 +24,7 @@ import {
   DetailDrawer,
   Dot,
   Eyebrow,
+  ImagingPanel,
   Mono,
   RangeBar,
   ShareDrawer,
@@ -44,6 +45,7 @@ import {
   SAMPLE_AI_SUGGESTIONS,
   SAMPLE_CARE_TEAM,
   SAMPLE_CONDITIONS,
+  SAMPLE_IMAGING,
   SAMPLE_LABS,
   SAMPLE_MEDS,
   SAMPLE_PATIENT,
@@ -966,6 +968,7 @@ export function RecordsOS() {
   const timeline = SAMPLE_TIMELINE;
   const careTeam = SAMPLE_CARE_TEAM;
   const shares = SAMPLE_SHARES;
+  const imaging = SAMPLE_IMAGING;
 
   // Persisted column widths. SSR-safe: we render the design defaults
   // first, then hydrate the user's stored sizes from localStorage on
@@ -1750,9 +1753,23 @@ export function RecordsOS() {
             </div>
           </div>
 
+          {/* Imaging gallery — 3 studies, click-to-view DetailDrawer with
+              real public-domain reference images per modality. SAMPLE_IMAGING
+              shape is the same one track D's FHIR ImagingStudy ingestion
+              populates. */}
+          <div
+            id="section-imaging"
+            style={{
+              scrollMarginTop: 80,
+              marginTop: 24,
+            }}
+          >
+            <ImagingPanel imaging={imaging} />
+          </div>
+
           {/* Placeholder for nav modules without their own dedicated section
-              yet (Imaging, Wearables, Visit notes, Genome, Sharing). Clicking
-              those nav items scrolls here. v1.1 will render dedicated views;
+              yet (Wearables, Visit notes, Genome, Sharing). Clicking those
+              nav items scrolls here. v1.1 will render dedicated views;
               for the demo this is the honest "we have the data, the view is
               under construction" affordance. The Ask bar can answer
               questions about all of these modules today via the agent's
@@ -1769,13 +1786,12 @@ export function RecordsOS() {
             }}
           >
             <Eyebrow style={{ marginBottom: 8 }}>
-              IMAGING · WEARABLES · VISIT NOTES · GENOME · SHARING
+              WEARABLES · VISIT NOTES · GENOME · SHARING
             </Eyebrow>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.6 }}>
               Dedicated views ship in v1.1. Until then, the agent has full
               read access to these modules — ask the AI rail anything
-              about your imaging reads (e.g. <em>&ldquo;what did my last
-              chest X-ray show?&rdquo;</em>), recent encounters, or sharing
+              about recent encounters, wearables trends, or sharing
               consents and it will answer from the same source data the
               dedicated panels will render.
             </div>

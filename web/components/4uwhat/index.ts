@@ -26,3 +26,6 @@ export { AskYourRecord } from "./AskYourRecord";
 
 // Share + FHIR R4 Bundle export (B2)
 export { ShareDrawer } from "./ShareDrawer";
+
+// Imaging gallery panel (B — imaging gallery)
+export { ImagingPanel } from "./ImagingPanel";
