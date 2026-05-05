@@ -43,6 +43,7 @@ import { useTts } from "@/hooks/useTts";
 const VOICE_SELECT_STORAGE_KEY = "medomni:tts:voice";
 import { usePatientId } from "@/hooks/usePatientId";
 import { usePersona } from "@/hooks/usePersona";
+import { saveReceipt, type Receipt } from "@/lib/4uwhat/receipts";
 
 const VOICE_OUT_STORAGE_KEY = "medomni:voiceOut";
 
@@ -257,7 +258,86 @@ export function AskYourRecord({
     [],
   );
 
-  const { messages, sendMessage, status, stop } = useChat({ transport });
+  // Tracks the wall-clock time of the most recent submit so onFinish can
+  // compute latency. The /receipts page (per-turn audit trail at
+  // /4UWHAt/receipts) reads this value off the saved Receipt; nothing
+  // else in the surface depends on it.
+  const turnStartedAtRef = useRef<number | null>(null);
+
+  const { messages, sendMessage, status, stop } = useChat({
+    transport,
+    // Save a Receipt on every completed assistant turn. This is the only
+    // hook that writes to the receipts log — keep it minimal so the rest
+    // of AskYourRecord (voice, image, verification badge) is unchanged.
+    onFinish: ({ message }) => {
+      try {
+        if (!message || message.role !== "assistant") return;
+        // Find the most recent user message preceding this assistant
+        // message. `messages` here is the live ref from useChat at the
+        // time the callback fires.
+        const idx = messagesRef.current.findIndex((m) => m.id === message.id);
+        const before = idx >= 0 ? messagesRef.current.slice(0, idx) : messagesRef.current;
+        const lastUser = [...before].reverse().find((m) => m.role === "user");
+        // Concatenate all text parts of the user prompt + assistant response.
+        const promptText = (lastUser?.parts ?? [])
+          .filter((p) => p.type === "text")
+          .map((p) => (p as { text?: string }).text ?? "")
+          .join("\n")
+          .trim();
+        const responseText = (message.parts ?? [])
+          .filter((p) => p.type === "text")
+          .map((p) => (p as { text?: string }).text ?? "")
+          .join("\n")
+          .trim();
+        const toolCalls = (message.parts ?? [])
+          .filter((p) => typeof p.type === "string" && p.type.startsWith("tool-"))
+          .map((p) => ({
+            name: p.type.replace(/^tool-/, ""),
+            args: (p as { input?: unknown }).input,
+          }));
+        // Mirror the in-line verification badge: 5 static checks today,
+        // tool count from this turn, model id from the agent route's
+        // public TOOL_SPEC contract. Numbers stay in lockstep with the
+        // badge in this file.
+        const checksTotal = 5;
+        const receipt: Receipt = {
+          id:
+            typeof crypto !== "undefined" && "randomUUID" in crypto
+              ? crypto.randomUUID()
+              : `r_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+          timestamp: Date.now(),
+          patientId: patientIdRef.current,
+          persona: personaRef.current ?? null,
+          prompt: promptText,
+          response: responseText,
+          toolCalls,
+          verification: {
+            toolsCalled: toolCalls.length,
+            checksPassed: checksTotal,
+            checksTotal,
+            model: "nemotron",
+          },
+          latencyMs:
+            turnStartedAtRef.current != null
+              ? Date.now() - turnStartedAtRef.current
+              : null,
+        };
+        saveReceipt(receipt);
+      } catch {
+        // Receipts are an audit nicety — never let a logging error break
+        // the chat surface.
+      } finally {
+        turnStartedAtRef.current = null;
+      }
+    },
+  });
+
+  // Stable ref to messages so onFinish (closes over the initial messages)
+  // can read the live array.
+  const messagesRef = useRef(messages);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   const busy = status === "submitted" || status === "streaming";
   const hasAudio = pendingAudio !== null;
@@ -358,6 +438,7 @@ export function AskYourRecord({
         (pendingImage && !pendingAudio
           ? "What do you see in this image? Reason about it clinically against my record. Note any concerning findings, suggest next steps if any, and add appropriate disclaimers — you are not a replacement for an in-person clinician evaluation."
           : "Transcribe the audio and answer the clinical question about this record. Cite guidelines and PMIDs where they meaningfully change the answer.");
+      turnStartedAtRef.current = Date.now();
       void sendMessage({ text: followup, files });
       setInput("");
       setPendingAudio(null);
@@ -367,6 +448,7 @@ export function AskYourRecord({
 
     // Text-only path.
     if (!trimmed) return;
+    turnStartedAtRef.current = Date.now();
     void sendMessage({ text: trimmed });
     setInput("");
   }

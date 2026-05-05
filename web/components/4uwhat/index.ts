@@ -24,6 +24,9 @@ export { PatientPicker } from "./PatientPicker";
 // Ask-your-record command bar (A1)
 export { AskYourRecord } from "./AskYourRecord";
 
+// Per-turn audit receipt card (/receipts page)
+export { ReceiptCard } from "./ReceiptCard";
+
 // Share + FHIR R4 Bundle export (B2)
 export { ShareDrawer } from "./ShareDrawer";
 

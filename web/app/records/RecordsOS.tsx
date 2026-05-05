@@ -41,6 +41,7 @@ import { Resizer, loadPersistedVar } from "@/components/4uwhat/Resizer";
 // this path. Bypassing the barrel keeps this file's imports isolated to
 // what A2 actually exports as a component module.
 import { PatientPicker } from "@/components/4uwhat/PatientPicker";
+import { BASE_PATH } from "@/lib/basePath";
 import {
   SAMPLE_AI_SUGGESTIONS,
   SAMPLE_CARE_TEAM,
@@ -142,6 +143,9 @@ const NAV: Array<{ id: string; label: string; count: number | null; k: string }>
   { id: "team", label: "Care team", count: 4, k: "P" },
   { id: "genome", label: "Genome", count: null, k: "G" },
   { id: "shares", label: "Sharing", count: 4, k: "S" },
+  // Per-turn audit trail — links out to /4UWHAt/receipts. Distinct from
+  // the in-page sections above (which scroll-anchor); this one navigates.
+  { id: "receipts", label: "Receipts", count: null, k: "R" },
 ];
 
 interface KeyValProps {
@@ -1066,6 +1070,15 @@ export function RecordsOS() {
                 key={n.id}
                 type="button"
                 onClick={() => {
+                  // Receipts is a distinct route, not a scroll anchor.
+                  // Navigate via the basePath-prefixed URL so it works
+                  // behind the v0 reverse proxy at thegoatnote.com/4UWHAt.
+                  if (n.id === "receipts") {
+                    if (typeof window !== "undefined") {
+                      window.location.href = `${BASE_PATH}/receipts`;
+                    }
+                    return;
+                  }
                   setActiveModule(n.id);
                   // Scroll to anchor — sections in the overview have
                   // id="section-<navId>" landings. Modules without a
