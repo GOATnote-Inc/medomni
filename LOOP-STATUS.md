@@ -46,11 +46,46 @@ Surfaced iter-14, 2026-05-05. The Karpathy loop on the 3-pod fleet is **80% heal
 |---|---|---|
 | **Training** | V1 finished 2026-05-03; V2 SFT has not fired ~2 days later. lobster `pgrep -af train_peft\|megatron` empty. Continuous factory data accumulating with nowhere to go. | Fire V2 SFT on lobster per `findings/2026-05-01-medgemma-recipe/MEDOMNI-NEMOTRON-RECIPE.md` |
 | **Deploy** | catfish `curl /v1/lora/list` → 404. **Public demo at `/4UWHAt` is still serving V0 base, not V1.** | Export V1 PEFT adapter from lobster → upload to catfish → restart `vllm-omni-b300` with `--enable-lora --lora-modules v1=/path/to/v1` → smoke `/api/agent` |
-| **Eval** | No `results/v1-imaging-peft-2026-05/CARD.md` exists. V0→V1 paired CI never computed. | Run `sovereign_bench.py` paired V0 vs V1 on `corpus/pins/healthbench-hard-1000.yaml`, ~2 hr on lobster |
+| **Eval** | No `results/v1-imaging-peft-2026-05/CARD.md` exists. V0→V1 paired CI never computed. | Run V0→V1 paired-eval per [`findings/2026-05-05-v0-v1-paired-eval/RUNBOOK.md`](findings/2026-05-05-v0-v1-paired-eval/RUNBOOK.md), ~2 hr on lobster (gated on HF_TOKEN per V1 export) |
+
+### Lobster disk pressure (P0, surfaced iter-19)
+
+`/dev/vda1` is **230/247 GB used (94%)** — was 88% in iter-15, getting worse. Filling will cascade-fail vllm-judge / heartbeat / factory output. Concrete consumers:
+
+| Path | Size | Action |
+|---|---|---|
+| `/var/lib/docker` | 115 GB | 84.6 GB images (NeMo 48 + vllm-openai 22.9 + Kokoro 13.7) + 30 GB layers/logs |
+| `/home/ubuntu/medomni` | 15 GB | likely an old checkout — if a working copy elsewhere is canonical, can be removed |
+| `/home/ubuntu/peft-text-v1` | 4.9 GB | V1 training output mirror; canonical V1 ckpt is `/workspace/ckpt/v1-pathd-out/` so this is removable after verification |
+
+User-action remediation (lowest-effort first):
+
+1. **Free ~5 GB instantly:** `rm -rf /home/ubuntu/peft-text-v1` (after `diff -r` against `/workspace/ckpt/v1-pathd-out/` confirms canonical copy is in /workspace)
+2. **Free ~10-15 GB:** `docker image prune -a` once V1 export retry completes (NeMo image becomes prune-candidate after that)
+3. **Free ~15 GB:** investigate `/home/ubuntu/medomni` — appears to be a duplicate medomni repo checkout
+4. **Real headroom:** attach external Brev volume (~$5-10/mo for 100 GB), move HF cache to it. Required for the 60 GB Omni multimodal base download (V2.5 prerequisite).
+
+iter-19 cleaned up exited `v1-export-2` container (~120 MB). Cannot do destructive cleanup beyond my own containers per harmony contract — user-action required.
 
 Once these land, the loop closes and clinical reasoning starts improving every cycle. Without them, factory data accumulates while the public demo stays on V0.
 
 ## Iteration log (newest first)
+
+### iter-19 · 2026-05-05 05:30 PT — auto-merger cleared backlog + lobster disk worse
+
+**State found:** zero open PRs. iter-15→iter-18 work all merged: SPEC (#59) + V2.5 PREREG (#60) + V2.7/V3/V3.5 PREREGs (#61) + iter-16 status (#62) + catfish flag-validation runbook (#63) + V0→V1 eval runbook (#64). User asked specifically for auto-merge unblocking; turned out auto-merger had already cleared everything by the time I checked.
+
+**V2.5 blocker re-probe (read-only):**
+- HF_TOKEN: still NOT SET
+- Lobster disk: **230/247 GB (94%)** — was 88% in iter-15. Trending toward fill.
+- Omni base: still not cached.
+- v1-export-2: Exited (137) ~2 hr ago (still). Output dir `/workspace/ckpt/v1-pathd-hf` empty.
+
+**Action:** updated ESCALATION block above with concrete disk consumers (see table). Cleaned up exited `v1-export-2` container (my mess; ~120 MB). User-action remediation list goes from removing 5 GB of duplicate V1 output to attaching external Brev volume.
+
+**Smoke:** `/4UWHAt/receipts` 200, V0 stable on catfish.
+
+**Next:** iter-20 — if HF_TOKEN clears, fire V1 export retry per V0→V1 runbook. If lobster disk drops below 80%, recommend Omni base download. If neither, author additional ready-to-fire artifacts (V_final HF release runbook, corpora license confirmation).
 
 ### iter-14 · 2026-05-05 02:55 PT — fleet probe authorized, real picture surfaced
 
