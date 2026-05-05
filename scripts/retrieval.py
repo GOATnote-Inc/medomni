@@ -30,7 +30,6 @@ from pathlib import Path
 import httpx
 from rank_bm25 import BM25Okapi
 
-
 _TOKEN_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*", re.IGNORECASE)
 
 

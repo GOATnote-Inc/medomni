@@ -26,7 +26,6 @@ if _HERE not in sys.path:
 
 from bench_dual_lookup import main as _main  # noqa: E402
 
-
 if __name__ == "__main__":
     # require_patient_id=False -> no `patientId` field in the request body.
     raise SystemExit(_main(require_patient_id=False))

@@ -26,7 +26,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import torch
-
 from agent.torch_stub_mutations import TORCH_CANDIDATES
 from kernels.base.mla_decode_torch import (
     TorchMLAConfig,
@@ -36,7 +35,6 @@ from kernels.base.mla_decode_torch import (
 from prism.validator_torch import validate_torch
 from runner.flashinfer_runner import FlashInferMLAConfig, run_flashinfer_mla_decode
 from runner.torch_runner import benchmark_torch
-
 
 COMPILE_MODES = {
     "eager": None,

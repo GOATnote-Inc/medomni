@@ -13,11 +13,11 @@ from prism.gaming_patterns import (
 )
 from prism.invariants import (
     DEFAULT_INVARIANTS,
-    InvariantCheck,
     NO_EXTREME_VALUES,
     OUTPUT_ROW_NORMS_BOUNDED,
     SOFTMAX_ROWS_SUM_TO_ONE,
     TOPK_AGREEMENT,
+    InvariantCheck,
 )
 from prism.validator import ValidationResult, validate
 

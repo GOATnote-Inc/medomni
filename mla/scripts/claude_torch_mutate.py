@@ -24,6 +24,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agent.llm_client import AnthropicClient, MutationRequest
+
 # Do NOT import torch_stub_mutations here — that imports torch, which may
 # be absent on the Claude-calling host. We parse baseline_bf16's source via
 # AST below. Safety validation (compile_candidate_torch) is deferred to the
@@ -88,7 +89,7 @@ def main() -> int:
 
         # Safety token check locally (lightweight — no torch required).
         # The pod-side evaluator runs compile_candidate_torch with real torch.
-        from agent.safety import scan_tokens, scan_ast, _BANNED_TORCH_TOKENS
+        from agent.safety import _BANNED_TORCH_TOKENS, scan_ast, scan_tokens
         bad_tokens = scan_tokens(resp.source)
         bad_torch = [t for t in _BANNED_TORCH_TOKENS if t in resp.source]
         try:

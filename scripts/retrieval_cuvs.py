@@ -40,7 +40,6 @@ from typing import Iterable
 
 import httpx
 
-
 # ----------------------------------------------------------------------------
 # Embedding client (reuses scripts/retrieval.py's contract)
 # ----------------------------------------------------------------------------

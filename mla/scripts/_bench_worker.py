@@ -151,7 +151,9 @@ def _build_torch_subject(subject: str, config: dict, candidates_json: str | None
     import torch
     from agent.torch_stub_mutations import TORCH_CANDIDATES
     from kernels.base.mla_decode_torch import (
-        TorchMLAConfig, make_torch_inputs, mla_decode_torch_reference,
+        TorchMLAConfig,
+        make_torch_inputs,
+        mla_decode_torch_reference,
     )
     from prism.validator_torch import validate_torch
 

@@ -27,11 +27,12 @@ Usage:
 """
 
 from __future__ import annotations
+
 import json
 import os
 import sys
-import urllib.request
 import urllib.error
+import urllib.request
 from pathlib import Path
 
 FHIR_BASE = "http://127.0.0.1:8103/fhir/R4"
