@@ -36,6 +36,7 @@ import { Eyebrow } from "./Eyebrow";
 import { Mono } from "./Mono";
 import { PrismMark } from "./PrismMark";
 import { AudioRecorder } from "@/components/AudioRecorder";
+import { ImageUpload } from "@/components/ImageUpload";
 import { VoiceOutToggle } from "@/components/VoiceOutToggle";
 import { useTts } from "@/hooks/useTts";
 
@@ -141,6 +142,17 @@ export function AskYourRecord({
     durationMs: number;
   } | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
+
+  // Image input — patient sends a wound photo, pill bottle, lab printout,
+  // rash, etc. The Nemotron-Omni model accepts image_url content blocks
+  // natively (vllm-omni-b300 multimodal). The /api/agent route already
+  // handles image content blocks via the same FilePart pattern as audio
+  // (web/app/api/agent/route.ts:279). Mirror the audio chip + state shape.
+  const [pendingImage, setPendingImage] = useState<{
+    url: string;
+    name: string;
+  } | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   // Voice-out toggle state. Default off; persists via localStorage to
   // match /agent so flipping the toggle on either surface carries to
@@ -305,6 +317,9 @@ export function AskYourRecord({
   function clearAudio() {
     setPendingAudio(null);
   }
+  function clearImage() {
+    setPendingImage(null);
+  }
 
   function submit() {
     if (busy) return;
@@ -312,25 +327,41 @@ export function AskYourRecord({
     ttsCancel();
     const trimmed = input.trim();
 
-    // Audio attached → send audio + optional follow-up text. Mirrors
-    // /agent's voice-mode submit path 1:1.
+    // Build attached files (audio + image are both supported; user may
+    // attach either or both with optional follow-up text). Mirrors
+    // /agent's multipart-content-block path.
+    const files: FilePart[] = [];
     if (pendingAudio) {
+      files.push({
+        type: "file",
+        mediaType: "audio/wav",
+        url: pendingAudio.url,
+        filename: `recording-${pendingAudio.durationMs}ms.wav`,
+      } as FilePart);
+    }
+    if (pendingImage) {
+      // Detect image media type from the data URL header
+      // (data:image/jpeg;base64,... or data:image/png;base64,...)
+      const headerMatch = pendingImage.url.match(/^data:(image\/[a-z+]+)/);
+      const mediaType = headerMatch ? headerMatch[1] : "image/jpeg";
+      files.push({
+        type: "file",
+        mediaType,
+        url: pendingImage.url,
+        filename: pendingImage.name,
+      } as FilePart);
+    }
+
+    if (files.length > 0) {
       const followup =
         trimmed ||
-        "Transcribe the audio and answer the clinical question about this record. Cite guidelines and PMIDs where they meaningfully change the answer.";
-      void sendMessage({
-        text: followup,
-        files: [
-          {
-            type: "file",
-            mediaType: "audio/wav",
-            url: pendingAudio.url,
-            filename: `recording-${pendingAudio.durationMs}ms.wav`,
-          } as FilePart,
-        ],
-      });
+        (pendingImage && !pendingAudio
+          ? "What do you see in this image? Reason about it clinically against my record. Note any concerning findings, suggest next steps if any, and add appropriate disclaimers — you are not a replacement for an in-person clinician evaluation."
+          : "Transcribe the audio and answer the clinical question about this record. Cite guidelines and PMIDs where they meaningfully change the answer.");
+      void sendMessage({ text: followup, files });
       setInput("");
       setPendingAudio(null);
+      setPendingImage(null);
       return;
     }
 
@@ -717,6 +748,79 @@ export function AskYourRecord({
           </button>
         </div>
       )}
+      {imageError && (
+        <div
+          style={{
+            flexShrink: 0,
+            padding: "8px 10px",
+            border: "1px solid rgba(244,63,94,0.45)",
+            background: "rgba(244,63,94,0.08)",
+            color: "rgba(254,205,211,0.95)",
+            fontFamily: "var(--font-mono)",
+            fontSize: 11,
+            lineHeight: 1.4,
+          }}
+          role="alert"
+        >
+          {imageError}
+        </div>
+      )}
+      {pendingImage && (
+        <div
+          style={{
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "8px 10px",
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "rgba(255,255,255,0.04)",
+            fontFamily: "var(--font-mono)",
+            fontSize: 11,
+            color: "rgba(255,255,255,0.75)",
+          }}
+        >
+          <span style={{ color: "var(--accent)", fontWeight: 700 }}>IMAGE</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={pendingImage.url}
+            alt="attached"
+            style={{
+              width: 28,
+              height: 28,
+              objectFit: "cover",
+              borderRadius: 2,
+              border: "1px solid rgba(255,255,255,0.18)",
+            }}
+          />
+          <span
+            style={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              maxWidth: 180,
+            }}
+          >
+            {pendingImage.name}
+          </span>
+          <button
+            type="button"
+            onClick={clearImage}
+            style={{
+              marginLeft: "auto",
+              background: "transparent",
+              color: "rgba(255,255,255,0.55)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              padding: "3px 8px",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              cursor: "pointer",
+            }}
+          >
+            clear
+          </button>
+        </div>
+      )}
 
       <form
         onSubmit={(e) => {
@@ -738,9 +842,9 @@ export function AskYourRecord({
           <input
             type="text"
             placeholder={
-              hasAudio
+              hasAudio || pendingImage
                 ? "optional follow-up text_"
-                : "ask anything about this record_"
+                : "ask anything · attach a photo · or speak_"
             }
             value={input}
             disabled={busy}
@@ -754,6 +858,17 @@ export function AskYourRecord({
             onAudio={handleAudio}
             onError={setAudioError}
             disabled={busy || hasAudio}
+          />
+          {/* Image — wound photo, pill bottle, lab printout, rash, etc.
+              Nemotron-Omni accepts image_url content blocks natively;
+              /api/agent already forwards them. Same multipart pattern as audio. */}
+          <ImageUpload
+            onImage={(url, name) => {
+              setImageError(null);
+              setPendingImage({ url, name });
+            }}
+            onError={setImageError}
+            disabled={busy || pendingImage !== null}
           />
           {busy ? (
             <button
@@ -770,10 +885,15 @@ export function AskYourRecord({
           ) : (
             <button
               type="submit"
-              disabled={!hasAudio && input.trim().length === 0}
+              disabled={
+                !hasAudio && pendingImage === null && input.trim().length === 0
+              }
               style={{
                 ...submitStyle,
-                opacity: !hasAudio && input.trim().length === 0 ? 0.5 : 1,
+                opacity:
+                  !hasAudio && pendingImage === null && input.trim().length === 0
+                    ? 0.5
+                    : 1,
               }}
             >
               ask
