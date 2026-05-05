@@ -60,3 +60,13 @@ third_party/
 scripts/spike/.medplum-data/
 scripts/spike/synthea/
 scripts/spike/.spike-token
+
+# Claude Code worktrees + agent state (local agent scratch, 4+ GB, never commit)
+.claude/
+
+# Vercel project linkage (local-only; project configured by `vercel link`)
+.vercel/
+
+# Private working notes (local drafts; promote to docs/ when shareable)
+findings/private/
+yc-coding-agent-session*.md

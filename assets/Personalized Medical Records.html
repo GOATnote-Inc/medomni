@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Personalized Medical Records · 4UWHAt</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="lib/colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; min-height: 100vh; }
+
+  /* caret blink for AI bars */
+  .caret { animation: blink 1s step-end infinite; color: var(--accent); }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* nicer scrollbars in dark surfaces */
+  .dark-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+  .dark-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); }
+  .dark-scroll::-webkit-scrollbar-track { background: transparent; }
+
+  /* Inside artboards default scrollbars: forced hidden via DC styles already */
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<!-- React + Babel (pinned) -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+        integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+        crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+        integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+        crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+        integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+        crossorigin="anonymous"></script>
+
+<!-- Starters -->
+<script type="text/babel" src="lib/design-canvas.jsx"></script>
+<script type="text/babel" src="lib/ios-frame.jsx"></script>
+<script type="text/babel" src="lib/tweaks-panel.jsx"></script>
+
+<!-- App -->
+<script type="text/babel" src="app/data.jsx"></script>
+<script type="text/babel" src="app/atoms.jsx"></script>
+<script type="text/babel" src="app/variant-records-os.jsx"></script>
+<script type="text/babel" src="app/variant-body-console.jsx"></script>
+<script type="text/babel" src="app/variant-mobile.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentHex": "#ff0096",
+  "accentIntensity": 1.0,
+  "density": "regular",
+  "showAIRibbon": true
+}/*EDITMODE-END*/;
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  // Apply tweaks via CSS vars on root
+  React.useEffect(() => {
+    document.documentElement.style.setProperty('--accent', t.accentHex);
+    document.documentElement.style.setProperty('--glow-pink',
+      `0 0 0 2px ${t.accentHex}66, 0 0 ${32 * t.accentIntensity}px ${t.accentHex}66`);
+  }, [t.accentHex, t.accentIntensity]);
+
+  return (
+    <React.Fragment>
+      <DesignCanvas>
+        <DCSection id="overview" title="Personalized medical records · 4UWHAt"
+                   subtitle="Patient view · Maya Okafor, 34 · two desktop directions + iOS">
+
+          <DCArtboard id="records-os" label="A · Records OS · 1440×900"
+                      width={1440} height={900}>
+            <RecordsOS/>
+          </DCArtboard>
+
+          <DCArtboard id="body-console" label="B · Body Console · 1440×900"
+                      width={1440} height={900}>
+            <BodyConsole/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="mobile" title="Mobile · iOS"
+                   subtitle="Home + lab detail. Same record, pocket-sized.">
+          <DCArtboard id="mobile-home" label="Home · iPhone" width={420} height={860}>
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a' }}>
+              <MobileHome/>
+            </div>
+          </DCArtboard>
+          <DCArtboard id="mobile-lab" label="Lab detail · LDL" width={420} height={860}>
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a' }}>
+              <MobileLabDetail/>
+            </div>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection label="Accent" />
+        <TweakColor label="Accent color" value={t.accentHex}
+                    onChange={(v) => setTweak('accentHex', v)} />
+        <TweakSlider label="Glow intensity" value={t.accentIntensity}
+                     min={0} max={1.5} step={0.1}
+                     onChange={(v) => setTweak('accentIntensity', v)} />
+        <TweakSection label="Layout" />
+        <TweakRadio label="Density" value={t.density}
+                    options={['compact', 'regular', 'comfy']}
+                    onChange={(v) => setTweak('density', v)} />
+        <TweakToggle label="Show AI ribbon" value={t.showAIRibbon}
+                     onChange={(v) => setTweak('showAIRibbon', v)} />
+      </TweaksPanel>
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+
+</body>
+</html>
