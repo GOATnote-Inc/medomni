@@ -77,22 +77,34 @@ lora_config:
   alpha: 128
   dropout: 0.05
   target_modules:
-    # Attention + Mamba projectors only — keeps adapter hot-loadable on
-    # NVFP4 base via vLLM 0.20.x --enable-lora per Team #2 finding.
-    # MoE expert weights (FP4 with per-block scales) are NOT LoRA-compatible
-    # for hot-load; deferred to V_final merge-and-requantize.
+    # CORRECTED iter-46 via meta-device probe of actual NemotronH model:
+    # `vision_projector` is named `mlp1` in HF's NemotronH_Nano_Omni
+    # implementation (single leaf module bridging vit -> llm). Verified by
+    # walking m.named_modules() of from_config(cfg) on meta device.
+    # Counts: q/k/v/o_proj × 30 (attention layers), in/out_proj × 23
+    # (Mamba layers), mlp1 × 1 (vision projector). Total: 187 LoRA-target
+    # leaves. MoE expert weights (down_proj/up_proj × 2967) are NOT
+    # LoRA-compatible for hot-load on NVFP4; deferred to V_final
+    # merge-and-requantize per Team #2 finding.
+    # Reasoning-SFT (text-only) doesn't need to train mlp1 — keeping it
+    # OPTIONAL via include_mlp1 toggle (default True) so the same recipe
+    # works for V2.5 reasoning + V_imaging style multimodal corpora.
     - q_proj
     - k_proj
     - v_proj
     - o_proj  # attention out_proj
     - in_proj   # Mamba in_proj
     - out_proj  # Mamba out_proj
-    - vision_projector
-    - audio_projector
+    - mlp1     # vision projector (was "vision_projector" in pre-iter-46 PREREG; HF NemotronH names it mlp1)
+    # NOTE: HF NemotronH has no separate "audio_projector" leaf — audio is fused
+    # via the same mlp1 path or via internal Parakeet weights (embedded in shards
+    # per HF API tree). Removed audio_projector entry; audio capability comes
+    # for free via base.
   bias: none
   task_type: CAUSAL_LM
   modules_excluded:
-    - moe_experts.*  # explicitly excluded; per Team #2 incompatible with hot-load
+    - moe_experts.*  # NemotronH expert pattern: language_model.backbone.layers.<n>.mixer.experts.<m>.{down_proj,up_proj} (~2967 modules total). Excluded; per Team #2 incompatible with hot-load on NVFP4 catfish.
+    - shared_experts.*  # shared experts (~23 modules); same hot-load constraint
     - lm_head        # frozen for capability preservation
     - embed_tokens   # frozen
 
