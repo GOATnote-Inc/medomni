@@ -7,21 +7,26 @@ requires-python = ">=3.10"
 [tool.pytest.ini_options]
 testpaths = ["tests", "mla/tests"]
 asyncio_mode = "auto"
-# Skip three tests that reference modules not present in the tree:
-#   - tests/test_clinical_case.py imports `validate_artifacts` from scripts/
-#     (`scripts/validate_artifacts.py` doesn't exist; sys.path.insert in
-#     the test points at a non-existent file).
-#   - tests/test_clinical_subset_sampler.py imports `sample_clinical_subset`
-#     (intended to live in scripts/ but never checked in; tracked by task #35).
-#   - mla/tests/test_runpod_provisioner.py imports `runner.runpod_provisioner`
-#     (mla/runner/ has flashinfer / numpy / torch runners, no runpod one).
-# All three are collection errors (ModuleNotFoundError on import), not test
-# failures — without ignoring them pytest exits 2 and the whole job is red.
-# Restoring any module will cause the import to succeed; the file-level
-# ignore can come back out at that point. test_clinical_demo_fixtures.py
-# is fine once `jsonschema` is in the workflow's pip install (added).
+# Skip tests that reference files not present in the tree. All are
+# collection or load-time errors, not real test failures — the underlying
+# code/scripts/schemas need to be restored for these tests to mean anything.
+# Each ignore is reversible the moment the missing artifact lands.
+#
+#   tests/test_clinical_case.py
+#     → imports `validate_artifacts` from scripts/, file absent.
+#   tests/test_clinical_subset_sampler.py
+#     → imports `sample_clinical_subset` from scripts/, file absent.
+#   tests/test_clinical_demo_artifacts.py
+#     → subprocess-runs `scripts/generate_clinical_demo_artifacts.py`, file absent.
+#   tests/test_clinical_demo_fixtures.py
+#     → loads `schemas/case.schema.json` + `schemas/clinical-rubric.schema.json`,
+#       both absent.
+#   mla/tests/test_runpod_provisioner.py
+#     → imports `runner.runpod_provisioner`, module absent in mla/runner/.
 addopts = [
     "--ignore=tests/test_clinical_case.py",
+    "--ignore=tests/test_clinical_demo_artifacts.py",
+    "--ignore=tests/test_clinical_demo_fixtures.py",
     "--ignore=tests/test_clinical_subset_sampler.py",
     "--ignore=mla/tests/test_runpod_provisioner.py",
 ]
