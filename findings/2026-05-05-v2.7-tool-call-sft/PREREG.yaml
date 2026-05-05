@@ -1,0 +1,227 @@
+---
+# V2.7 Tool-call SFT — Pre-Registration Manifest
+#
+# Per the world-class trajectory SPEC at
+# findings/2026-05-05-world-class-medomni-strategy/SPEC.md §3 Stage 2.
+# Depends on V2.5 PASS. The load-bearing stage for the headline
+# claim "open 30B beats Claude Opus on Stanford MedAgentBench by ≥5pp."
+
+name: v2.7-tool-call-sft
+sequence: V0 → V2.5 (reasoning SFT) → V2.7 (this stage) → V3 (GRPO) → V3.5 (DPO refusal) → V_final → HF release
+depends_on: V2.5 PASS per findings/2026-05-05-v2.5-reasoning-sft/PREREG.yaml ship_rule
+
+# ──────────────────────────────────────────────────────────────────────
+# Hypothesis
+# ──────────────────────────────────────────────────────────────────────
+hypothesis: |
+  Loss-masked SFT on tool-call traces (Hermes Function-Calling-v3 60K +
+  ToolACE 40K + 5K synthetic FHIR/MedAgentBench) lifts BFCL v3 by
+  ≥+15pp and MedAgentBench by ≥+20pp vs V2.5, with paired-bootstrap
+  95% CI lower bound above V2.5 point estimate. Empirical anchors:
+  Nemotron-Research-Tool-N1 (arXiv 2505.00024) +6.36% over xLAM-8B-SFT
+  via similar recipe.
+
+# ──────────────────────────────────────────────────────────────────────
+# Why this stage
+# ──────────────────────────────────────────────────────────────────────
+why_this_stage: |
+  Three of four research teams (2026-05-05 dispatch) named tool-use
+  training as the missing load-bearing piece for the user's stated
+  "world-class clinical reasoning + tool use" goal. Team #4 explicitly:
+  "Beat MedAgentBench first — the most defensible single claim with
+  100 H200-hrs." The current V0 / V1 / V2.5 chain has zero tool-call
+  training stage; native tool-call-parser (qwen3_coder) gives correct
+  format but doesn't teach the model WHEN to call vs reason directly,
+  vs ARG correctness, vs error recovery.
+
+# ──────────────────────────────────────────────────────────────────────
+# Inputs
+# ──────────────────────────────────────────────────────────────────────
+base_model:
+  hf_id: nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning
+  starting_weights: V2.5 LoRA adapter applied (cumulative)
+  precision_for_training: bf16
+
+training_corpora:
+  - name: hermes-function-calling-v3
+    hf_id: NousResearch/hermes-function-calling-v3
+    license: Apache-2.0
+    size: ~60000 tool-call traces
+    role: function-calling format + selection examples (not medical-specific; provides format reliability)
+    sha256_at_pull: TBD
+  - name: ToolACE
+    hf_id: Team-ACE/ToolACE
+    license: MIT (per arXiv 2409.00920)
+    size: ~40000 traces
+    role: synthetic high-coverage tool-call training set with API-graph diversity
+    sha256_at_pull: TBD
+    note: |
+      Use the curated SUBSET filtered to function categories that overlap
+      medical agents (search, calculation, retrieval, structured-data
+      lookup, scheduling). Drop categories irrelevant to clinical use
+      (gaming, e-commerce, social media).
+  - name: synthetic-fhir-medagentbench-traces
+    source: factory_loop on narwhal + catfish, generation prompt = MedAgentBench-shaped FHIR scenarios
+    license: Apache-2.0 (synthetic; subject to OpenEM 370 license-audit)
+    size: 5000 traces (target)
+    role: domain-specific tool-call examples that anchor the agent's behavior on FHIR-resource workflows
+    sha256_at_pull: TBD
+    quality_gate: ensemble judge (gpt-4.1 + sovereign Qwen) ≥45% pass rate per existing factory pipeline
+
+# ──────────────────────────────────────────────────────────────────────
+# Loss masking (load-bearing for tool-call SFT)
+# ──────────────────────────────────────────────────────────────────────
+loss_masking:
+  policy: only-on-assistant-tool-call-blocks
+  rationale: |
+    Per Nemotron-Research-Tool-N1 (arXiv 2505.00024), masking loss on
+    surrounding chat tokens prevents the model from over-fitting on
+    Hermes-style chat patterns at the expense of the actual tool-call
+    structure. Loss is computed only on:
+      - tool-call name token sequences
+      - tool-call argument JSON token sequences
+      - tool-call closing markers
+    Loss is masked on:
+      - user prompts
+      - assistant text outside tool calls
+      - tool-result observation tokens (model reads but doesn't predict them)
+
+# ──────────────────────────────────────────────────────────────────────
+# LoRA scope (cumulative on V2.5)
+# ──────────────────────────────────────────────────────────────────────
+lora_config:
+  rank: 64
+  alpha: 128
+  dropout: 0.05
+  target_modules:  # same as V2.5 — keeps adapter hot-loadable on NVFP4 base
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - in_proj
+    - out_proj
+    - vision_projector
+    - audio_projector
+  bias: none
+  task_type: CAUSAL_LM
+  init_from: V2.5 LoRA adapter (continued training, not fresh init)
+  modules_excluded:
+    - moe_experts.*  # per Team #2; not LoRA-compatible for hot-load
+    - lm_head
+    - embed_tokens
+
+# ──────────────────────────────────────────────────────────────────────
+# Hyperparameters
+# ──────────────────────────────────────────────────────────────────────
+training:
+  precision: bf16-mixed
+  optimizer: AdamW
+  learning_rate: 1e-5  # lower than V2.5 (continuing from existing LoRA, smaller updates)
+  warmup_ratio: 0.03
+  scheduler: cosine
+  weight_decay: 0.0
+  per_device_batch_size: 4
+  gradient_accumulation_steps: 4  # effective batch 16
+  max_seq_length: 4096  # tool-call traces are shorter than CoT
+  epochs: 1
+  packing: true
+  seed: 42
+
+estimated_cost:
+  wall_hours: 4-6
+  usd: ~40
+  decision_kill_switches:
+    - val_ppl_at_step_500_above: 8.0  # tighter than V2.5 since starting from already-fine-tuned weights
+    - tool_call_format_accuracy_below: 0.85  # measured on a held-out 100-trace eval at step 500
+    - oom_during_first_100_steps: revert to LoRA r=32
+
+# ──────────────────────────────────────────────────────────────────────
+# Eval (paired-bootstrap CI, gpt-4.1 + sovereign Qwen cross-family)
+# ──────────────────────────────────────────────────────────────────────
+eval_protocol:
+  comparator: V2.5 (NOT V0)  # incremental measurement of tool-call lift on top of reasoning lift
+  benchmarks:
+    - name: BFCL v3
+      script: gorilla-llm/berkeley-function-call-leaderboard
+      n_trials: 3
+      seeds: [42, 123, 7919]
+      grading: AST + executable checks (BFCL convention)
+      role: format + selection accuracy primary signal
+    - name: MedAgentBench v1
+      script: stanford-crfm/MedAgentBench
+      n_trials: 3
+      role: HEADLINE — 300 FHIR tasks, longitudinal EHR + tool-CALL+ARG+CHAIN
+    - name: MedAgentBench v2 (if available)
+      script: per Chen et al. PSB 2026 paper
+      n_trials: 3
+      role: extension — adds tool-error-recovery + multi-step planning
+    - name: HealthBench-Hard
+      script: openai/simple-evals (pinned sha)
+      n_trials: 3
+      role: regression check (tool-call training should NOT degrade closed-book reasoning)
+    - name: MedQA-USMLE
+      script: lm-evaluation-harness
+      n_trials: 3
+      role: regression check
+  graders:
+    primary: gpt-4.1 (rubric grading where applicable; AST+exec for BFCL)
+    cross_family_backup: Qwen2.5-7B-Instruct (sovereignty)
+  ci_method: paired bootstrap, 10000 resamples, 95% CI
+
+# ──────────────────────────────────────────────────────────────────────
+# Ship rule
+# ──────────────────────────────────────────────────────────────────────
+ship_rule:
+  pass_conditions_all_required:
+    - BFCL-v3 delta vs V2.5 lower-CI-bound ≥ +10pp
+    - MedAgentBench-v1 delta vs V2.5 lower-CI-bound ≥ +15pp
+    - HealthBench-Hard no-regression (delta ≥ -2pp lower CI bound)
+    - MedQA-USMLE no-regression (delta ≥ -1pp lower CI bound)
+    - tool_call_format_accuracy on held-out 100-trace eval ≥ 0.95
+  on_pass: proceed to V3 GRPO
+  on_fail: |
+    Two diagnostic paths:
+      (a) BFCL pass + MedAgentBench fail → domain-specific synthetic
+          trace problem; expand synthetic FHIR/MedAgentBench corpus and
+          re-fire V2.7b
+      (b) BFCL fail → format/selection problem; revert to V2.5 LoRA,
+          increase Hermes Function-Calling-v3 mix ratio, re-fire V2.7c
+
+# ──────────────────────────────────────────────────────────────────────
+# Pre-flight (assumes V2.5 ship)
+# ──────────────────────────────────────────────────────────────────────
+preflight:
+  - blocker: V2.5 LoRA adapter exists on lobster
+    state: pending V2.5 fire + ship
+  - blocker: synthetic FHIR/MedAgentBench traces generated
+    state: 5K target — narwhal factory_loop already running but not yet steered toward FHIR shape
+    resolution: extend factory_loop seed prompts with MedAgentBench-shaped scenarios
+  - blocker: ToolACE filtered subset prepared
+    state: not done; ~30 min laptop work to filter the 11K-API graph to medical-relevant categories
+
+ship_rule_hard_failure_mode:
+  scenario: BFCL passes (+12pp) but MedAgentBench regresses (-5pp)
+  diagnosis: format learned from Hermes; medical-domain context not transferred
+  decision: re-fire V2.7 with synthetic FHIR ratio doubled (10K instead of 5K)
+  cost: another 4-6 hr H200 + factory generation time
+
+# ──────────────────────────────────────────────────────────────────────
+# Headline claim (per Team #4)
+# ──────────────────────────────────────────────────────────────────────
+headline_target: |
+  "Open-weight 30B Nemotron-3-Nano-Omni-medical (Apache-2.0) clears
+  Claude Opus 4.x on Stanford MedAgentBench by ≥5pp paired-bootstrap CI"
+
+  Most defensible single claim with the budget. V2.7 is the stage that
+  delivers it; V3 GRPO compounds the lift; V3.5 DPO calibrates safety.
+
+references:
+  spec: findings/2026-05-05-world-class-medomni-strategy/SPEC.md
+  v2_5_prereg: findings/2026-05-05-v2.5-reasoning-sft/PREREG.yaml
+  citations:
+    - "Nemotron-Research-Tool-N1 (arXiv 2505.00024)"
+    - "Tool Zero (EMNLP 2025 Findings)"
+    - "ToolACE (arXiv 2409.00920)"
+    - "MedAgentBench (NEJM AI 2025)"
+    - "MedAgentBench v2 (Chen et al., PSB 2026)"
+    - "BFCL v3+v4 leaderboard (Berkeley Gorilla)"

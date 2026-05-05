@@ -1,0 +1,246 @@
+---
+# V3 GRPO — Pre-Registration Manifest
+#
+# Per the world-class trajectory SPEC at
+# findings/2026-05-05-world-class-medomni-strategy/SPEC.md §3 Stage 3.
+# Replaces the originally-planned V3-DPO. Depends on V2.7 PASS.
+
+name: v3-grpo
+sequence: V0 → V2.5 (reasoning SFT) → V2.7 (tool-call SFT) → V3 (this stage, GRPO) → V3.5 (DPO refusal) → V_final → HF release
+depends_on: V2.7 PASS per findings/2026-05-05-v2.7-tool-call-sft/PREREG.yaml ship_rule
+
+# ──────────────────────────────────────────────────────────────────────
+# Hypothesis
+# ──────────────────────────────────────────────────────────────────────
+hypothesis: |
+  GRPO (Group Relative Policy Optimization) training on verifiable medical
+  problems (HuatuoGPT-o1's 40K + Clinical-R1 multi-objective subset) with
+  composite rewards (correctness + format + medical-verifier judge) lifts
+  MedXpertQA-Text by ≥+8pp and HealthBench-Hard by ≥+5pp vs V2.7, with
+  paired-bootstrap 95% CI lower bound above V2.7 point estimate. Empirical
+  anchors: AlphaMed-8B (GRPO) beats DeepSeek-V3-671B + Claude-3.5-Sonnet
+  on MedXpertQA; MediX-R1-8B (GRPO) at 68.8% beats MedGemma-27B at 68.4%.
+
+# ──────────────────────────────────────────────────────────────────────
+# Why GRPO (not DPO, not SimPO, not PPO)
+# ──────────────────────────────────────────────────────────────────────
+rationale_grpo_over_alternatives:
+  vs_dpo: |
+    Original V3 plan was DPO. Three of four research teams (2026-05-05)
+    converge: every May-2026 SOTA medical model wins via verifiable-reward
+    RL, NOT preference-pair DPO. AlphaMed (GRPO) beats DeepSeek-V3-671B +
+    Claude-3.5-Sonnet at 8B params. DPO-only recipes (Med42-v2, OpenBioLLM,
+    vanilla Aloe-Beta) plateau 5-10 points below the GRPO ceiling.
+  vs_simpo: |
+    SimPO (arXiv 2403.07691) shows scale-dependent ranking inversions per
+    controlled study (arXiv 2603.19335). At 30B safer to stay with GRPO
+    which has consistent published lifts at this scale.
+  vs_ppo: |
+    Standard PPO requires a separate reward model with $$. GRPO uses
+    multi-sample group rewards from the policy itself + verifiable
+    outcome reward + sovereign Qwen judge — no separate reward-model
+    training stage needed.
+
+# ──────────────────────────────────────────────────────────────────────
+# Inputs
+# ──────────────────────────────────────────────────────────────────────
+base_model:
+  hf_id: nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning
+  starting_weights: V2.7 LoRA adapter applied (cumulative on V2.5)
+  precision_for_training: bf16
+
+training_corpora:
+  - name: huatuogpt-o1-verifiable-40k
+    hf_id: FreedomIntelligence/medical-o1-verifiable-problem
+    license: Apache-2.0
+    size: ~40000 verifiable medical problems with deterministic correctness checking
+    role: outcome-reward source — each problem has a single correct answer that can be programmatically verified
+    citation: "HuatuoGPT-o1 (arXiv 2412.18925)"
+    sha256_at_pull: TBD
+  - name: clinical-r1-multi-objective
+    source: per Clinical-R1 paper (arXiv 2512.00601)
+    size: subset (~5K) with multi-objective verifiable rewards
+    role: complementary reward shape — clinical-quality + correctness
+    license: per paper authors' release
+    sha256_at_pull: TBD
+
+# ──────────────────────────────────────────────────────────────────────
+# Reward composition (load-bearing for GRPO)
+# ──────────────────────────────────────────────────────────────────────
+rewards:
+  composite_components:
+    - name: correctness
+      weight: 0.5
+      computation: |
+        For each rollout, parse the final-answer slot from the structured
+        output. Compare against the gold answer in the dataset. Boolean
+        match → 1.0; non-match → 0.0. Per-problem deterministic.
+    - name: format
+      weight: 0.2
+      computation: |
+        Reward 1.0 if the rollout has exactly one <think>...</think>
+        block followed by exactly one <answer>...</answer> block; else
+        0.0. Prevents reasoning collapse.
+    - name: medical-verifier-judge
+      weight: 0.3
+      computation: |
+        Sovereign Qwen2.5-7B-Instruct on lobster, prompted as a medical
+        rubric judge per HealthBench convention (gpt-4.1 fallback for
+        N=200 calibration items). Returns 0.0-1.0 score. Per-rollout.
+        Cost-bounded: 200 max judge calls per training step.
+
+  sovereign_judge_endpoint:
+    url: http://127.0.0.1:8000/v1
+    model: Qwen/Qwen2.5-7B-Instruct
+    temperature: 0.0
+    seed: 42
+    pre_flight: |
+      Per memory `feedback_eval_preflight_judge_key.md`: BEFORE training
+      fires, run a 200-item judge calibration smoke. If judge returns
+      401/403/zero-rewards-for-all-items → halt; do not waste 12-18 H200-hr
+      on a poisoned reward signal.
+
+shortcut_hallucination_guard: |
+  Per MedCEG (arXiv 2512.13510): outcome-only GRPO is vulnerable to
+  shortcut-hallucination (model learns to guess correctly without
+  actually reasoning). The 0.2-weight FORMAT reward + 0.3-weight
+  judge reward together prevent this — the model must produce
+  a coherent CoT to clear all three reward components.
+
+# ──────────────────────────────────────────────────────────────────────
+# GRPO hyperparameters
+# ──────────────────────────────────────────────────────────────────────
+grpo_config:
+  group_size: 8           # rollouts per problem
+  kl_coefficient_beta: 0.04
+  kl_reference: V2.7 LoRA (frozen reference model for KL term)
+  learning_rate: 5e-7     # an order of magnitude smaller than SFT
+  warmup_steps: 50
+  max_seq_length: 8192    # CoT can be long
+  rollout_temperature: 1.0  # GRPO needs diversity in the group
+  rollout_top_p: 1.0
+  per_device_batch_size: 1
+  gradient_accumulation_steps: 8
+  effective_problems_per_step: 8 (1 device × 8 grad-accum × 1 problem; 8 rollouts each = 64 rollouts/step)
+  reward_clip_min: 0.0
+  reward_clip_max: 1.0
+  advantage_normalization: per-group (GRPO standard — not global)
+  total_steps: 5000  # ~40K problems / 8 per step
+
+# ──────────────────────────────────────────────────────────────────────
+# LoRA scope (cumulative on V2.7)
+# ──────────────────────────────────────────────────────────────────────
+lora_config:
+  rank: 64
+  alpha: 128
+  dropout: 0.0  # disable for RL — noise is already from rollout sampling
+  target_modules:  # same scope; hot-loadable on NVFP4
+    - q_proj, k_proj, v_proj, o_proj
+    - in_proj, out_proj
+    - vision_projector, audio_projector
+  init_from: V2.7 LoRA adapter
+  modules_excluded:
+    - moe_experts.*
+    - lm_head
+    - embed_tokens
+
+estimated_cost:
+  wall_hours: 12-18
+  usd: ~130
+  decision_kill_switches:
+    - mean_reward_at_step_500_below: 0.30  # if rewards never lift, fundamental data/recipe problem
+    - kl_divergence_above: 5.0  # policy exploding away from V2.7
+    - val_metric_regression_step_1000: revert to V2.7
+
+# ──────────────────────────────────────────────────────────────────────
+# Eval
+# ──────────────────────────────────────────────────────────────────────
+eval_protocol:
+  comparator: V2.7 (not V0; incremental verifiable-reward lift)
+  benchmarks:
+    - name: MedXpertQA-Text
+      script: TsinghuaC3I/MedXpertQA
+      n_trials: 3
+      seeds: [42, 123, 7919]
+      role: HEADLINE — AlphaMed-8B beat DeepSeek-V3-671B + Claude-3.5-Sonnet here via similar GRPO
+    - name: MedXpertQA-MM
+      script: same repo
+      n_trials: 3
+      role: multimodal extension
+    - name: HealthBench-Hard
+      script: openai/simple-evals (pinned sha)
+      n_trials: 3
+      role: composite reasoning benchmark
+    - name: MedAgentBench v1
+      script: stanford-crfm/MedAgentBench
+      n_trials: 3
+      role: regression check (V2.7 lift should hold; GRPO should not degrade)
+    - name: BFCL v3
+      script: gorilla-llm
+      n_trials: 3
+      role: regression check
+    - name: MedQA-USMLE
+      script: lm-evaluation-harness
+      n_trials: 3
+      role: regression check
+  graders:
+    primary: gpt-4.1 (rubric); BFCL uses AST+exec
+    cross_family_backup: Qwen2.5-7B-Instruct
+  ci_method: paired bootstrap, 10000 resamples, 95% CI
+
+# ──────────────────────────────────────────────────────────────────────
+# Ship rule
+# ──────────────────────────────────────────────────────────────────────
+ship_rule:
+  pass_conditions_all_required:
+    - MedXpertQA-Text delta vs V2.7 lower-CI-bound ≥ +5pp
+    - HealthBench-Hard delta vs V2.7 lower-CI-bound ≥ +3pp
+    - MedAgentBench-v1 no-regression (delta ≥ -2pp lower CI)
+    - BFCL-v3 no-regression (delta ≥ -2pp lower CI)
+    - MedQA-USMLE no-regression (delta ≥ -1pp lower CI)
+  on_pass: proceed to V3.5 DPO refusal
+  on_fail: |
+    Two diagnostic paths:
+      (a) Mean reward stalled <0.30 at step 500 → judge endpoint or
+          reward-shape issue; recalibrate judge prompt or composite weights
+          and re-fire V3b
+      (b) Headline metric lifts but regressions trigger → reward over-fit
+          on correctness; up-weight format component (0.2 → 0.3) and
+          re-fire V3c
+
+# ──────────────────────────────────────────────────────────────────────
+# Pre-flight
+# ──────────────────────────────────────────────────────────────────────
+preflight:
+  - blocker: V2.7 LoRA adapter shipped per ship_rule
+    state: pending V2.7 fire
+  - blocker: judge endpoint pre-flight smoke (200 items, expect mean reward ≈ V2.7 baseline)
+    state: not yet done — 200 items × ~2s = ~7 min on lobster
+  - blocker: huatuogpt-o1-verifiable-40k corpus downloaded on lobster
+    state: dependent on disk pressure resolution
+  - blocker: GRPO entry-point script
+    state: not yet authored — Megatron-Bridge has GRPO support per release notes 2026-04, but verification needed
+  - blocker: V2.7 reference model frozen for KL term (memory cost: another ~60 GB GPU memory; H200 144 GB has room)
+    state: setup at fire-time
+
+# ──────────────────────────────────────────────────────────────────────
+# What this PREREG explicitly does NOT do
+# ──────────────────────────────────────────────────────────────────────
+not_in_scope:
+  - SimPO comparison run (excluded due to scale-dependent ranking inversions)
+  - PPO with separate reward model (excluded due to budget)
+  - Multimodal-specific reward shaping (V3 is text-reasoning; multimodal reward shaping deferred to V4 if scoped)
+  - Self-consistency at training time (defer to inference-only per Team #3 recommendation)
+
+references:
+  spec: findings/2026-05-05-world-class-medomni-strategy/SPEC.md
+  v2_5_prereg: findings/2026-05-05-v2.5-reasoning-sft/PREREG.yaml
+  v2_7_prereg: findings/2026-05-05-v2.7-tool-call-sft/PREREG.yaml
+  citations:
+    - "HuatuoGPT-o1 (arXiv 2412.18925)"
+    - "MediX-R1 (OpenReview)"
+    - "Med-R1 (arXiv 2503.13939v5)"
+    - "AlphaMed (in MedCEG arXiv 2512.13510)"
+    - "Clinical-R1 / CRPO (arXiv 2512.00601)"
+    - "MedCEG: shortcut-hallucination warning for outcome-only GRPO (arXiv 2512.13510)"
+    - "Do Post-Training Algorithms Actually Differ? — SimPO instability at scale (arXiv 2603.19335)"
