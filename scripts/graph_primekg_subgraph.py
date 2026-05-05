@@ -294,7 +294,6 @@ class PrimeKG:
           seed_priority_types   — when capping at max_nodes, prefer
                                   expanding from seeds of these types.
         """
-        import networkx as nx  # noqa: WPS433
         G = self.graph
 
         if node_type_whitelist is None:

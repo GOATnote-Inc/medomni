@@ -62,7 +62,6 @@ from __future__ import annotations
 
 import os
 import pickle
-from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -226,7 +225,7 @@ class EmbeddingRetriever:
             return
         try:
             import faiss  # noqa: PLC0415, F401
-            from sentence_transformers import SentenceTransformer  # noqa: PLC0415
+            from sentence_transformers import SentenceTransformer  # noqa: PLC0415, F401
         except ImportError as exc:
             raise SystemExit(
                 "EmbeddingRetriever requires sentence-transformers + faiss. "

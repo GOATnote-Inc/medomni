@@ -60,7 +60,6 @@ import hashlib
 import json
 import os
 import pickle
-import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -128,7 +127,6 @@ def _smoke_pipeline(g: Any, out_dir: Path) -> dict[str, Any]:
         print(f"  {n[:40]:40s}  {t[:120]}{'...' if len(t) > 120 else ''}")
     # Stage 4 — Leiden via networkx fallback (community.greedy_modularity)
     try:
-        import networkx as nx  # noqa: PLC0415
         from networkx.algorithms.community import greedy_modularity_communities  # noqa: PLC0415
         undirected = g.to_undirected() if g.is_directed() else g
         comms = list(greedy_modularity_communities(undirected))
