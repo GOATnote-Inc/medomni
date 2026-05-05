@@ -128,12 +128,23 @@ training:
   seed: 42
 
 estimated_cost:
-  wall_hours: 4-6
-  usd: ~40
+  # iter-55 amendment: switch from HF-PEFT-eager to NeMo Framework
+  # Megatron-Bridge per findings/2026-05-05-nvidia-best-practices/SPEC.md.
+  # NVIDIA published Day-0 Megatron-Bridge LoRA cookbook for our exact base
+  # model (Nemotron-3-Nano-Omni 30B-A3B) on 2026-04-28 — recovers the 12.4×
+  # speedup we measured in V1 vs HF-PEFT-eager.
+  framework: NeMo Framework + Megatron-Bridge (PREFERRED) — fall back to HF PEFT-eager if Megatron-Bridge LoRA path fails for any reason
+  framework_url: https://github.com/NVIDIA-NeMo/Nemotron/tree/main/usage-cookbook/Nemotron-3-Nano-Omni/Megatron-bridge
+  fallback_framework: HF transformers + peft (as in V2.5; ~24s/step × 12.4× = 288s/step on the same data → 4-6 hr range)
+  wall_hours: 0.5-1.0  # Megatron-Bridge cookbook path (12.4× of V2.5 wall-time) — fallback 4-6 hr
+  usd: ~10 (cookbook) / ~40 (fallback)
   decision_kill_switches:
     - val_ppl_at_step_500_above: 8.0  # tighter than V2.5 since starting from already-fine-tuned weights
     - tool_call_format_accuracy_below: 0.85  # measured on a held-out 100-trace eval at step 500
     - oom_during_first_100_steps: revert to LoRA r=32
+    - megatron_bridge_setup_failure_within_30min: |
+        revert to HF PEFT-eager (V2.5 pattern); accept 4-6 hr wall-time;
+        do not block V2.7 fire on Megatron-Bridge availability
 
 # ──────────────────────────────────────────────────────────────────────
 # Eval (paired-bootstrap CI, gpt-4.1 + sovereign Qwen cross-family)
