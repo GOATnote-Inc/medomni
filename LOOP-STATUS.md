@@ -8,7 +8,17 @@ Per user directive 2026-05-04: persistent loop, 15 min cadence, runs as full-tim
 
 Every iteration:
 1. **Check state** — `git status`, `git log -5`, `gh pr list`, `gh run list -L 5`, scan for failing CI, untriaged PRs, regressed deploys.
-2. **Fleet pulse (read-only)** — for each Brev pod (catfish B300, lobster H200 train, narwhal H200 factory), `ssh <pod> 'tail -3 /home/<user>/data-queue/heartbeat.jsonl 2>/dev/null'`. Surface staleness > 30 min in this status board; ESCALATE (terminal text) on >30 min stale or judge-401-shaped reward=0 streaks. Never write or restart pods (memory: `feedback_runpod_stop_resume_loses_host`, `feedback_idle_gpus_get_deleted`).
+2. **5-stage fleet pulse (read-only ssh)** — codified iter-21 from `feedback_check_each_pipeline_stage_separately.md`. The Karpathy loop has 5 stages on different pods; one pod's signal tells you about that stage only. Probe each stage independently; report each signal per iter; ESCALATE (terminal text) on any stage stuck >30 min:
+
+    | Stage | Probe | Healthy signal |
+    |---|---|---|
+    | **Generate** | `ssh narwhal 'pgrep -af factory_loop && tail -1 ~/data-queue/heartbeat.jsonl'` | factory_loop running + heartbeat <10 min old |
+    | **Judge** | `ssh lobster 'curl -s --max-time 3 http://127.0.0.1:8000/v1/models'` | 200 with model list |
+    | **Train** | `ssh lobster 'pgrep -af train_peft\|megatron'` | process running OR explicit "scheduled when X" note in PREREG |
+    | **Deploy** | `ssh catfish 'curl -s http://127.0.0.1:8000/v1/lora/list'` | latest trained adapter present (post-V_final) |
+    | **Eval** | `find results/ -name CARD.md -newer <V_n training completion>` | paired-CI CARD landed |
+
+    Never write or restart pods (memory: `feedback_runpod_stop_resume_loses_host`, `feedback_idle_gpus_get_deleted`). Do NOT equate "one pod idle" with "loop stalled" — pods have different roles; each handoff is separate.
 3. **CARD scan** — `git diff HEAD~10 -- findings/ results/ | grep '+++.*CARD\.md'`. New CARD with V_{n+1} headline beating V_n by ≥5% triggers a `docs/v{n+1}-baseline-update` PR rebasing README's V0 baseline numbers.
 4. **Deploy smoke** — `curl -sI https://www.thegoatnote.com/4UWHAt/`. After any catfish-touching merge, also smoke `/api/agent` with a 1-token payload. Failures escalate.
 5. **Act** — fix flaky tests, rebase PRs, address comments, update docs. Verify before pushing (build, tsc, smoke).
@@ -70,6 +80,20 @@ User-action remediation (lowest-effort first):
 iter-19 cleaned up exited `v1-export-2` container (~120 MB). Cannot do destructive cleanup beyond my own containers per harmony contract — user-action required.
 
 ## Iteration log (newest first)
+
+### iter-21 · 2026-05-05 06:35 PT — corpora license cleared (5 of 6) + Charter 5-stage fleet pulse codified
+
+**State found:** zero open PRs (auto-merger cleared #66 and prior). Smoke `/4UWHAt/receipts` 200.
+
+**Corpora license CARD** (`findings/2026-05-05-corpora-license-confirmation/CARD.md`): WebFetch'd HF API per dataset. 5 of 6 confirmed **Apache-2.0**: MedReason, medical-o1-reasoning-SFT, ToolACE, Hermes-function-calling-v1, HuatuoGPT-o1-verifiable-problem. MedSafetyBench shows `license: None` on HF API — needs GitHub LICENSE check at V3.5 fire-time; substitution path (synthetic factory pairs) documented. Hermes was referenced as "v3" in PREREG but the actual published version on HF is v1; non-blocking note. **V2.5 pre-flight `corpus license check` is CLEARED.**
+
+**Charter 5-stage fleet pulse codified** (owed since iter-14): replaced single-pod heartbeat probe with explicit 5-stage table per `feedback_check_each_pipeline_stage_separately.md`. Future iters probe Generate (narwhal) + Judge (lobster) + Train (lobster) + Deploy (catfish) + Eval (laptop) independently.
+
+**Trajectory document chain — complete:** strategy SPEC + 4 PREREGs (V2.5/V2.7/V3/V3.5) + 3 runbooks (catfish flag-validation, V0→V1 eval, V_final HF release) + corpora license CARD = **9 documents on main covering every stage of V0→V_final→HF release**.
+
+Single user-action (set HF_TOKEN + free 30 GB disk on lobster) unblocks the entire chain.
+
+**Next:** iter-22 — if blockers cleared, fire V1 export retry. If not, update HF model card draft anchors with Muse Spark / GPT-5.4 numbers from the OpenAI HealthBench-Professional 2026-04-22 PDF, OR consolidate the 12+ feedback memory files.
 
 ### iter-20 · 2026-05-05 06:05 PT — disk re-probe stable, V_final HF release runbook authored, #65 superseded
 
