@@ -40,6 +40,34 @@ Hard rules below come from CLAUDE.md, user directive, and durable memories:
 
 ## Iteration log (newest first)
 
+### iter-11 · 2026-05-05 02:00 PT — UP035 wedge ships + UP037 agent-team plan archived
+
+**State found:** #50 (I001) + #51 (iter-10 status) MERGED. main at `2afc291`. Lint at 80, with 59 F401, 30 UP035, 20 UP037 by rule.
+
+**Action 1 — third lint wedge (PR #52):** UP035 typing→collections.abc migration. 15 sites. Bundled with chained I001 because changing the import source line invalidates the previous sort. Anti-check filtered diff: zero non-import lines changed. Lint **80 → 65** (cumulative 121 → 65, **-46%** in three sub-PRs).
+
+**Action 2 — UP037 agent-team safety plan archived (PR coming):** authored `findings/2026-05-05-up037-safety-plan/SPEC.md`. Plan applies Anthropic Generator-Validator-Attacker pattern + verify-then-claim discipline + pilot-before-full-sweep:
+1. **Scout** (foreground, 1 agent) — enumerates 20 UP037 sites + extracts referenced type names + writes `sites.json`.
+2. **Validators** (4 parallel agents) — per site, prove the referenced name IS imported/defined or flag as latent bug.
+3. **Attacker** (foreground, 1 agent) — for each validator-safe site, runs `python -c 'import <module>'` + `pytest --collect-only` + post-fix `ruff check --select F` to attempt to break the proposed fix.
+4. **Scribe** (me) — applies fix only to safe+attacker-pass sites; `# noqa: UP037` on the rest with TODO comments tracking missing imports / bogus annotations.
+
+Per user direction (this iter): UP037 deferred until F401 lands first. Estimated firing: iter-13 or iter-14.
+
+**Roadmap state:**
+| Wedge | Status | Sites | Lint after |
+|---|---|---|---|
+| F541 | ✓ #47 | 19 | 102 |
+| I001 | ✓ #50 | 22 | 80 |
+| UP035 | ✓ #52 | 15 | 65 |
+| F401 case-by-case | next | 59 | est. 6 |
+| UP037 agent-team | gated | 20 | est. ~0 manual + noqa |
+| Manual judgment | last | 53 | finalize |
+
+**Smoke:** live URL still 200, receipts 200.
+
+**Next:** iter-12 will (1) check #52 + this status PR merge, (2) open F401 wedge (case-by-case for side-effect / availability-check imports), (3) execute UP037 agent-team campaign per the SPEC if F401 lands clean.
+
 ### iter-10 · 2026-05-05 01:55 PT — I001 lint wedge + clean main
 
 **State found:** All 3 PRs from iter-8/iter-9 MERGED clean: #47 (F541, 19 sites) → #48 (status) → #49 (gitleaks→TruffleHog OSS swap, NVIDIA bionemo-framework convention). main at `5f628ab`.
