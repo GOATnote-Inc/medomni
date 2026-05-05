@@ -62,8 +62,9 @@ import sys
 import time
 import uuid
 from collections import defaultdict
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import yaml
 

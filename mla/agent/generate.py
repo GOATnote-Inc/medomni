@@ -8,7 +8,7 @@ expensive filtering happens downstream in validate → benchmark → score.
 from __future__ import annotations
 
 import inspect
-from typing import Callable
+from collections.abc import Callable
 
 from agent.llm_client import LLMClient, MutationRequest
 from agent.mutate import Candidate, MutationFailure, mutate_once

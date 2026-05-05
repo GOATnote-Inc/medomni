@@ -12,8 +12,9 @@ is the honest floor (matches flashinfer_runner.verify_matches_reference).
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 import torch
 

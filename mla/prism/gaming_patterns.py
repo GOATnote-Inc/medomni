@@ -13,8 +13,9 @@ Sources: notes in ../papers/notes-robust-kbench.md.
 from __future__ import annotations
 
 import inspect
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping
+from typing import Any
 
 import numpy as np
 
