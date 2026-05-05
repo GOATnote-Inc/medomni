@@ -40,6 +40,33 @@ Hard rules below come from CLAUDE.md, user directive, and durable memories:
 
 ## Iteration log (newest first)
 
+### iter-8 · 2026-05-05 01:30 PT — first lint wedge + 2 new findings surfaced
+
+**State found (user shared screenshots of GH Actions tab):**
+- `test` job is consistently GREEN across PRs #41–#46. iter-5's CI fix landed cleanly.
+- `lint` is consistently RED across all PRs — the 121 pre-existing errors I scoped out of #37/#41.
+- 2 new annotations on `secrets-scan` job: missing gitleaks license + Node.js 20 deprecation.
+
+**Action — first lint wedge (PR #47):** opened `ci/lint-fix-f541-empty-fstrings`. Smallest, safest ruff rule: F541 strips `f` prefix from string literals with no `{...}` placeholders. 19 sites across 8 files in `mla/loop/`, `mla/scripts/`, `scripts/`. Every diff line is `f"..."` → `"..."` with identical content. Zero behavior change. Lint count down 121→102.
+
+**Per-rule cleanup roadmap (each its own PR per the orphan-avoidance + UP037 lessons):**
+1. ✓ F541 — empty f-strings (this PR, 19 sites)
+2. I001 — import sort, `mla/` + `scripts/` (~22 sites)
+3. F401 — unused imports (~31 sites; case-by-case for side-effect imports)
+4. UP035 — typing.Callable → collections.abc.Callable (~15 sites)
+5. **UP037** — forward-ref quote strip (~10 sites; HIGH RISK per iter-2 lesson, hand-review each)
+6. Manual — E702/E741/F841/B007/B904/B905/F821 (~18 judgment-call sites)
+
+**Two new findings — surface to user, do NOT auto-fix:**
+
+1. **`secrets-scan` missing gitleaks license** — gitleaks-action recently switched to a paid-license model. The job currently exits success (probably falls back to scanning open-source rules) but reports a `🔴 missing gitleaks license` annotation. Two paths: (a) buy a license + add `GITLEAKS_LICENSE` GitHub secret, (b) replace `gitleaks/gitleaks-action@v2` with a free alternative (`zricethezav/gitleaks-action@v1` pre-license, or `trufflesecurity/trufflehog`). User decision needed; loop will not auto-pivot scanners without OK.
+
+2. **Node.js 20 deprecation** — `actions/checkout@v4`, `actions/setup-python@v5`, `gitleaks/gitleaks-action@v2` all run on Node 20. June 2 2026 deadline; after that, GitHub forces Node 24. Fix is bumping major versions: checkout@v5, setup-python@v6, etc. Mechanical change but should review per-action since some pinned-to-major versions intentionally. Surface for user OK before iter-9 lands the bumps.
+
+**Live smoke:** `/4UWHAt/receipts` 200, `/4UWHAt/` 200/308, imaging assets 200. All live.
+
+**Next:** iter-9 will (1) check #47 merge, (2) open I001 PR if approved, (3) await user decision on gitleaks + Node 20 paths, (4) probe `/workspace/` heartbeat path on lobster (deferred from iter-7).
+
 ### iter-7 · 2026-05-05 01:55 PT — receipts live + heartbeat mystery resolved + 1 durable rule
 
 **State found:** all 5 PRs from iter-6 (#41 #43 #44 #45) MERGED. main at `a6f77c3`. **Live URL `/4UWHAt/receipts` initially returned 404.**
