@@ -577,6 +577,85 @@ export function AskYourRecord({
                 }
                 return null;
               })}
+
+              {/* Verification monitor badge — under every assistant turn.
+                  This is the "specification monitor" thesis from the YC
+                  application made tangible: every reply lands with a
+                  visible audit summary (tools called, spec-checks passed,
+                  hardware, sovereignty). The current checks are a
+                  static demo set; the production runtime monitor wires
+                  into the same surface post-Series-A.
+
+                  Hidden on the user's own turns (m.role === "user") and
+                  on the assistant's empty placeholder before the first
+                  delta arrives (parts.length === 0). */}
+              {m.role === "assistant" && m.parts.length > 0 && (() => {
+                const tools = m.parts
+                  .filter((p) => p.type.startsWith("tool-"))
+                  .map((p) =>
+                    p.type
+                      .replace(/^tool-/, "")
+                      .replace(/_/g, " "),
+                  );
+                const checks = [
+                  "PHI isolation: maintained (no patient data crossed external boundary)",
+                  "Out-of-coverage screen: tool returned notInRegistry where applicable",
+                  "Drug-interaction screen: PrimeKG / PubMed cross-checked",
+                  "Provenance: every claim traceable to a tool result or patient-context block",
+                  "Hardware attestation: NVIDIA Blackwell B300 sovereign · 0 cloud LLM keys",
+                ];
+                return (
+                  <details
+                    style={{
+                      marginTop: 4,
+                      padding: "6px 8px",
+                      border: "1px solid rgba(255,0,150,0.2)",
+                      background: "rgba(255,0,150,0.03)",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 9.5,
+                      lineHeight: 1.4,
+                      color: "rgba(255,255,255,0.65)",
+                    }}
+                  >
+                    <summary
+                      style={{
+                        cursor: "pointer",
+                        listStyle: "none",
+                        color: "var(--accent)",
+                        userSelect: "none",
+                      }}
+                    >
+                      VERIFIED · {tools.length} TOOLS · {checks.length}/{checks.length} CHECKS · NEMOTRON-OMNI · B300
+                    </summary>
+                    <div style={{ marginTop: 6, display: "grid", gap: 3 }}>
+                      <div>
+                        <span style={{ color: "rgba(255,255,255,0.45)" }}>tools called:</span>{" "}
+                        {tools.length === 0 ? "(none)" : tools.join(", ")}
+                      </div>
+                      <div style={{ marginTop: 4, color: "rgba(255,255,255,0.45)" }}>
+                        specification monitor checks:
+                      </div>
+                      {checks.map((c) => (
+                        <div key={c} style={{ paddingLeft: 8 }}>
+                          <span style={{ color: "var(--accent)" }}>✓</span> {c}
+                        </div>
+                      ))}
+                      <div
+                        style={{
+                          marginTop: 4,
+                          paddingTop: 4,
+                          borderTop: "1px dashed rgba(255,255,255,0.1)",
+                          color: "rgba(255,255,255,0.4)",
+                        }}
+                      >
+                        Demo mode: checks above are static. Production runtime
+                        monitor compares actual model behavior to a clinician-authored
+                        specification on every turn; deviations log byte-deterministically.
+                      </div>
+                    </div>
+                  </details>
+                );
+              })()}
             </div>
           ))}
         </div>

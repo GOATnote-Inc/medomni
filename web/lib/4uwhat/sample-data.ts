@@ -250,6 +250,19 @@ export const SAMPLE_TIMELINE: SampleTimelineEntry[] = [
   { date: "2025-09-01", t: "10:00", kind: "msg", title: "Renewed Fluticasone Rx", who: "Dr. Patel", loc: "via portal", tag: "MSG" },
 ];
 
+export interface SampleSurgery {
+  date: string;       // ISO YYYY-MM-DD
+  procedure: string;
+  surgeon: string;
+  facility: string;
+  outcome: string;
+}
+
+export const SAMPLE_SURGERIES: SampleSurgery[] = [
+  { date: "2018-09-12", procedure: "Laparoscopic appendectomy", surgeon: "Dr. J. Chen", facility: "Renown Regional Medical Center", outcome: "Uncomplicated; same-day discharge." },
+  { date: "2010-06-04", procedure: "Wisdom teeth extraction (4)", surgeon: "Dr. T. Cohen, DDS", facility: "Cohen Oral Surgery", outcome: "Routine; full healing in 2 weeks." },
+];
+
 export const SAMPLE_IMAGING: SampleImaging[] = [
   { id: "cxr", date: "2026-03-08", kind: "X-ray", region: "Chest, 2-view", read: "No acute findings.", radiologist: "Dr. M. Hsu" },
   { id: "mri", date: "2025-11-04", kind: "MRI", region: "Right ankle", read: "Grade II ATFL sprain. No fracture.", radiologist: "Dr. L. Sato" },

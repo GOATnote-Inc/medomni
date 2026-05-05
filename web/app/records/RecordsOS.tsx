@@ -1062,7 +1062,21 @@ export function RecordsOS() {
               <button
                 key={n.id}
                 type="button"
-                onClick={() => setActiveModule(n.id)}
+                onClick={() => {
+                  setActiveModule(n.id);
+                  // Scroll to anchor — sections in the overview have
+                  // id="section-<navId>" landings. Modules without a
+                  // dedicated section render a "v1.1" placeholder card
+                  // (id="section-placeholder") that stays in the page so
+                  // every nav click has a destination.
+                  if (typeof window === "undefined") return;
+                  const target =
+                    document.getElementById(`section-${n.id}`) ||
+                    document.getElementById("section-placeholder");
+                  if (target) {
+                    target.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -1146,21 +1160,10 @@ export function RecordsOS() {
             >
               Share
             </button>
-            <Tooltip
-              label="DEMO MODE"
-              range="New entry disabled"
-              hint="v1.1: surfaces FHIR data-entry forms (vital, lab, message). Sharing the existing record works today via Share → above."
-              source="medomni · sample data"
-            >
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                style={{ ...btnGhost, cursor: "not-allowed", opacity: 0.55 }}
-              >
-                + New entry (demo)
-              </button>
-            </Tooltip>
+            {/* `+ New entry` removed 2026-05-04: the affordance was
+                cosmetic-only; data entry happens via the Ask bar (voice
+                or text) or future FHIR ingestion. Removing the disabled
+                button declutters the header. */}
           </div>
         </div>
 
@@ -1176,6 +1179,7 @@ export function RecordsOS() {
             }}
           >
             <div style={cardBase}>
+              <span id="section-overview" style={{ scrollMarginTop: 80 }} />
               <Eyebrow style={{ marginBottom: 12 }}>
                 PATIENT · {patient.pronouns.toUpperCase()}
               </Eyebrow>
@@ -1325,6 +1329,7 @@ export function RecordsOS() {
                 alignItems: "center",
               }}
             >
+              <span id="section-vitals" style={{ scrollMarginTop: 80 }} />
               <Eyebrow>VITALS · LAST 12 READINGS</Eyebrow>
               <Mono>FROM APPLE WATCH · OURA · CLINIC</Mono>
             </div>
@@ -1440,6 +1445,7 @@ export function RecordsOS() {
                   marginBottom: 14,
                 }}
               >
+                <span id="section-labs" style={{ scrollMarginTop: 80 }} />
                 <Eyebrow>LATEST LABS · APR 22</Eyebrow>
                 <Mono color="rgba(255,255,255,0.4)">8 RESULTS · 1 OUT OF RANGE</Mono>
               </div>
@@ -1528,6 +1534,7 @@ export function RecordsOS() {
             {/* Meds + conditions stacked */}
             <div style={{ display: "grid", gridTemplateRows: "1fr 1fr", gap: 16 }}>
               <div style={cardBase}>
+                <span id="section-meds" style={{ scrollMarginTop: 80 }} />
                 <Eyebrow style={{ marginBottom: 12 }}>MEDICATIONS · 4 ACTIVE</Eyebrow>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {meds.slice(0, 4).map((m) => (
@@ -1608,6 +1615,7 @@ export function RecordsOS() {
               </div>
 
               <div style={cardBase}>
+                <span id="section-cond" style={{ scrollMarginTop: 80 }} />
                 <Eyebrow style={{ marginBottom: 12 }}>PROBLEM LIST</Eyebrow>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   {conditions.map((c) => (
@@ -1687,7 +1695,8 @@ export function RecordsOS() {
                   marginBottom: 14,
                 }}
               >
-                <Eyebrow>TIMELINE · LAST 6 MONTHS</Eyebrow>
+                <span id="section-timeline" style={{ scrollMarginTop: 80 }} />
+              <Eyebrow>TIMELINE · LAST 6 MONTHS</Eyebrow>
                 <Mono>SCROLL FOR FULL HISTORY ↓</Mono>
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
@@ -1740,6 +1749,37 @@ export function RecordsOS() {
               </div>
             </div>
           </div>
+
+          {/* Placeholder for nav modules without their own dedicated section
+              yet (Imaging, Wearables, Visit notes, Genome, Sharing). Clicking
+              those nav items scrolls here. v1.1 will render dedicated views;
+              for the demo this is the honest "we have the data, the view is
+              under construction" affordance. The Ask bar can answer
+              questions about all of these modules today via the agent's
+              patient-context block. */}
+          <div
+            id="section-placeholder"
+            style={{
+              scrollMarginTop: 80,
+              marginTop: 24,
+              border: "1px dashed rgba(255,0,150,0.25)",
+              borderRadius: 6,
+              padding: "20px 24px",
+              background: "rgba(255,0,150,0.02)",
+            }}
+          >
+            <Eyebrow style={{ marginBottom: 8 }}>
+              IMAGING · WEARABLES · VISIT NOTES · GENOME · SHARING
+            </Eyebrow>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.6 }}>
+              Dedicated views ship in v1.1. Until then, the agent has full
+              read access to these modules — ask the AI rail anything
+              about your imaging reads (e.g. <em>&ldquo;what did my last
+              chest X-ray show?&rdquo;</em>), recent encounters, or sharing
+              consents and it will answer from the same source data the
+              dedicated panels will render.
+            </div>
+          </div>
         </div>
       </main>
 
@@ -1771,6 +1811,7 @@ export function RecordsOS() {
         {/* Care team */}
         <div style={{ padding: "18px 22px", borderBottom: "1px solid #1f1f1f" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+            <span id="section-team" style={{ scrollMarginTop: 80 }} />
             <Eyebrow>CARE TEAM</Eyebrow>
             <Mono>{careTeam.filter((c) => c.online).length} ONLINE</Mono>
           </div>

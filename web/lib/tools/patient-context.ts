@@ -582,6 +582,10 @@ import {
   SAMPLE_CONDITIONS,
   SAMPLE_MEDS,
   SAMPLE_LABS,
+  SAMPLE_TIMELINE,
+  SAMPLE_IMAGING,
+  SAMPLE_SURGERIES,
+  SAMPLE_CARE_TEAM,
 } from "@/lib/4uwhat/sample-data";
 
 const DESIGN_PATIENT_ID = "design-sample-patient";
@@ -646,6 +650,83 @@ export function buildDesignPatientContextBlock(): string {
       const adh = m.adherence !== null ? ` · adherence ${m.adherence}%` : "";
       const refills = m.refills !== null ? ` · ${m.refills} refills` : "";
       out.push(`- ${m.name} ${m.dose} ${m.freq} (since ${m.since}; prescriber ${m.prescriber}${adh}${refills})`);
+    }
+  }
+
+  // Upcoming appointments — derived from care-team `nextAppointment` fields
+  // so the agent can answer "when is my next visit with Dr. Adebayo?".
+  out.push("");
+  out.push("## Upcoming Appointments");
+  const upcoming = SAMPLE_CARE_TEAM.filter((c) => c.nextAppointment).map((c) => ({
+    when: c.nextAppointment!.date,
+    type: c.nextAppointment!.type,
+    with: `${c.name} · ${c.role} · ${c.org}`,
+  }));
+  if (upcoming.length === 0) {
+    out.push("- (none scheduled)");
+  } else {
+    for (const a of upcoming) {
+      out.push(`- ${a.when} — ${a.type} with ${a.with}`);
+    }
+  }
+
+  // Care-team items-to-watch — clinically relevant follow-up topics each
+  // provider has flagged for this patient. Lets the agent answer "what
+  // is Dr. Patel watching?" without fabricating.
+  out.push("");
+  out.push("## Care-Team Watch List");
+  const watching = SAMPLE_CARE_TEAM.filter(
+    (c) => c.itemsToWatch && c.itemsToWatch.length > 0,
+  );
+  if (watching.length === 0) {
+    out.push("- (no active flags)");
+  } else {
+    for (const c of watching) {
+      out.push(`- **${c.name} (${c.role}):** ${(c.itemsToWatch ?? []).join("; ")}`);
+    }
+  }
+
+  // Surgical history — the agent should be able to answer "when was my
+  // appendectomy?" without speculation. Synthetic data only.
+  out.push("");
+  out.push("## Surgical History");
+  if (SAMPLE_SURGERIES.length === 0) {
+    out.push("- (none on record)");
+  } else {
+    for (const s of SAMPLE_SURGERIES) {
+      out.push(
+        `- ${s.date} — ${s.procedure}; ${s.surgeon} at ${s.facility}; ${s.outcome}`,
+      );
+    }
+  }
+
+  // Recent encounters — from the unified timeline. Visits + urgent care
+  // + vaccinations + portal messages so questions like "when did I last
+  // see pulmonology?" or "did I get my flu shot this year?" resolve.
+  out.push("");
+  out.push("## Recent Encounters (last 12 months)");
+  const recent = SAMPLE_TIMELINE.slice(0, 8); // already date-sorted desc in source
+  if (recent.length === 0) {
+    out.push("- (no recent encounters on record)");
+  } else {
+    for (const e of recent) {
+      out.push(
+        `- ${e.date} — ${e.kind.toUpperCase()}: ${e.title} (${e.who} · ${e.loc})`,
+      );
+    }
+  }
+
+  // Imaging summary with reads — lets "what did my chest X-ray show?"
+  // resolve from the actual radiologist read field rather than hallucinated.
+  out.push("");
+  out.push("## Imaging Studies");
+  if (SAMPLE_IMAGING.length === 0) {
+    out.push("- (none on record)");
+  } else {
+    for (const im of SAMPLE_IMAGING) {
+      out.push(
+        `- ${im.date} — ${im.kind} of ${im.region} (read by ${im.radiologist}): ${im.read}`,
+      );
     }
   }
 
