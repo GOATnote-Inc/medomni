@@ -40,6 +40,22 @@ Hard rules below come from CLAUDE.md, user directive, and durable memories:
 
 ## Iteration log (newest first)
 
+### iter-10 · 2026-05-05 01:55 PT — I001 lint wedge + clean main
+
+**State found:** All 3 PRs from iter-8/iter-9 MERGED clean: #47 (F541, 19 sites) → #48 (status) → #49 (gitleaks→TruffleHog OSS swap, NVIDIA bionemo-framework convention). main at `5f628ab`.
+
+**Live smoke:** `/4UWHAt/receipts` 200, `/4UWHAt/` 308 redirect. Healthy.
+
+**Lint trajectory (cumulative this session):** 121 → 102 (after F541 #47) → **80** (after I001 this iter, PR #50). Down 41 errors / 34%. All via per-rule `--select X --fix` with hand-verified diffs. No UP037 territory yet (deferred until safety review per iter-2 InvariantCheck lesson).
+
+**Action — second lint wedge (PR #50):** `ci/lint-fix-i001-import-sort`. Pure import reordering across 20 non-test files in `mla/`, `scripts/`, `scripts/spike/`. Verified diff is exclusively import-block reformatting via `git diff -U0` filter. Zero logic change.
+
+**Roadmap remaining:** F401 unused imports (~31, low risk) → UP035 typing.Callable migration (~15, no risk) → UP037 forward-ref quote strip (~10, **HIGH RISK** — hand-review each per the validator.py F821 case) → manual E702/E741/F841/B007/B904/B905/F821 (~18 judgment-call sites).
+
+**Carried open:** medomni#50 (I001), gitleaks/TruffleHog swap is now MERGED so secrets-scan annotation should be clean on next CI run; user pending decisions on (a) gitleaks-license-replacement narrative now that we've gone TruffleHog (resolved by #49), (b) Node.js 20 deprecation bumps for actions/checkout@v5 etc.
+
+**Next:** iter-11 will (1) check #50 merge + main lint count, (2) begin F401 wedge with case-by-case review for side-effect imports, (3) probe `/workspace/` heartbeat path on lobster (re-deferred from iter-7 due to lint focus).
+
 ### iter-8 · 2026-05-05 01:30 PT — first lint wedge + 2 new findings surfaced
 
 **State found (user shared screenshots of GH Actions tab):**
