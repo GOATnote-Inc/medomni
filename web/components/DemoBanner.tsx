@@ -11,7 +11,7 @@ export function DemoBanner() {
       or personally identifiable patient information.
       <span className="mx-2 text-amber-400">·</span>
       <span className="font-mono text-xs text-amber-700">
-        Sovereign · NVIDIA Blackwell B300 · Nemotron-Omni-30B-NVFP4 · 0 cloud LLM keys
+        Private by design · runs on dedicated NVIDIA hardware · no third-party AI APIs called
       </span>
     </div>
   );

@@ -598,11 +598,11 @@ export function AskYourRecord({
                       .replace(/_/g, " "),
                   );
                 const checks = [
-                  "PHI isolation: maintained (no patient data crossed external boundary)",
-                  "Out-of-coverage screen: tool returned notInRegistry where applicable",
-                  "Drug-interaction screen: PrimeKG / PubMed cross-checked",
-                  "Provenance: every claim traceable to a tool result or patient-context block",
-                  "Hardware attestation: NVIDIA Blackwell B300 sovereign · 0 cloud LLM keys",
+                  "Patient privacy: your data stayed on our servers — never sent to a third-party AI",
+                  "Coverage check: when a guideline isn't in our registry, the agent says so instead of guessing",
+                  "Drug-interaction check: cross-referenced against PrimeKG and PubMed",
+                  "Source-of-truth: every claim traceable to a tool result or your record",
+                  "Hardware: runs on dedicated NVIDIA Blackwell B300 · no third-party AI APIs called",
                 ];
                 return (
                   <details
@@ -625,7 +625,7 @@ export function AskYourRecord({
                         userSelect: "none",
                       }}
                     >
-                      VERIFIED · {tools.length} TOOLS · {checks.length}/{checks.length} CHECKS · NEMOTRON-OMNI · B300
+                      VERIFIED · {tools.length} TOOLS USED · {checks.length}/{checks.length} CHECKS PASSED · NVIDIA B300
                     </summary>
                     <div style={{ marginTop: 6, display: "grid", gap: 3 }}>
                       <div>
