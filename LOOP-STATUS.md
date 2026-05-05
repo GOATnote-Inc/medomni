@@ -8,20 +8,35 @@ Per user directive 2026-05-04: persistent loop, 15 min cadence, runs as full-tim
 
 Every iteration:
 1. **Check state** — `git status`, `git log -5`, `gh pr list`, `gh run list -L 5`, scan for failing CI, untriaged PRs, regressed deploys.
-2. **Act** — fix flaky tests, rebase open PRs, address review comments, update docs, ship small wins. Verify before pushing (build, tsc, smoke).
-3. **Report** — append a one-paragraph entry to this file with what you did. Only escalate to user via terminal/Slack if blocked or ambiguous.
-4. **Self-improve** — when you spot a recurring mistake, write a feedback memory and update MEMORY.md, then carry on.
+2. **Fleet pulse (read-only)** — for each Brev pod (catfish B300, lobster H200 train, narwhal H200 factory), `ssh <pod> 'tail -3 /home/<user>/data-queue/heartbeat.jsonl 2>/dev/null'`. Surface staleness > 30 min in this status board; ESCALATE (terminal text) on >30 min stale or judge-401-shaped reward=0 streaks. Never write or restart pods (memory: `feedback_runpod_stop_resume_loses_host`, `feedback_idle_gpus_get_deleted`).
+3. **CARD scan** — `git diff HEAD~10 -- findings/ results/ | grep '+++.*CARD\.md'`. New CARD with V_{n+1} headline beating V_n by ≥5% triggers a `docs/v{n+1}-baseline-update` PR rebasing README's V0 baseline numbers.
+4. **Deploy smoke** — `curl -sI https://www.thegoatnote.com/4UWHAt/`. After any catfish-touching merge, also smoke `/api/agent` with a 1-token payload. Failures escalate.
+5. **Act** — fix flaky tests, rebase PRs, address comments, update docs. Verify before pushing (build, tsc, smoke).
+6. **Report** — append iter entry to this file. Only escalate to terminal/Slack if blocked or ambiguous.
+7. **Self-improve** — recurring mistake → new feedback memory + MEMORY.md update.
 
-Cache cost note: 15 min cadence forces a cache miss every wake (5 min TTL). User chose this; respect it, but be efficient — don't fan out into expensive multi-agent searches each iteration.
+Cache cost note: 15 min cadence forces a cache miss every wake (5 min TTL). Be efficient — no sub-agent fan-out unless an issue is confirmed-blocking.
 
-## Hard rules (from CLAUDE.md and user directive)
+## Hard write boundaries (the harmony contract with the 3-pod training loop)
+
+The training loop (catfish + lobster + narwhal autoresearcher) and this babysitter loop coexist by writing to disjoint surfaces and reading each other's state through artifacts. Violating the boundary is the primary failure mode to avoid.
+
+| Loop | WRITES | READS from the other |
+|---|---|---|
+| **Training (3-pod)** | GPU memory · model weights · `factory_loop.py` · `mla/judges/*` · `corpus/*` · `fleet/*` · CARDs (`findings/<date>/CARD.md`, `results/<run-id>/CARD.md`) · pod-local `heartbeat.jsonl` | nothing — fully autonomous |
+| **Babysitter (this loop)** | `web/` · `README.md` · `LOOP-STATUS.md` · `.github/workflows/*` · `pyproject.toml` (CI config only) · `.gitignore` · memory files | heartbeat tails (read-only ssh) · CARDs (read git) · live URL smoke · `gh pr list` |
+
+Hard rules below come from CLAUDE.md, user directive, and durable memories:
 
 - Prefer simple, reliable fixes. No speculative refactors.
 - Never break existing functionality. Verify end-to-end before pushing.
-- Honor the §1 isolation contract: never touch prism42 prod surface, ElevenLabs, LiveKit, DNS, or `.vercel/` config.
+- Honor §1 isolation: never touch prism42 prod surface, ElevenLabs, LiveKit, DNS, `.vercel/` config.
 - No cloud LLM keys. Sovereignty by construction.
+- Never `podStop`/`podStart`/`podRestart` (Brev or RunPod) — host capacity isn't guaranteed on resume.
+- Never write into the training-loop surface (`mla/`, `scripts/judge_*`, `corpus/`, `fleet/`, `factory_loop.py`). PRs that touch those go to user/training-engineer review; the babysitter only triages.
 - Stage by name. Never `git add -A` or `.`.
 - Author email: `b@thegoatnote.com`. One Co-Authored-By per commit.
+- One substantive commit per branch (auto-merger races second pushes — `feedback_auto_merger_squash_race`).
 
 ## Iteration log (newest first)
 
