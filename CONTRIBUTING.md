@@ -119,7 +119,10 @@ The `.env` file is gitignored. The `.env.example` lists the only two secrets Med
 construction means zero cloud LLM keys in any code path.
 
 The pre-commit `no-cloud-llm-keys` hook blocks references to those keys outside of explicitly
-allowlisted files. The `detect-secrets` baseline + `gitleaks` CI run as defense-in-depth.
+allowlisted files. The `detect-secrets` baseline (NVIDIA-NeMo convention) + **TruffleHog OSS**
+verifier-based CI scan (NVIDIA core convention, used by `NVIDIA/bionemo-framework` and
+`NVIDIA/Model-Optimizer`) run as defense-in-depth. Both Apache-2.0 / OSS-licensed; no paid-tier
+dependency.
 
 If you discover you've staged a secret:
 
