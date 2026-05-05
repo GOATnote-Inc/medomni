@@ -52,6 +52,8 @@ Architecture decision behind the patient slice: **Pattern B (dual lookup)** — 
 
 The training / eval / methodology stack below is the proof-of-quality behind that demo. Read on if you care how the model got there. Or [open the demo](https://www.thegoatnote.com/4UWHAt).
 
+For the **world-class trajectory** (V2.5 reasoning-SFT → V2.7 tool-call SFT → V3 GRPO → V3.5 DPO refusal → V_final HF release as Apache-2.0; eval gauntlet with MedAgentBench as the headline target), see the navigable index at [`findings/INDEX.md`](findings/INDEX.md). Nine pre-registered documents covering every stage; ~32-41 H200-hrs total; gated on three user-action pre-flight items per `LOOP-STATUS.md` ESCALATION block.
+
 ---
 
 ## Headline result
