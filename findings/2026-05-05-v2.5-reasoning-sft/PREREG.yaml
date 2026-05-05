@@ -1,0 +1,228 @@
+---
+# V2.5 Reasoning SFT — Pre-Registration Manifest
+#
+# Per the world-class trajectory SPEC at
+# findings/2026-05-05-world-class-medomni-strategy/SPEC.md §3 Stage 1.
+# Authored 2026-05-05 in iter-15+ of the babysitter loop after 4-agent
+# research synthesis. Awaits user OK before fire.
+
+name: v2.5-reasoning-sft
+sequence: V0 (base) → V2.5 (this stage) → V2.7 (tool-call SFT) → V3 (GRPO) → V3.5 (DPO refusal) → V_final → HF release
+
+# ──────────────────────────────────────────────────────────────────────
+# Hypothesis (the load-bearing claim)
+# ──────────────────────────────────────────────────────────────────────
+hypothesis: |
+  Training Nemotron-3-Nano-Omni-30B-A3B-Reasoning on KG-grounded medical
+  chain-of-thought traces (MedReason 32K + medical-o1-reasoning-SFT 25K +
+  R1-distilled USMLE 5K) lifts MedQA-USMLE by ≥+5pp and MedXpertQA-Text
+  by ≥+10pp vs the V0 base, with paired-bootstrap 95% CI lower bound
+  above the V0 point estimate. Cross-team agent synthesis (Teams #1, #3
+  in 2026-05-05 dispatch) flags this as the highest-leverage missing
+  stage in the prior V0→V3 plan.
+
+# ──────────────────────────────────────────────────────────────────────
+# Pivot rationale
+# ──────────────────────────────────────────────────────────────────────
+why_this_supersedes_v2:
+  prior_plan: V2 = multi-task SFT on (HealthBench-train + MedQA-train + MedMCQA + PubMedQA-L), all answer-only.
+  evidence_against:
+    - "MedReason (arXiv 2504.00993): KG-grounded CoT lifts DeepSeek-Distill-8B by +7.7%; beats HuatuoGPT-o1-8B by +4.2% on MedBullets."
+    - "Every May-2026 SOTA medical model (AlphaMed, MediX-R1, Med-R1, MedS3, Clinical-R1) wins via reasoning-trace SFT + verifiable-reward RL, NOT answer-only SFT."
+    - "Lobster's existing V1 (per /workspace/logs/prod_train.log) WAS the answer-only multi-task SFT — runnable; but per cross-team synthesis, dominated by reasoning-trace SFT."
+  decision: Promote reasoning-trace SFT to the next stage (V2.5). Keep V1 (text multi-task) as a methodology data point for the V0 vs V1 paired-eval CARD; do not deploy.
+
+# ──────────────────────────────────────────────────────────────────────
+# Inputs
+# ──────────────────────────────────────────────────────────────────────
+base_model:
+  hf_id: nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning
+  precision_for_training: bf16
+  rationale: |
+    Train against the multimodal Omni base (NOT the text-only BF16 variant
+    used by V1). Catfish serves the Omni-NVFP4 quantization in production;
+    matching base eliminates the iter-14 base-mismatch deploy gate.
+  storage_required: ~60 GB (model weights), download to /workspace/.hf-cache
+
+training_corpora:
+  - name: MedReason
+    hf_id: UCSC-VLAA/MedReason
+    license: Apache-2.0
+    size: 32682 reasoning traces
+    role: KG-grounded medical CoT
+    citation: "Wu et al., arXiv 2504.00993 (May 2025)"
+    sha256_at_pull: TBD
+  - name: medical-o1-reasoning-SFT
+    hf_id: FreedomIntelligence/medical-o1-reasoning-SFT
+    license: Apache-2.0
+    size: ~25000 traces
+    role: o1-style scratchpad-reasoning, distilled from larger reasoning models
+    citation: "FreedomIntelligence, Hugging Face dataset card (2025)"
+    sha256_at_pull: TBD
+  - name: deepseek-r1-distill-usmle-traces
+    source: synthetic — DeepSeek-R1 (671B) distillation on USMLE-style questions
+    size: 5000 traces (target)
+    license: Apache-2.0 (distillation output of an MIT-licensed model)
+    role: high-quality per-step USMLE reasoning examples
+    sha256_at_pull: TBD
+  - name: pubmedvision-image-text-pairs
+    optional: true
+    rationale: optional vision-grounded CoT mix-in if H200-hr permits
+
+# ──────────────────────────────────────────────────────────────────────
+# LoRA scope (load-bearing for hot-load on catfish)
+# ──────────────────────────────────────────────────────────────────────
+lora_config:
+  rank: 64
+  alpha: 128
+  dropout: 0.05
+  target_modules:
+    # Attention + Mamba projectors only — keeps adapter hot-loadable on
+    # NVFP4 base via vLLM 0.20.x --enable-lora per Team #2 finding.
+    # MoE expert weights (FP4 with per-block scales) are NOT LoRA-compatible
+    # for hot-load; deferred to V_final merge-and-requantize.
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj  # attention out_proj
+    - in_proj   # Mamba in_proj
+    - out_proj  # Mamba out_proj
+    - vision_projector
+    - audio_projector
+  bias: none
+  task_type: CAUSAL_LM
+  modules_excluded:
+    - moe_experts.*  # explicitly excluded; per Team #2 incompatible with hot-load
+    - lm_head        # frozen for capability preservation
+    - embed_tokens   # frozen
+
+# ──────────────────────────────────────────────────────────────────────
+# Hyperparameters
+# ──────────────────────────────────────────────────────────────────────
+training:
+  precision: bf16-mixed
+  optimizer: AdamW
+  learning_rate: 2e-5
+  warmup_ratio: 0.03
+  scheduler: cosine
+  weight_decay: 0.0
+  per_device_batch_size: 2
+  gradient_accumulation_steps: 16  # effective batch 32
+  max_seq_length: 8192
+  epochs: 1
+  packing: true
+  seed: 42
+
+# ──────────────────────────────────────────────────────────────────────
+# Pod + framework
+# ──────────────────────────────────────────────────────────────────────
+hardware:
+  pod: evil-cyan-lobster
+  gpu: NVIDIA H200 (Hopper, 144 GB HBM)
+  framework: NeMo Framework + Megatron-Bridge (matches V1's working stack)
+  container: nvcr.io/nvidia/nemo:26.04.00
+
+estimated_cost:
+  wall_hours: 8-10
+  usd: ~80
+  decision_kill_switches:
+    - val_ppl_at_step_1000_above: 10.0
+    - grad_norm_above: 100.0
+    - oom_during_first_100_steps: revert to LoRA r=32
+
+# ──────────────────────────────────────────────────────────────────────
+# Eval (paired-bootstrap CI, gpt-4.1 + sovereign Qwen cross-family)
+# ──────────────────────────────────────────────────────────────────────
+eval_protocol:
+  comparator: V0 base (Nemotron-3-Nano-Omni-30B-A3B-Reasoning, no LoRA)
+  benchmarks:
+    - name: MedQA-USMLE
+      script: lm-evaluation-harness
+      n_trials: 3
+      seeds: [42, 123, 7919]
+    - name: MedXpertQA-Text
+      script: TsinghuaC3I/MedXpertQA
+      n_trials: 3
+    - name: HealthBench-Hard
+      script: openai/simple-evals (healthbench_eval.py at pinned sha ee3b0318d8d1)
+      n_trials: 3
+    - name: PubMedQA-L
+      script: lm-evaluation-harness
+      n_trials: 3
+      role: regression check (V1 included this; V2.5 should at minimum NOT regress)
+  graders:
+    primary: gpt-4.1 (rubric grading per HealthBench convention)
+    cross_family_backup: Qwen2.5-7B-Instruct on lobster (sovereignty backup; disagreement >5pp triggers manual adjudication)
+  ci_method: paired bootstrap, 10000 resamples, 95% CI
+  same_item_set: true  # required for tight paired CI
+
+# ──────────────────────────────────────────────────────────────────────
+# Ship rule
+# ──────────────────────────────────────────────────────────────────────
+ship_rule:
+  pass_conditions_all_required:
+    - MedQA-USMLE delta lower-CI-bound > 0
+    - MedXpertQA-Text delta lower-CI-bound ≥ +5pp
+    - HealthBench-Hard delta point-estimate > 0
+    - PubMedQA-L no-regression (delta ≥ -1pp lower CI bound)
+    - Manifest sha256 verifiable
+  on_pass: proceed to V2.7 tool-call SFT (no public deploy yet)
+  on_fail: revert; debug data quality (likely: insufficient CoT diversity); re-author V2.5b PREREG
+
+# ──────────────────────────────────────────────────────────────────────
+# Reproducibility manifest (per the SPEC §6.2)
+# ──────────────────────────────────────────────────────────────────────
+manifest_fields_required:
+  - weights_sha256 (V2.5 LoRA adapter)
+  - base_model_id + base_weights_sha256
+  - eval_script_git_sha + eval_script_url (for each benchmark)
+  - prompt_template_sha256
+  - system_prompt_sha256
+  - grader_model_id + grader_prompt_sha256
+  - decode_params (temp=0, top_p=1.0, max_new_tokens=2048, no thinking budget)
+  - seed_list
+  - item_manifest_sha256 + dataset_revision (for each benchmark)
+  - hardware (gpu, driver, cuda, vllm/nemo versions)
+  - runtime_seconds, total_tokens_in/out, cost_usd
+
+# ──────────────────────────────────────────────────────────────────────
+# Pre-flight blockers (must clear before fire)
+# ──────────────────────────────────────────────────────────────────────
+preflight:
+  - blocker: lobster disk pressure
+    state: 215/247 GB used (88% full); 32 GB free; insufficient for Omni download (~60 GB)
+    resolution_options:
+      - prune unused docker images (NeMo image alone is 48 GB; only 1 needed)
+      - mount external storage for /workspace/.hf-cache
+      - decision: ESCALATE to user — needs cleanup or storage decision
+  - blocker: HF_TOKEN not in lobster env
+    state: V1 export attempt 2026-05-05 found env empty
+    resolution_options:
+      - set via Brev console env-var UI (NEVER via ssh per RunPod-proxy memory)
+      - confirm whether base model download requires gated auth (`Nemotron-3-Nano-Omni-Reasoning` may be gated)
+  - blocker: Omni multimodal base not cached on lobster
+    state: only text-only `Nemotron-3-Nano-30B-A3B-BF16` cached per iter-14
+    resolution: download once HF_TOKEN + disk are sorted
+  - blocker: V0→V1 paired-eval CARD outstanding
+    state: V1 exists but no V0 vs V1 comparison computed
+    rationale: useful as a methodology data point regardless of trajectory; informs whether answer-only SFT is truly dominated
+    resolution: separate eval run; ~2 hr on lobster against text-only BF16 base + V1 LoRA
+
+# ──────────────────────────────────────────────────────────────────────
+# Linked SPEC + cross-team agent reports
+# ──────────────────────────────────────────────────────────────────────
+references:
+  spec: findings/2026-05-05-world-class-medomni-strategy/SPEC.md
+  agent_reports:
+    - team_1_training_sota: tasks/ab9620b82dca5231d.output
+    - team_2_serving_sota: tasks/a06197df0d195690f.output
+    - team_3_multimodal_sota: tasks/a0e214fa23f8ba072.output
+    - team_4_eval_gauntlet: tasks/a11665e54e9903243.output
+  citations:
+    - "MedReason (arXiv 2504.00993)"
+    - "MediX-R1 (OpenReview)"
+    - "Med-R1 (arXiv 2503.13939v5)"
+    - "AlphaMed (in MedCEG arXiv 2512.13510)"
+    - "Nemotron-Research-Tool-N1 (arXiv 2505.00024)"
+    - "vLLM blog 2026-04-28: NVFP4 + LoRA hot-load"
+    - "OpenAI HealthBench-Professional 2026-04-22"
