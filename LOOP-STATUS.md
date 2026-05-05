@@ -82,6 +82,26 @@ iter-19 cleaned up exited `v1-export-2` container (~120 MB). Cannot do destructi
 
 ## Iteration log (newest first)
 
+### iter-27 · 2026-05-05 08:43 PT — Judge stall confirmed laptop-side (zero `judge_filter` PIDs)
+
+**State delta zero on infra:** smoke 200, lobster 230/247 GB (94%, HF_TOKEN NOT_SET), narwhal raw=6/judged=0 unchanged from iter-26. PR #71 merged.
+
+**New direct-laptop probe (iter-26 was narwhal-side only):** `ps -ef | grep judge_filter` returns zero matches on this laptop. Confirms iter-26's hypothesis — the laptop-side ensemble judge is simply not running. Script lives at `/Users/kiteboard/prism42-nemotron-med/scripts/judge_filter.py`; its `_validate_keys()` (lines 1099-1119) refuses to start without `OPENAI_API_KEY` (sk-) AND `ANTHROPIC_API_KEY` (sk-ant-).
+
+**Doc drift surfaced:** prism42-nemotron-med `CLAUDE.md §6.5` still says *"judge_filter.py waits on ANTHROPIC_API_KEY rotation; runs gpt-4.1-only in fallback mode until then"* — but task #80 (rotate ANTHROPIC_API_KEY) is marked completed AND the script has no gpt-4.1-only fallback path. §6.5 is stale; not editing this iter (private-repo doctrine territory; flagged for a future clean-up commit on prism42-nemotron-med directly).
+
+**Concrete unblock path** (user-action; CLAUDE.md §1 rule 6 forbids babysitter from sourcing the canonical .env):
+```bash
+set -a && source ~/lostbench/.env && set +a   # in a fresh laptop terminal
+cd /Users/kiteboard/prism42-nemotron-med
+# rsync raw shards from narwhal first if input-dir is local
+rsync -av warm-lavender-narwhal:~/data-queue/raw/ ./results/data-queue/raw/
+python3 scripts/judge_filter.py --input-dir ./results/data-queue --mode continuous
+```
+~5 min user-action. Once judge runs, raw=6 should drain to curated/, train can ingest.
+
+**No further authored docs this iter** per iter-22 restraint commitment. iter-28+ will pure-state-probe unless a blocker clears.
+
 ### iter-24 · 2026-05-05 07:35 PT — branch prune (40→19) + iter-19 peft-text-v1 claim corrected
 
 **State found:** zero open PRs (auto-merger steady). HF_TOKEN still NOT_SET; lobster disk 230/247 GB (94%, stable). `/api/agent` end-to-end smoke green.
