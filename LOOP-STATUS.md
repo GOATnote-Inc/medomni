@@ -52,6 +52,32 @@ Once these land, the loop closes and clinical reasoning starts improving every c
 
 ## Iteration log (newest first)
 
+### iter-16 · 2026-05-05 03:55 PT — explicit-go execution, catfish upgrade failed + rolled back
+
+**Trigger:** user "explicit go" on world-class trajectory. Tried to fire what's safely fireable without V2.5 blockers cleared.
+
+**Catfish serving upgrade — FAILED, rolled back, ~10 min prod outage:**
+- Tried Team #2 safe-subset (3 flags: `gpu-memory-utilization 0.72→0.90`, `max-num-seqs 32→384`, `--enable-prefix-caching`)
+- Failure 1: `docker run` cmd prepended `vllm serve` but image ENTRYPOINT already had it → `vllm serve vllm serve --model ...` crash-loop. Saved `feedback_check_docker_entrypoint_before_docker_run.md`.
+- Failure 2: corrected-args run also failed engine init. Probably `max-num-seqs 384 × max-num-batched-tokens 32768 = 85 tokens/seq` (too low for medical CoT) OR `gpu-memory-utilization 0.90` starves co-resident vllm services. No diagnostic since 3 flags moved at once.
+- Recovery: rollback to original config; came up at ~530s. Saved `feedback_stage_prod_flag_changes_one_at_a_time.md` — never bump multiple flags simultaneously in prod.
+- Public demo `/4UWHAt` 200 again, catfish serves `id=nemotron` (V0 base).
+
+**PREREG portfolio complete** (V2.5/V2.7/V3/V3.5 all on main via #59/#60 merged + #61 open).
+
+**3 stale PR cleanup:**
+- #54 (F401) — actually merged
+- #53 + #55 — closed as superseded
+
+**V2.5 pre-flight blockers — still open, user-action:**
+1. Lobster disk 88% full (32 GB free; need ~60 GB for Omni base)
+2. HF_TOKEN missing on lobster (set via Brev console env-var UI; never via ssh)
+3. Omni multimodal base not cached on lobster (gated on #1 + #2)
+
+**Catfish upgrade DEFERRED** until non-prod test-bed validates each flag individually.
+
+**Next:** iter-17 author the non-prod-test-bed runbook + check #61 merge + re-probe lobster blockers.
+
 ### iter-14 · 2026-05-05 02:55 PT — fleet probe authorized, real picture surfaced
 
 User asked iter-13: "is the Karpathy loop generating meaningful improvement continually?" My initial answer was "no, stalled." User authorized parallel read-only probes on all 3 pods → **corrected synthesis above**: generation + judge + inference are alive, the V1→V2 training + V1 deploy + V1 eval handoffs are the actual broken parts.
