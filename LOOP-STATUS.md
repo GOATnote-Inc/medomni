@@ -68,7 +68,7 @@ Once these land, the loop closes and clinical reasoning starts improving every c
 |---|---|---|
 | `/var/lib/docker` | 115 GB | 84.6 GB images (NeMo 48 GB + vllm-openai 22.9 GB + Kokoro 13.7 GB) + 30 GB layers/logs |
 | `/home/ubuntu/medomni` | 15 GB | Likely an old checkout — if a working copy elsewhere is canonical, can be removed |
-| `/home/ubuntu/peft-text-v1` | 4.9 GB | INTERMEDIATE V1 ckpt (`checkpoint-1000`); canonical V1 is `iter_0015594` in `/workspace/ckpt/v1-pathd-out/` — confirmed different, this is removable |
+| `/home/ubuntu/peft-text-v1` | 4.9 GB | **CORRECTED iter-24:** NOT a duplicate of `/workspace/ckpt/v1-pathd-out` — different training paths. peft-text-v1 has HF/PEFT-eager format (`checkpoint-1000`, `manifest.json`, `train.log`); /workspace has Megatron-Bridge Path D format (`__0_*.distcp`, `metadata.json`, `run_config.yaml`). peft-text-v1 is the **older Path C / HF-PEFT-eager** run that was 12.4× slower per CLAUDE.md, before the Path D pivot. Removable for the 5 GB IF you don't need the Path C comparison artifact; keeping it as a "what we tried" record is also defensible |
 
 User-action remediation (lowest-effort first):
 
@@ -80,6 +80,20 @@ User-action remediation (lowest-effort first):
 iter-19 cleaned up exited `v1-export-2` container (~120 MB). Cannot do destructive cleanup beyond my own containers per harmony contract — user-action required.
 
 ## Iteration log (newest first)
+
+### iter-24 · 2026-05-05 07:35 PT — branch prune (40→19) + iter-19 peft-text-v1 claim corrected
+
+**State found:** zero open PRs (auto-merger steady). HF_TOKEN still NOT_SET; lobster disk 230/247 GB (94%, stable). `/api/agent` end-to-end smoke green.
+
+**Action — branch prune** per `feedback_clean_branches_after_session.md`: 21 stale local branches deleted (9 worktree-agent-* + 10 ci/* + 21 docs/loop-iter-* / docs/runbook / docs/spec), all merged to main via squash. **Local branches: 40 → 19.** Remaining 19 are mostly spike/* with locked worktrees in `.claude/worktrees/` (deletion would require `git worktree remove --force`, deferred since worktrees are gitignored anyway).
+
+**iter-19 finding correction:** Claimed `/home/ubuntu/peft-text-v1` was a "duplicate intermediate V1 ckpt." iter-24 verified — they're **different training paths entirely**: peft-text-v1 = Path C HF-PEFT-eager (the 12.4×-slower-pre-Path-D run); /workspace/ckpt/v1-pathd-out = Path D Megatron-Bridge (the actual V1 production). Removing peft-text-v1 doesn't lose canonical V1 but does lose Path C as a comparison artifact. Updated ESCALATION block above.
+
+**Auto-merge sweep:** zero PRs needed unblocking this iter (auto-merger has been steady since iter-19; #65 was the last conflict).
+
+**No new authored docs** per the iter-22 commitment to restraint when state delta is zero.
+
+**Next:** iter-25 will continue state probe + smoke. If user clears any blocker, fire next-step from runbooks. If no delta after 3 more iters at 15-min cadence, propose 30-min stretch again.
 
 ### iter-21 · 2026-05-05 06:35 PT — corpora license cleared (5 of 6) + Charter 5-stage fleet pulse codified
 
