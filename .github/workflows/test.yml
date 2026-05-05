@@ -21,6 +21,15 @@ jobs:
           pip install -r requirements.txt 2>/dev/null || pip install -e . 2>/dev/null || true
           pip install pytest pytest-asyncio httpx pyyaml rank_bm25 jsonschema
 
+      - name: Clone simple-evals upstream pin
+        # Several tests (test_healthbench_grader_wire, test_healthbench_judge)
+        # import from `_healthbench_grader_bridge` which requires this exact
+        # upstream sha. The bridge raises UpstreamPinError if it's absent.
+        run: |
+          git clone --depth 1 https://github.com/openai/simple-evals.git third_party/simple-evals
+          git -C third_party/simple-evals fetch --depth 1 origin ee3b0318d8d1d9d72755a4120879be65f7c07e9e
+          git -C third_party/simple-evals checkout ee3b0318d8d1d9d72755a4120879be65f7c07e9e
+
       - name: Run unit tests
         run: |
           pytest -m "not integration and not gpu and not h100 and not h200 and not training" -q
