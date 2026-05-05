@@ -50,7 +50,36 @@ Surfaced iter-14, 2026-05-05. The Karpathy loop on the 3-pod fleet is **80% heal
 
 Once these land, the loop closes and clinical reasoning starts improving every cycle. Without them, factory data accumulates while the public demo stays on V0.
 
+### Lobster disk pressure (P0, surfaced iter-19; revised iter-20 — stable not trending)
+
+`/dev/vda1` is **230/247 GB used (94%)** — was 88% in iter-15. **iter-20 re-probe: stable at 94%** (the iter-19 "5 GB/hr trend" was over a 3-hr window of unknowns; instantaneous trend is flat — last-hour file-touch shows only `nv-hostengine.log` minor growth). Concrete consumers:
+
+| Path | Size | Action |
+|---|---|---|
+| `/var/lib/docker` | 115 GB | 84.6 GB images (NeMo 48 GB + vllm-openai 22.9 GB + Kokoro 13.7 GB) + 30 GB layers/logs |
+| `/home/ubuntu/medomni` | 15 GB | Likely an old checkout — if a working copy elsewhere is canonical, can be removed |
+| `/home/ubuntu/peft-text-v1` | 4.9 GB | INTERMEDIATE V1 ckpt (`checkpoint-1000`); canonical V1 is `iter_0015594` in `/workspace/ckpt/v1-pathd-out/` — confirmed different, this is removable |
+
+User-action remediation (lowest-effort first):
+
+1. **Free ~5 GB instantly:** `rm -rf /home/ubuntu/peft-text-v1` (verified iter-20: it's `checkpoint-1000` while canonical V1 is `iter_0015594` in `/workspace`)
+2. **Free ~10-15 GB:** `docker image prune -a` once V1 export retry completes (NeMo image becomes prune-candidate after that)
+3. **Free ~15 GB:** investigate `/home/ubuntu/medomni` — appears to be a duplicate medomni repo checkout
+4. **Real headroom:** attach external Brev volume (~$5-10/mo for 100 GB), move HF cache to it. Required for the 60 GB Omni multimodal base download (V2.5 prerequisite).
+
+iter-19 cleaned up exited `v1-export-2` container (~120 MB). Cannot do destructive cleanup beyond my own containers per harmony contract — user-action required.
+
 ## Iteration log (newest first)
+
+### iter-20 · 2026-05-05 06:05 PT — disk re-probe stable, V_final HF release runbook authored, #65 superseded
+
+**State found:** `#65` (iter-19 status) had merge conflicts vs main; closed as superseded and re-authored on fresh main. Lobster disk **stable at 94%** (iter-19's "5 GB/hr trend" was over a 3-hr window — instantaneous re-probe shows flat). HF_TOKEN still NOT SET.
+
+**Action — V_final HF release runbook authored:** `findings/2026-05-05-v-final-hf-release/RUNBOOK.md` (~330 lines). Stage 4 of the world-class trajectory: merge V3.5 LoRA → BF16 → NVFP4 quantize via TensorRT Model Optimizer → catfish swap → HF push as Apache-2.0. Includes pre-flight checklist (V3.5 ship rule clear, TensorRT Model Optimizer accessible, ≥80 GB free disk, safety datasheet co-signed, HF write-token), 5-stage execution path (merge → quantize → smoke 30 fixtures → catfish cutover with rollback ready → HF push + adapters branch), 6 decision gates with on-fail recovery, eval gauntlet sweep producing the headline "open 30B beats Claude Opus on MedAgentBench by ≥5pp paired CI."
+
+**Smoke:** `/4UWHAt/receipts` 200, V0 stable on catfish.
+
+**Next:** iter-21 — if HF_TOKEN clears OR disk gets freed, fire V1 export retry per V0→V1 runbook. If neither, author corpora license confirmation card OR start a single-flag catfish non-prod test per the iter-17 runbook (lowest-risk substantive action available).
 
 ### iter-16 · 2026-05-05 03:55 PT — explicit-go execution, catfish upgrade failed + rolled back
 
