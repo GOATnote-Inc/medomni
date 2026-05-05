@@ -26,6 +26,7 @@ import {
 import type { NextRequest } from "next/server";
 import { pubmedSearch, type PubMedSearchResult } from "@/lib/tools/pubmed";
 import { primekgLookup, type PrimeKGSubgraphResult } from "@/lib/tools/primekg";
+import { buildPatientContextForSystemPrompt } from "@/lib/tools/patient-context";
 import {
   guidelineCurrencyCheck,
   type GuidelineCurrencyResult,
@@ -35,6 +36,10 @@ import {
   SUPPORTED_SCORES,
   type CalculatorResult,
 } from "@/lib/tools/clinical-calculator";
+import {
+  getPatientContext,
+  type PatientContextResult,
+} from "@/lib/tools/patient-context";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -115,7 +120,7 @@ const TOOL_SPEC = [
     function: {
       name: "guideline_currency_check",
       description:
-        "Check whether a clinical default the user mentions (or that you are about to recommend) is the CURRENT standard or a stale recommendation that has been superseded since 2023. Returns matched entries from a curated registry with the stale default, the current default, and the citing guideline body+year. Use early in your reasoning whenever the question touches a topic where guidance has shifted recently (DOAC vs warfarin, H. pylori first-line, adult pneumococcal vaccination, BPH therapy, opioid taper, GLP-1 contraindications, denosumab discontinuation, SGLT2 in non-diabetic HFrEF, etc.) — call once with the clinical concept, then incorporate the current default into your final answer.",
+        "Look up whether a specific clinical guideline (e.g. 'statin therapy 2024', 'BP target hypertension', 'H. pylori first-line', 'asthma controller GINA') is still current vs superseded. Returns the stale default, the current default, the citing body+year, and a publication/update pointer when the topic is in our small curated registry (~48 entries: DOAC vs warfarin, H. pylori, adult pneumococcal vaccination, BPH, opioid taper, GLP-1, denosumab, SGLT2 HFrEF, statin primary prevention, asthma controller, BP target, vitamin D, etc.). Returns `notInRegistry: true` with a `registryTopics` summary for topics outside the registry — when you see that, do NOT cite the (empty) result; fall back to `pubmed_search` for a literature search. Use this tool ONLY for guideline-currency questions, not for general clinical reasoning.",
       parameters: {
         type: "object",
         properties: {
@@ -158,6 +163,47 @@ const TOOL_SPEC = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "get_patient_context",
+      description:
+        "Retrieve a concise summary of the current patient's active conditions, recent labs, vitals, medications, allergies, diagnostic reports, and imaging studies (modality, started date, radiologist read) from their EHR (FHIR R4). Call this in parallel with knowledge-base tools (pubmed_search, primekg_lookup) when the question involves the specific patient. Requires patientId from session context. SCOPE: this tool only fires if MEDOMNI_FHIR_BASE_URL is configured.",
+      parameters: {
+        type: "object",
+        properties: {
+          patientId: {
+            type: "string",
+            description:
+              "FHIR Patient resource id for the current patient. In the spike this comes from the request body's `patientId` field; in v1 it'll come from SMART launch context.",
+          },
+          queryHint: {
+            type: "string",
+            description:
+              "Optional free-text hint about which slice of the chart matters for the current question (e.g. 'AFib management', 'preop clearance'). Surfaces in the rendered block; does not change which resources are pulled.",
+          },
+          scopes: {
+            type: "array",
+            description:
+              "Optional list of FHIR resource types to pull. Defaults to all seven: Patient, Condition, Observation, MedicationRequest, AllergyIntolerance, DiagnosticReport, ImagingStudy.",
+            items: {
+              type: "string",
+              enum: [
+                "Patient",
+                "Condition",
+                "Observation",
+                "MedicationRequest",
+                "AllergyIntolerance",
+                "DiagnosticReport",
+                "ImagingStudy",
+              ],
+            },
+          },
+        },
+        required: ["patientId"],
+      },
+    },
+  },
 ];
 
 const SYSTEM_PROMPT = `You are MedOmni, a medical reasoning assistant served sovereign on NVIDIA Blackwell B300 hardware. You help clinicians (RNs, NPs, PAs, MDs) and trained healthcare workers think through clinical scenarios.
@@ -179,11 +225,24 @@ When the user message contains audio:
 - Begin your reasoning with "Transcript: <verbatim transcript>" on the first line so the user can see what you heard.
 - Then continue normally — reasoning, optional tool call, final answer.
 
+When the user asks to view, see, show, pull up, or open an imaging study (X-ray, MRI, CT, panoramic, ultrasound, etc.) without attaching an image themselves:
+- Do NOT say "no image was provided." The on-screen Records OS dashboard has an Imaging panel with click-to-view cards for every study in the patient's record. The user can see it without you generating an image.
+- Answer in two sentences: (1) one-sentence summary of the relevant study from the patient context (modality, region, date, key finding from the radiology read), and (2) explicitly tell them: "Click the Imaging tab in the left rail (or scroll to the Imaging gallery) and tap the [modality] card to view the film at full size."
+- Do not include the radiology report verbatim — let the user open the card if they want the full read.
+
+When the user message contains an image:
+- Begin your reasoning with "Image: <one-sentence visual description>" on the first line so the user can see what you saw — include modality (photo, X-ray, lab printout, pill bottle, etc.), key visible features, and clarity (well-lit / blurry / partial / etc.).
+- Then continue normally — reason about the image AGAINST the patient's record (medications, conditions, recent vitals/labs, upcoming appointments) where relevant.
+- Disclaimer model: this is image-based clinical reasoning, NOT a substitute for in-person clinician evaluation. State that explicitly when the question is diagnostic ("Is this rash X?", "Is this surgical site infected?"). Recommend in-person evaluation, telehealth visit, or ED visit per the urgency you observe.
+- For non-diagnostic image questions (medication identification from a pill bottle, reading a lab printout, explaining a wearable display) you can answer directly without escalation language.
+- If the image is unreadable or insufficient (too dark, wrong angle, missing key view), say so and suggest a better photo rather than guessing.
+
 Tool use:
 - Call guideline_currency_check FIRST when your draft answer relies on a clinical default that may have shifted since 2023 (DOAC vs warfarin, H. pylori first-line, pneumococcal vaccination, opioid taper, GLP-1 contraindications, denosumab discontinuation, SGLT2 in HFrEF, etc.). One quick call up front prevents you from confidently citing a stale default.
 - Call clinical_calculate whenever the user gives enough patient detail to compute a standard score (CHA2DS2-VASc, HAS-BLED, MELD-Na, Wells DVT, PERC). Do NOT estimate these scores in your head — the tool is exact.
 - Call pubmed_search when recent literature would meaningfully change your answer.
 - Call primekg_lookup when the question turns on relationships between named medical entities — drug-drug interactions, drug-disease contraindications, gene-disease associations, pathway membership. Especially valuable for polypharmacy questions.
+- Call get_patient_context when the question concerns a SPECIFIC patient and the harness has provided a patientId. Fire it in parallel with primekg_lookup / pubmed_search — patient slice and KB slice are independent, so one round-trip handles both. Skip it if no patientId is available or the question is purely general clinical knowledge.
 - You have a generous tool-call budget (up to 8 calls per query). Use parallel calls when independent (e.g. PubMed + PrimeKG + currency check on the same question can all fire in one step). The budget is a safety net, not a target — most questions resolve in 1-2 calls.
 - If a tool returns an "error" field or zero matches, do not retry — answer from prior knowledge and note what was unavailable.
 
@@ -426,9 +485,21 @@ type ToolResult =
   | PrimeKGSubgraphResult
   | GuidelineCurrencyResult
   | CalculatorResult
+  | PatientContextResult
   | { error: string };
 
-async function runTool(name: string, argsRaw: string): Promise<ToolResult> {
+interface ToolContext {
+  // patientId from the request body; used as a fallback when the model
+  // omits it from the tool-call args. In v1 this'll come from SMART launch
+  // context; for the spike the harness sets it as a top-level body field.
+  patientId?: string;
+}
+
+async function runTool(
+  name: string,
+  argsRaw: string,
+  ctx: ToolContext = {},
+): Promise<ToolResult> {
   let parsed: Record<string, unknown>;
   try {
     parsed = JSON.parse(argsRaw || "{}") as Record<string, unknown>;
@@ -465,6 +536,29 @@ async function runTool(name: string, argsRaw: string): Promise<ToolResult> {
     if (!query.trim()) return { error: "query is required" };
     try {
       return await guidelineCurrencyCheck({ query, maxResults });
+    } catch (e) {
+      return { error: (e as Error).message };
+    }
+  }
+
+  if (name === "get_patient_context") {
+    const patientId =
+      typeof parsed.patientId === "string" && parsed.patientId.trim()
+        ? parsed.patientId.trim()
+        : ctx.patientId ?? "";
+    const queryHint =
+      typeof parsed.queryHint === "string" ? parsed.queryHint : undefined;
+    const scopes = Array.isArray(parsed.scopes)
+      ? (parsed.scopes.filter((s) => typeof s === "string") as string[])
+      : undefined;
+    if (!patientId) {
+      return {
+        error:
+          "patientId is required. The agent harness must include `patientId` in the request body, or the model must pass it explicitly.",
+      };
+    }
+    try {
+      return await getPatientContext({ patientId, queryHint, scopes });
     } catch (e) {
       return { error: (e as Error).message };
     }
@@ -509,7 +603,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { messages?: UIMessage[] };
+  let body: { messages?: UIMessage[]; patientId?: string };
   try {
     body = await req.json();
   } catch {
@@ -520,6 +614,10 @@ export async function POST(req: NextRequest) {
   }
 
   const incoming = body.messages ?? [];
+  const requestPatientId =
+    typeof body.patientId === "string" && body.patientId.trim()
+      ? body.patientId.trim()
+      : undefined;
   if (incoming.length === 0) {
     return new Response(JSON.stringify({ error: "messages array is required" }), {
       status: 400,
@@ -527,10 +625,25 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Pre-load patient context into the system prompt when a patientId is
+  // present. Design-mode (patientId === "design-sample-patient") renders
+  // synchronously from sample-data.ts; live-mode calls the FHIR fetch.
+  // Failures fall back to a vanilla system prompt — the agent still
+  // answers, just without patient-specific data. See lib/tools/patient-context.ts
+  // for the rationale (the public demo at /4UWHAt must be able to reason
+  // about the patient already on the page even when MEDOMNI_FHIR_BASE_URL
+  // is unset).
+  const patientContextBlock = await buildPatientContextForSystemPrompt(
+    requestPatientId,
+  );
+  const systemContent = patientContextBlock
+    ? `${SYSTEM_PROMPT}\n\n---\n\n# Active patient session\n\nThe user is currently viewing the following patient's record. Reason from this context whenever the question concerns this patient. Do NOT ask for "patient ID" — the patient is already loaded.\n\n${patientContextBlock}`
+    : SYSTEM_PROMPT;
+
   const stream = createUIMessageStream({
     async execute({ writer }) {
       const history: ChatMessage[] = [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemContent },
         ...uiMessagesToChat(incoming),
       ];
 
@@ -608,7 +721,9 @@ export async function POST(req: NextRequest) {
               };
             }
             try {
-              const output = await runTool(tc.name, tc.argsRaw);
+              const output = await runTool(tc.name, tc.argsRaw, {
+                patientId: requestPatientId,
+              });
               return { tc, output };
             } catch (e) {
               return { tc, output: { error: (e as Error).message } };

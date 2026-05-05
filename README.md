@@ -33,6 +33,27 @@ manifest sha256 `f9372e0cc948` byte-stable. Released open as proof-of-quality.
 
 ---
 
+## Live demo — `https://www.thegoatnote.com/4UWHAt`
+
+Public demo URL, no login, no account. Routes via Vercel edge rewrite from
+the `www.thegoatnote.com` apex (owned by `v0-goat-note-landing-page-3c`)
+to `medomni.vercel.app/4UWHAt`. The page is the **Records OS** dashboard:
+
+- **Three-column patient cockpit** — left nav rail (Overview · Timeline · Labs · Meds · Conditions · Vitals · Imaging · Wearables · Visit notes · Care team · Genome · Sharing), main canvas, right rail.
+- **Ask your record** command bar — voice in (Web Audio + Nemotron-Omni native ASR), voice out (Kokoro-82M TTS on H200 via Cloudflare quick-tunnel; browser `speechSynthesis` fallback), image input (camera / file → multimodal Omni reasoning), text in.
+- **Imaging gallery** — three click-to-view DetailDrawer cards (X-ray · MRI · panoramic) backed by real CC0 / CC-BY reference films from Wikimedia Commons. Track D's FHIR `ImagingStudy` ingestion populates the same shape from a real EHR.
+- **Five-tool agent** — `pubmed_search`, `primekg_lookup`, `guideline_currency_check`, `clinical_calculate`, `get_patient_context` (FHIR R4). Tool call provenance + verification badge under every assistant turn.
+- **FHIR R4 Bundle export** — Share button produces a valid Bundle with Patient + Conditions + Observations + MedicationRequests + AllergyIntolerances + DiagnosticReports + ImagingStudies, downloadable as JSON.
+- **Demo banner** — `Private by design · runs on dedicated NVIDIA hardware · no third-party AI APIs called` (for evaluation only; do not enter PHI).
+
+Inference path: every keystroke / image / audio chunk hits **Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4** on the B300 catfish pod via vllm. No cloud LLM API keys in the path; the only external service is the public `medomni.vercel.app` Vercel deploy that proxies `/api/agent` to the catfish vllm endpoint.
+
+Architecture decision behind the patient slice: **Pattern B (dual lookup)** — the agent hits FHIR (Medplum, self-hosted) and PrimeKG independently and merges in-prompt. Measured p95 = **11 ms** for the FHIR fetch across 12 patients, 60 samples (`findings/2026-05-04-pattern-b-spike/RESULTS.md`).
+
+The training / eval / methodology stack below is the proof-of-quality behind that demo. Read on if you care how the model got there. Or [open the demo](https://www.thegoatnote.com/4UWHAt).
+
+---
+
 ## Headline result
 
 > **Held-out mean 0.385 ± 0.000** across 6 chemoprevention fixtures, **N=3 seeded trials**,

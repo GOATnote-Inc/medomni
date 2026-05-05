@@ -1,0 +1,110 @@
+# Medplum FHIR sandbox for the medomni clinical-AI architecture spike.
+# Pattern B (dual-lookup) latency probe — local-only, no PHI, no cloud LLM keys.
+# See ./README.md for run order.
+#
+# Versions are pinned. Bump deliberately and re-verify the smoke curl in README.
+services:
+  postgres:
+    image: postgres:16
+    container_name: medomni-spike-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: medplum
+      POSTGRES_PASSWORD: medplum
+      POSTGRES_DB: medplum
+    command:
+      - 'postgres'
+      - '-c'
+      - 'listen_addresses=*'
+      - '-c'
+      - 'statement_timeout=60000'
+      - '-c'
+      - 'default_transaction_isolation=REPEATABLE READ'
+      - '-c'
+      - 'shared_preload_libraries=pg_stat_statements,auto_explain'
+    volumes:
+      - ./.medplum-data/postgres:/var/lib/postgresql/data
+    # Postgres is intentionally NOT bound to a host port — host already runs
+    # postgres on 5432. The Medplum server reaches it via the docker network.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U medplum']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: medomni-spike-redis
+    restart: unless-stopped
+    command: redis-server --requirepass medplum --appendonly yes --dir /data
+    volumes:
+      - ./.medplum-data/redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', 'medplum', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  medplum-server:
+    image: medplum/medplum-server:5.1.10
+    container_name: medomni-spike-medplum
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:8103:8103'
+    volumes:
+      - ./.medplum-data/binary:/usr/src/medplum/packages/server/binary
+    # The 'env' arg tells the loader to read MEDPLUM_* environment variables.
+    # See packages/server/src/config/loader.ts in the medplum repo.
+    command: ['env']
+    environment:
+      MEDPLUM_PORT: 8103
+      MEDPLUM_BASE_URL: 'http://localhost:8103/'
+      MEDPLUM_APP_BASE_URL: 'http://localhost:3000/'
+      MEDPLUM_STORAGE_BASE_URL: 'http://localhost:8103/storage/'
+      MEDPLUM_BINARY_STORAGE: 'file:./binary/'
+      MEDPLUM_SUPPORT_EMAIL: '"Medplum" <support@medplum.com>'
+
+      MEDPLUM_DATABASE_HOST: 'postgres'
+      MEDPLUM_DATABASE_PORT: 5432
+      MEDPLUM_DATABASE_DBNAME: 'medplum'
+      MEDPLUM_DATABASE_USERNAME: 'medplum'
+      MEDPLUM_DATABASE_PASSWORD: 'medplum'
+
+      MEDPLUM_REDIS_HOST: 'redis'
+      MEDPLUM_REDIS_PORT: 6379
+      MEDPLUM_REDIS_PASSWORD: 'medplum'
+
+      # Auto-create a super-admin User and a ClientApplication on first boot.
+      # The setup script reads these to mint a bearer token via OAuth2
+      # client_credentials. No interactive login required.
+      MEDPLUM_DEFAULT_SUPER_ADMIN_EMAIL: 'admin@example.com'
+      MEDPLUM_DEFAULT_SUPER_ADMIN_PASSWORD: 'medplum_admin'
+      MEDPLUM_DEFAULT_SUPER_ADMIN_CLIENT_ID: '8d8d2b3a-1d0f-4f8a-9c1e-f0e7c8b3a2d1'
+      MEDPLUM_DEFAULT_SUPER_ADMIN_CLIENT_SECRET: 'medomni_spike_local_only_NOT_a_secret'
+
+      MEDPLUM_MAX_JSON_SIZE: '1mb'
+      MEDPLUM_MAX_BATCH_SIZE: '50mb'
+      MEDPLUM_BOT_LAMBDA_ROLE_ARN: ''
+      MEDPLUM_BOT_LAMBDA_LAYER_NAME: 'medplum-bot-layer'
+      MEDPLUM_VM_CONTEXT_BOTS_ENABLED: 'true'
+      MEDPLUM_DEFAULT_BOT_RUNTIME_VERSION: 'vmcontext'
+      MEDPLUM_ALLOWED_ORIGINS: '*'
+      MEDPLUM_INTROSPECTION_ENABLED: 'true'
+      MEDPLUM_SHUTDOWN_TIMEOUT_MILLISECONDS: 30000
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          'fetch("http://localhost:8103/healthcheck").then(r => { if(!r.ok) process.exit(1); }).catch(() => process.exit(1))',
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
