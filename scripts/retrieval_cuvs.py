@@ -34,9 +34,9 @@ import math
 import os
 import statistics
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
 
 import httpx
 

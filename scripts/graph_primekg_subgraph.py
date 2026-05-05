@@ -33,9 +33,9 @@ import pickle
 import re
 import time
 from collections import deque
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
 
 # Per the durable rule: ensure the cugraph backend is selected for any
 # downstream networkx algorithm call. This is a no-op outside RAPIDS.

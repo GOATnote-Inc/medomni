@@ -17,8 +17,9 @@ reference_kernel are callables returning numpy ndarrays (or anything with
 from __future__ import annotations
 
 import math
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Callable, Mapping
+from typing import Any
 
 import numpy as np
 

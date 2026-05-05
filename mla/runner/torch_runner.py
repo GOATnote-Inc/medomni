@@ -7,8 +7,9 @@ the three without changes to its scoring code.
 from __future__ import annotations
 
 import statistics
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 try:
     import torch

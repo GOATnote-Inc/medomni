@@ -8,8 +8,8 @@ deterministically for debugging.
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable
 
 from agent.llm_client import (
     LLMClient,
