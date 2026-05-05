@@ -36,9 +36,11 @@ The trajectory chain (1-6 above) defines the WHAT (V2.5→V_final). These 5 docu
 14. **[`2026-05-05-process-supervision-verifiability/SPEC.md`](2026-05-05-process-supervision-verifiability/SPEC.md)** — V3 PRM channel (Med-PRM +13.5pp), V_final Best-of-K + claim-audit, V3.5 domain-specific Constitutional AI.
 15. **[`2026-05-05-reliability-calibration/SPEC.md`](2026-05-05-reliability-calibration/SPEC.md)** — V3.5 Cal-DPO + `<abstain/>` channel, V_final Semantic Entropy Probes, conformal prediction sets for DDx.
 
-## Lobster disk forensics (iter-36)
+## Lobster disk + V2.5 fire-readiness (iter-36 → iter-46)
 
-16. **[`2026-05-05-lobster-disk-forensics/SPEC.md`](2026-05-05-lobster-disk-forensics/SPEC.md)** — corrects iter-19 phantom byte claims; Stage A+B prune sequence (free 18→~98 GB) + Omni FP8 download recipe (35 GB not 60).
+16. **[`2026-05-05-lobster-disk-forensics/SPEC.md`](2026-05-05-lobster-disk-forensics/SPEC.md)** — iter-36, corrects iter-19 phantom byte claims; Stage A+B prune sequence (free 18→~98 GB) + Omni download recipe.
+17. **[`2026-05-05-v2.5-base-precision-mismatch/CARD.md`](2026-05-05-v2.5-base-precision-mismatch/CARD.md)** — iter-46 CRITICAL pre-flight find: `train_peft_imaging.py:455 _check_bf16_only` rejects the FP8 download from iter-45. User authorized Option A; FP8 dropped + BF16 firing. Durable lesson on pre-flighting trainer dtype assertions.
+18. **[`2026-05-05-fire-v2.5-runbook/RUNBOOK.md`](2026-05-05-fire-v2.5-runbook/RUNBOOK.md)** — iter-46, Step 0-6 user-action sequence to fire V2.5 once BF16 download completes. Includes Step 2 LoRA target_modules verification (catch the next iter-45-style gotcha before smoke).
 
 ## Auxiliary
 

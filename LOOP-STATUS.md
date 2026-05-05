@@ -50,16 +50,20 @@ Hard rules below come from CLAUDE.md, user directive, and durable memories:
 
 ## ⚠ ESCALATION (READY TO FIRE) — training pipeline structurally unblocked
 
-**iter-46 FINAL update (2026-05-05 ~13:35 PT): BF16 BASE DOWNLOAD COMPLETE.** All 50 files finalized, 0 incomplete blobs, 17 safetensors in snapshot. Snapshot at `~/.cache/huggingface/hub/models--nvidia--Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16/snapshots/a5fba9ed825b7a641606d97c8f189ce01e3a7cf0`. Lobster: 218 GB used / **30 GB free** (sufficient for V2.5 LoRA + optimizer states ~10-15 GB).
+**iter-47 update (2026-05-05 ~13:50 PT): V2.5 SMOKE IN PROGRESS.** User authorized full sequence (author script + smoke + production). Sub-agent authored `prism42-nemotron-med/scripts/train_peft_reasoning.py` (sibling of train_peft_imaging.py; reuses TraceLogger + _check_bf16_only + attn_impl ladder; new dataset loader for MedReason + medical-o1-reasoning-SFT). Smoke fired at `/workspace/v2.5-smoke` with `--smoke-steps 50`. Step time stabilized at ~6.5s/step on H200 (vs PREREG estimate); trainable params 36.5M / 31.6B = 0.116% (slightly below PREREG's 0.2-0.5% expected band — informational, not blocker; r=64 with 7-target-list × ~83 modules each = 580 LoRA layers in 30B). attn_implementation=eager working (FA3/FA2 unavailable). gradient_checkpointing rejected (NemotronH not supported); H200 144 GB has memory headroom anyway. Estimated 50-step smoke completes ~13:55 PT.
 
-**hf-cli stall recovery insight:** the BF16 download stalled across 4 kill+rerun cycles with the same 8 byte-complete `.incomplete` files. Manual sha256 validation confirmed all 8 bytes-correct (filename = expected hash); manual `mv X.incomplete X` promoted them; final re-fire then fetched only the 2 truly-missing shards (model-00013 + model-00017, ~6 GB) and finalized in <30s. Saved durable memory `feedback_hf_download_manual_finalize.md`. Estimated 30+ min wall-clock recovery vs. waiting for hf to converge.
+**iter-46 FINAL update (2026-05-05 ~13:35 PT): BF16 BASE DOWNLOAD COMPLETE.** All 50 files finalized, 0 incomplete blobs, 17 safetensors in snapshot. Snapshot at `~/.cache/huggingface/hub/models--nvidia--Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16/snapshots/a5fba9ed825b7a641606d97c8f189ce01e3a7cf0`.
+
+**hf-cli stall recovery insight:** the BF16 download stalled across 4 kill+rerun cycles with the same 8 byte-complete `.incomplete` files. Manual sha256 validation confirmed all 8 bytes-correct (filename = expected hash); manual `mv X.incomplete X` promoted them; final re-fire then fetched only the 2 truly-missing shards. Saved durable memory `feedback_hf_download_manual_finalize.md`.
 
 **3 of 3 user-action blockers cleared:**
 1. ✅ HF_TOKEN (iter-35)
 2. ✅ Lobster disk (iter-44 Stage B — 73 GB recovered)
 3. ✅ Omni BF16 base (iter-46 — after FP8/BF16 mismatch remediation)
 
-**V2.5 ready to fire.** User-action sequence in `findings/2026-05-05-fire-v2.5-runbook/RUNBOOK.md` (Step 0-6). Babysitter cannot fire training per harmony contract.
+**iter-46 update (2026-05-05 ~13:25 PT): FP8/BF16 base-precision MISMATCH found + remediated.** Pre-flight check before declaring V2.5 ready surfaced that `train_peft_imaging.py:455-465` hard-codes `_check_bf16_only`, making the iter-45 FP8 download incompatible. See `findings/2026-05-05-v2.5-base-precision-mismatch/CARD.md`. User authorized Option A; babysitter dropped FP8 (33 GB recovered) and fired BF16 download. Durable lesson saved: pre-flight check the actual trainer's accepted dtypes before recommending non-default base precision.
+
+**iter-45 update (2026-05-05 ~13:10 PT): Omni FP8 DOWNLOAD COMPLETE** (later swapped to BF16 in iter-46 per trainer dtype constraint). All 27 files finalized at the time. Durable lesson: when hf download stalls with byte-complete `.incomplete` files, kill + re-fire to trigger validation pass.
 
 **iter-44 update (2026-05-05 ~12:55 PT): Stage B FIRED + Omni FP8 download IN PROGRESS.** User authorized babysitter to execute the rm sequence + Omni FP8 download per `findings/2026-05-05-lobster-disk-forensics/SPEC.md`. Stage B required **`sudo`** (caches root-owned by docker bind-mount; SPEC's plain `rm` failed with permission denied — durable lesson saved). Result: **73 GB recovered** (230→157 GB used; 18→91 GB free; 94% → 64%). Omni FP8 download fired immediately after via `hf download nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-FP8` (PID 2410947, nohup background, log at `/tmp/omni-fp8-download.log`). 33 GB cached as of 12:55 PT (~2-3 GB pending of 35.2 GB total). **2 of 3 user-action blockers cleared.** Training pipeline near-unblocked: V2.5 reasoning-SFT can fire as soon as download completes + user issues training go-ahead.
 
