@@ -40,6 +40,24 @@ Hard rules below come from CLAUDE.md, user directive, and durable memories:
 
 ## Iteration log (newest first)
 
+### iter-6 · 2026-05-05 01:25 PT — parallel ship: receipts page + HF model card draft
+
+**Trigger:** user said "both as parallel" on the iter-5 strategic menu (Option A receipts + Option B HF model card).
+
+**Execution:** dispatched a research-agent in the background for the receipts page (Option A, multi-file UI work) while drafting the HF model card (Option B, single markdown) in the foreground. Both landed as separate PRs per the orphan-avoidance rule.
+
+**Shipped:**
+- **#43** — `findings/2026-05-05-hf-model-card-draft/CARD.md` (296 lines). Apache-2.0 license rationale, V0 baseline table (HB Hard 0.054, VQA-RAD 0.643, SLAKE-en 0.744), V1 shipped numbers (12.4× faster via Path D Megatron-Bridge), V2→V3→HF-release progression, sovereignty narrative, pre-release gating checklist (V2/V3 PASS, safety co-sign, red-team cycle, license-compat audit). Marked DRAFT until V3 ships.
+- **#44** — `feat/4uwhat-receipts-page` (1039 net lines across 6 files). Client-side receipts MVP at `/4UWHAt/receipts`. NO server-side telemetry, NO `/api/agent` changes — surfaces existing `useChat` message history via `onFinish`. New: `Receipt` type + SSR-safe localStorage adapter (cap 100), `ReceiptCard` collapsible component, `/receipts` page with export-markdown + clear-all buttons, nav-rail `Receipts` entry. Verified: `npx tsc --noEmit` clean, `npm run build` green, `/receipts` in route table.
+
+**Pending merge:** #41 (CI fully green), #44 (receipts), #43 (HF card). All admin-mergeable per `contexts: []` + `enforce_admins: false` on main.
+
+**Smoke:** `https://www.thegoatnote.com/4UWHAt/` 200/308. Live.
+
+**Heartbeat anomaly carried forward:** still need read-only investigation of why `~/data-queue/heartbeat.jsonl` doesn't exist on lobster. Deferred to iter-7 since iter-6 ate the cache budget on parallel agent dispatch.
+
+**Next:** iter-7 will (1) verify all four open PRs have merged, (2) re-smoke `/receipts` live on production, (3) read-only `ls /home/<user>/data-queue/` + `pgrep -f heartbeat` on each Brev pod to resolve the heartbeat-path mystery.
+
 ### iter-5 · 2026-05-05 00:55 PT — unit's second tier of failures + first fleet-pulse attempt
 
 **State found:** PR #40 (charter) MERGED at 07:50:25Z; main now at `fcf026e`. Surveyed unit-job state on the latest cherry-pick CI (`3db3721`) and found 17 test failures despite collection now succeeding cleanly. Three categories: (1) tests using `_healthbench_grader_bridge` raise `UpstreamPinError` because CI doesn't clone `third_party/simple-evals` at the expected sha; (2) `test_clinical_demo_artifacts.py` subprocess-runs a missing script `scripts/generate_clinical_demo_artifacts.py`; (3) `test_clinical_demo_fixtures.py` loads two missing schema files under `schemas/`.
