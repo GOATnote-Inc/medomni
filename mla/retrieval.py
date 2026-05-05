@@ -225,8 +225,8 @@ class EmbeddingRetriever:
         if self._model is not None:
             return
         try:
-            from sentence_transformers import SentenceTransformer  # noqa: PLC0415
             import faiss  # noqa: PLC0415, F401
+            from sentence_transformers import SentenceTransformer  # noqa: PLC0415
         except ImportError as exc:
             raise SystemExit(
                 "EmbeddingRetriever requires sentence-transformers + faiss. "

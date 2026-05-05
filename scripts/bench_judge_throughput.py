@@ -32,7 +32,6 @@ from pathlib import Path
 
 import httpx
 
-
 JUDGE_PROMPT = (
     "You are a strict clinical-rubric grader. Given a single question, an "
     "AI-generated answer, and a list of binary criteria, return a JSON list "

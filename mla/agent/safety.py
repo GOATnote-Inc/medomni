@@ -20,7 +20,6 @@ from typing import Callable
 
 import numpy as np
 
-
 _BANNED_TOKENS: tuple[str, ...] = (
     "import ",          # any import statement
     "__import__",

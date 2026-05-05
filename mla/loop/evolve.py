@@ -37,9 +37,10 @@ from kernels.base.mla_decode_numpy import (
     make_inputs,
     mla_decode_naive,
 )
-from loop.pareto import ParetoPoint, pareto_front
 from prism import DEFAULT_INVARIANTS, validate
 from runner.numpy_runner import benchmark
+
+from loop.pareto import ParetoPoint, pareto_front
 
 
 @dataclass

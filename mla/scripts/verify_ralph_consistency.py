@@ -42,7 +42,6 @@ import re
 import sys
 from pathlib import Path
 
-
 VALID_VERDICTS = {
     "supported",
     "partially-supported",

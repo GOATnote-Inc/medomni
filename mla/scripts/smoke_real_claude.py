@@ -12,6 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import inspect
+
 from agent.critique import CritiqueRequest
 from agent.llm_client import AnthropicClient, MutationRequest
 from agent.mutate import Candidate
@@ -23,7 +25,6 @@ from kernels.base.mla_decode_numpy import (
     mla_decode_naive,
 )
 from prism import validate
-import inspect
 
 
 def main() -> int:

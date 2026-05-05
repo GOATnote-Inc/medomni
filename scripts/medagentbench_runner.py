@@ -218,8 +218,8 @@ def _load_refsol():
 
 
 def _verify_fhir_server(fhir_api_base: str) -> bool:
-    import urllib.request
     import urllib.error
+    import urllib.request
     try:
         req = urllib.request.Request(fhir_api_base + "metadata", headers={"Accept": "application/json"})
         with urllib.request.urlopen(req, timeout=5) as resp:
@@ -269,8 +269,8 @@ def _status_code_of(exc: BaseException) -> int | None:
 
 def _send_get_request(url: str) -> dict:
     """Mirror utils.send_get_request's response shape."""
-    import urllib.request
     import urllib.error
+    import urllib.request
     try:
         req = urllib.request.Request(url, headers={"Accept": "application/json"})
         with urllib.request.urlopen(req, timeout=15) as resp:

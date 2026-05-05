@@ -10,7 +10,6 @@ import statistics
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-
 try:
     import torch
     _HAVE_TORCH = True
