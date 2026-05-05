@@ -21,7 +21,6 @@ import json
 import sys
 from pathlib import Path
 
-import numpy as np
 
 # Allow `python loop/manual_mutation.py` from repo root.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))

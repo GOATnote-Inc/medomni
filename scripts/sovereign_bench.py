@@ -35,7 +35,6 @@ import uuid
 from pathlib import Path
 
 import httpx
-import yaml
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))

@@ -47,7 +47,6 @@ import argparse
 import os
 import pickle
 import sys
-from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -236,7 +235,7 @@ def merge_with_seed(openem_g: Any, seed_path: Path) -> Any:
 def validate(g: Any) -> bool:
     """Run a couple of sanity queries that catch construction bugs."""
     try:
-        import networkx as nx  # noqa: PLC0415
+        import networkx as nx  # noqa: PLC0415, F401
     except ImportError:
         return False
 

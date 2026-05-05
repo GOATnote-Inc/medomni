@@ -16,7 +16,6 @@ import inspect
 
 from agent.critique import CritiqueRequest
 from agent.llm_client import AnthropicClient, MutationRequest
-from agent.mutate import Candidate
 from agent.safety import UnsafeSourceError, compile_candidate
 from kernels.base.mla_decode_numpy import (
     MLAConfig,
