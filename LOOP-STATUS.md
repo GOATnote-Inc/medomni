@@ -38,7 +38,43 @@ Hard rules below come from CLAUDE.md, user directive, and durable memories:
 - Author email: `b@thegoatnote.com`. One Co-Authored-By per commit.
 - One substantive commit per branch (auto-merger races second pushes — `feedback_auto_merger_squash_race`).
 
+## ⚠ ESCALATION (open, user-action) — training pipeline partially stalled
+
+Surfaced iter-14, 2026-05-05. The Karpathy loop on the 3-pod fleet is **80% healthy** but has three concrete handoffs broken simultaneously. Generation is alive (narwhal 100% util, catfish 81% util, both `factory_loop.py` running, narwhal data-queue last write `2026-05-05 09:53 UTC` = 10 min before probe). Judge endpoint alive on lobster. **What's broken:**
+
+| Stage | Symptom | Recovery (user-action — babysitter cannot fire per harmony contract) |
+|---|---|---|
+| **Training** | V1 finished 2026-05-03; V2 SFT has not fired ~2 days later. lobster `pgrep -af train_peft\|megatron` empty. Continuous factory data accumulating with nowhere to go. | Fire V2 SFT on lobster per `findings/2026-05-01-medgemma-recipe/MEDOMNI-NEMOTRON-RECIPE.md` |
+| **Deploy** | catfish `curl /v1/lora/list` → 404. **Public demo at `/4UWHAt` is still serving V0 base, not V1.** | Export V1 PEFT adapter from lobster → upload to catfish → restart `vllm-omni-b300` with `--enable-lora --lora-modules v1=/path/to/v1` → smoke `/api/agent` |
+| **Eval** | No `results/v1-imaging-peft-2026-05/CARD.md` exists. V0→V1 paired CI never computed. | Run `sovereign_bench.py` paired V0 vs V1 on `corpus/pins/healthbench-hard-1000.yaml`, ~2 hr on lobster |
+
+Once these land, the loop closes and clinical reasoning starts improving every cycle. Without them, factory data accumulates while the public demo stays on V0.
+
 ## Iteration log (newest first)
+
+### iter-14 · 2026-05-05 02:55 PT — fleet probe authorized, real picture surfaced
+
+User asked iter-13: "is the Karpathy loop generating meaningful improvement continually?" My initial answer was "no, stalled." User authorized parallel read-only probes on all 3 pods → **corrected synthesis above**: generation + judge + inference are alive, the V1→V2 training + V1 deploy + V1 eval handoffs are the actual broken parts.
+
+**Probe data (read-only ssh, 2026-05-05 09:53 UTC):**
+
+| Pod | GPU util | Memory used | Active processes |
+|---|---|---|---|
+| narwhal H200 | **100%** | 138/144 GB | vllm-Nemotron-3-Nano-30B-A3B-BF16 + factory_loop.py (data-queue: 963 raw items, last write 10 min ago) |
+| catfish B300 | **81%** | 235/275 GB | vllm-omni-b300 + vllm-judge + vllm-rerank + vllm-embed (uptime 2-5 days) + factory_loop.py |
+| lobster H200 | 0% | 67 GB | VLLM::EngineCore (judge, idle between requests). NO train_peft. Last training log `prod_train.log` 2026-05-03 07:27. |
+
+**Two durable lessons saved to memory:**
+1. `feedback_escalate_training_stalls_immediately.md` — never defer training-stage stalls for dev-side polish.
+2. `feedback_check_each_pipeline_stage_separately.md` — 5-stage pipeline on different pods; one pod's signal tells you about that stage only. iter-13 mistake: equated lobster-idle with whole-loop stalled.
+
+**Charter delta needed:** iter-4's fleet-pulse step probes only lobster heartbeat. Should probe ALL FIVE handoffs (generate / judge / train / deploy / eval) per the new memory rule. iter-15 will codify in the Charter section above.
+
+**Lint progress unaffected this iter:** 121 → 26 projected after #54 + #56 land. No new lint wedge fired — focus was pipeline investigation.
+
+**Live URL smoke:** `/4UWHAt/receipts` 200 — public demo healthy (still serving V0 base).
+
+**Next:** iter-15 will (1) check #54 + #56 + this status PR merges, (2) update Charter with 5-stage fleet pulse, (3) if user has fired any of the three open handoffs, surface new V1 CARD or LoRA endpoint signal.
 
 ### iter-13 · 2026-05-05 02:30 PT — UP037 campaign executed, 1 latent bug surfaced
 
