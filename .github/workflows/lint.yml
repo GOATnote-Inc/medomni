@@ -42,8 +42,21 @@ jobs:
             detect-secrets scan --all-files --exclude-files '\.lock$|results/.*' > /dev/null
           fi
 
-      - name: Gitleaks scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
+      # TruffleHog OSS — verifier-based secret scanning. Replaces gitleaks-action
+      # (which moved to a paid-license model in 2025). Aligns medomni with the
+      # NVIDIA core OSS convention used by NVIDIA/bionemo-framework,
+      # NVIDIA/Model-Optimizer, NVIDIA/dsx-github-actions/.../trufflehog-scan,
+      # NVIDIA/terraform-provider-ngc, NVIDIA/nvflow. Apache-2.0 binary;
+      # AGPL-3.0 on the source — using the binary in CI does not trigger
+      # AGPL distribution obligations (no network service offered, no binary
+      # redistributed).
+      #
+      # `--results=verified,unknown` excludes unverified false-positive matches
+      # (live API checks on 700+ verifiers eliminate the FP fatigue that made
+      # gitleaks noisy on a public repo).
+      - name: TruffleHog OSS — verifier-based secret scan
+        uses: trufflesecurity/trufflehog@v3.95.2
+        with:
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --results=verified,unknown

@@ -82,8 +82,16 @@ Per [CLAUDE.md](CLAUDE.md) §2 (sovereignty contract), MedOmni runs with exactly
 
 `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `XAI_API_KEY`, etc. are blocked by:
 - The `no-cloud-llm-keys.sh` pre-commit hook
-- The `detect-secrets` baseline
-- The `gitleaks` CI workflow
+- The `detect-secrets` baseline (Yelp, Apache-2.0; aligns with the
+  `NVIDIA-NeMo` org convention used by NeMo, NeMo-Run, and NeMo-Curator)
+- **TruffleHog OSS** in CI — verifier-based scanning that actively calls
+  candidate-secret APIs to confirm a match is a live credential, not just
+  a regex hit (700+ verifiers, ~near-zero false-positive rate in
+  `--results=verified` mode). Aligns with the `NVIDIA` core convention
+  used by `NVIDIA/bionemo-framework`, `NVIDIA/Model-Optimizer`, and
+  packaged in `NVIDIA/dsx-github-actions/.../trufflehog-scan/action.yml`.
+  Replaces the previous `gitleaks-action` step (which moved to a
+  paid-license model in 2025).
 - A grep CI gate on every PR
 
 If you find yourself adding one of those keys to a script or an env-template, the design is
@@ -128,7 +136,8 @@ MedOmni is a clinical decision-support codebase. Its threat model is shaped by:
 4. **Methodology-side circularity** — addressed by held-out fixtures with non-overlapping evidence
    base, cross-family judge, and N≥3 seeded trials with deterministic decoding.
 5. **Supply-chain compromise** — addressed by revision-pinned weights in the 9-layer manifest,
-   `detect-secrets` + `gitleaks` dual-layer secret scanning, and pinned dependency versions in
+   `detect-secrets` + **TruffleHog OSS** dual-layer secret scanning (regex/entropy +
+   verifier-based, both NVIDIA OSS conventions), and pinned dependency versions in
    `pyproject.toml` + `uv.lock`.
 
 ## Disclosure timeline
