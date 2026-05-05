@@ -52,7 +52,9 @@ Architecture decision behind the patient slice: **Pattern B (dual lookup)** — 
 
 The training / eval / methodology stack below is the proof-of-quality behind that demo. Read on if you care how the model got there. Or [open the demo](https://www.thegoatnote.com/4UWHAt).
 
-For the **world-class trajectory** (V2.5 reasoning-SFT → V2.7 tool-call SFT → V3 GRPO → V3.5 DPO refusal → V_final HF release as Apache-2.0; eval gauntlet with MedAgentBench as the headline target), see the navigable index at [`findings/INDEX.md`](findings/INDEX.md). Nine pre-registered documents covering every stage; ~32-41 H200-hrs total; gated on three user-action pre-flight items per `LOOP-STATUS.md` ESCALATION block.
+For the **world-class trajectory** (V2.5 reasoning-SFT → V2.7 tool-call SFT → V3 GRPO → V3.5 DPO refusal → V_final HF release as Apache-2.0; eval gauntlet with MedAgentBench as the headline target), see the navigable index at [`findings/INDEX.md`](findings/INDEX.md). 16+ pre-registered documents covering every stage with surgical recipe additions per the iter-38 4-agent improvement-dimensions synthesis; ~32-41 H200-hrs total.
+
+**Live status (2026-05-05):** all 3 user-action pre-flight blockers cleared (HF_TOKEN install, lobster Stage B prune, Omni BF16 base download). V2.5 reasoning-SFT **production training in flight** on lobster H200 (3243-step full epoch, ~22 hr wall-clock, seq=1536 + LoRA r=64 on attention/Mamba projectors + mlp1). Per-stage recipe amendments landed: V2.7 → Megatron-Bridge cookbook (12.4× speedup vs HF PEFT-eager); V3 → +PRM channel at weight 0.15 (Med-PRM EMNLP 2025 +13.5pp on MedQA-class); V3.5 → Cal-DPO + `<abstain/>` token + Health-ORSC-Bench joint ship rule. V_final inference scaffolding (system prompt + verifier-vote + Skills) staged at [`mvp/medomni-inference/`](mvp/medomni-inference/) per the synthesis.
 
 ---
 
