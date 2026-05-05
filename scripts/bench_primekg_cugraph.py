@@ -218,7 +218,7 @@ def main() -> int:
     pickle_path = Path(args.primekg_path)
     out_path = Path(args.out)
 
-    print(f"[bench] dispatching subprocess workers per backend...")
+    print("[bench] dispatching subprocess workers per backend...")
     suites: dict[str, dict] = {}
     for backend in ("cpu", "cugraph"):
         print(f"[bench]  spawning {backend} worker...")

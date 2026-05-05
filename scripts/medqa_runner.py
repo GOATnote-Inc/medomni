@@ -155,9 +155,9 @@ def do_dry_run(args: argparse.Namespace, run_id: str) -> int:
     est_cost = planned_calls * 0.0075
 
     print("(dry-run) medqa_runner.py plan:")
-    print(f"  benchmark        : medqa")
-    print(f"  role             : null-result control "
-          f"(|harness - baseline| <= 0.01 noise floor)")
+    print("  benchmark        : medqa")
+    print("  role             : null-result control "
+          "(|harness - baseline| <= 0.01 noise floor)")
     print(f"  manifest         : {manifest_path}")
     print(f"  out              : {out_path}")
     print(f"  seed             : {args.seed}")
@@ -166,7 +166,7 @@ def do_dry_run(args: argparse.Namespace, run_id: str) -> int:
     print(f"  planned api calls: {planned_calls}")
     print(f"  est cost usd     : ~{est_cost:.2f}")
     print(f"  model            : {MODEL_ID}")
-    print(f"  grader           : exact-match (A/B/C/D)")
+    print("  grader           : exact-match (A/B/C/D)")
     print(f"  manifest status  : {'ok' if manifest_ok else 'placeholder'}")
     print("(dry-run) no network activity; no anthropic SDK import")
 

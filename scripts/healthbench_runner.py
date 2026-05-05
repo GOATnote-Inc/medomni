@@ -622,7 +622,7 @@ def do_dry_run(args: argparse.Namespace, run_id: str) -> int:
     print(f"  budget_cap_usd   : {args.budget_cap_usd}")
     print(f"  planned api calls: {planned_calls}")
     print(f"  model            : {MODEL_ID}")
-    print(f"  grader           : simple-evals@ee3b0318 (bridge; heuristic judge default)")
+    print("  grader           : simple-evals@ee3b0318 (bridge; heuristic judge default)")
     print("(dry-run) no network activity; no anthropic SDK import")
 
     payload = {

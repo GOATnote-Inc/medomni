@@ -123,7 +123,7 @@ def _smoke_pipeline(g: Any, out_dir: Path) -> dict[str, Any]:
     print(f"[smoke] node count: {len(nodes)}")
     # Stage 2 — node text composition
     texts = {n: _node_text(g, n) for n in nodes[:25]}  # sample for smoke
-    print(f"[smoke] sample node texts (first 3):")
+    print("[smoke] sample node texts (first 3):")
     for n, t in list(texts.items())[:3]:
         print(f"  {n[:40]:40s}  {t[:120]}{'...' if len(t) > 120 else ''}")
     # Stage 4 — Leiden via networkx fallback (community.greedy_modularity)
@@ -163,9 +163,9 @@ def _full_build(g: Any, embedding_model: str, out_dir: Path) -> int:
     print("[full-build] not yet implemented; would do:")
     print(f"  - load embedding model: {embedding_model}")
     print(f"  - embed {g.number_of_nodes()} nodes (batch of 64, fp16)")
-    print(f"  - compute Leiden communities via cugraph (nx-cugraph backend)")
+    print("  - compute Leiden communities via cugraph (nx-cugraph backend)")
     print(f"  - build cuVS IVF-PQ index over embeddings, persist to {out_dir}/cuvs_index.bin")
-    print(f"  - persist manifest.json with provenance + cuVS params + Leiden resolution")
+    print("  - persist manifest.json with provenance + cuVS params + Leiden resolution")
     print()
     print("To implement: see findings/research/2026-04-29-graph-rag-rethink/synthesis.md")
     print("for the architecture; cite the cuVS optimization blog and nx-cugraph docs")
