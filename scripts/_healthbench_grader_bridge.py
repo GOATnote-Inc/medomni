@@ -113,7 +113,7 @@ class RubricItem:
         return {"criterion": self.criterion, "points": self.points, "tags": self.tags}
 
     @classmethod
-    def from_dict(cls, d: dict) -> "RubricItem":
+    def from_dict(cls, d: dict) -> RubricItem:
         return cls(criterion=d["criterion"], points=d["points"], tags=d["tags"])
 
 

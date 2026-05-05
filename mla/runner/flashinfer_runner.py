@@ -312,7 +312,7 @@ class FlashInferMLAHarness:
         kpe_dense = _gather(self.kpe_cache)
         return ckv_dense, kpe_dense
 
-    def run(self) -> "torch.Tensor":
+    def run(self) -> torch.Tensor:
         """One MLA decode call. Returns output tensor shape (B, H, D_ckv)."""
         cfg = self.cfg
         if cfg.backend == "cutlass":
@@ -335,7 +335,7 @@ class FlashInferMLAHarness:
 
     # ---- CUDA Graph path (H6.1) ----
 
-    def prepare_cuda_graph(self) -> "torch.cuda.CUDAGraph":
+    def prepare_cuda_graph(self) -> torch.cuda.CUDAGraph:
         """Capture a CUDA Graph of one MLA decode call for fast replay.
 
         Requires cfg.use_cuda_graph=True at construction. Pre-allocates
@@ -382,14 +382,14 @@ class FlashInferMLAHarness:
             out=out_buf,
         )
 
-    def run_graph(self) -> "torch.Tensor":
+    def run_graph(self) -> torch.Tensor:
         """Replay the captured CUDA Graph. Must call prepare_cuda_graph() first."""
         if not hasattr(self, "_graph"):
             raise RuntimeError("run_graph: call prepare_cuda_graph() first")
         self._graph.replay()
         return self._graph_output
 
-    def run_torch_reference(self) -> "torch.Tensor":
+    def run_torch_reference(self) -> torch.Tensor:
         """Torch absorbed-form reference. float32 on GPU."""
         ckv_dense, kpe_dense = self.gather_cache_dense()
         return torch_mla_decode_absorbed(

@@ -67,7 +67,13 @@ def validate(
     run_tier2: bool = True,
     config_sweep: list[Inputs] | None = None,
     adversarial_inputs: list[Inputs] | None = None,
-    invariants: "list[InvariantCheck] | None" = None,
+    # TODO(lint-debt): `InvariantCheck` is referenced here but never imported
+    # or defined in this module. The quoted form keeps PEP 563 deferred-eval
+    # happy at runtime, but it's a latent bug — the annotation has no
+    # resolvable target. Either import the type from its real home, redesign
+    # this parameter's contract, or drop the annotation. Surfaced by the
+    # iter-13 UP037 campaign — findings/2026-05-05-up037-safety-plan/SPEC.md
+    invariants: "list[InvariantCheck] | None" = None,  # noqa: UP037, F821
     anti_gaming: bool = False,
     shape_hint: dict[str, int] | None = None,
 ) -> ValidationResult:
