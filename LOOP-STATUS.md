@@ -25,6 +25,18 @@ Cache cost note: 15 min cadence forces a cache miss every wake (5 min TTL). User
 
 ## Iteration log (newest first)
 
+### iter-3 · 2026-05-05 00:15 PT — orphan recovery + 2 durable rules
+
+**State:** medomni#37 `MERGED` at 07:10:00Z (squash-merged b6fbef5 — `headRefOid` confirms the auto-merger raced before iter-2's follow-up commit `cf67cd6` could land). main now at `73e6823`. cf67cd6 was orphaned on the deleted feature branch; main is missing the `tests/test_clinical_case.py` ignore. `unit` will still fail on main (same `validate_artifacts` ModuleNotFoundError). Live smoke: `/4UWHAt/` 200 (308 trailing-slash redirect on bare path — correct), imaging assets 200.
+
+**Actions:**
+- Cherry-picked `cf67cd6` onto a fresh branch `ci/greenlight-test-clinical-case` off main → opened **medomni#38**. Same surgical addopts edit, this time as its own PR so it can't be raced by another follow-up (none planned).
+- Saved 2 durable feedback memories: `feedback_auto_merger_squash_race.md` (today's failure mode) + `feedback_up037_unmasks_f821.md` (the latent-bug discovery from iter-2's aborted auto-fix). Both indexed in MEMORY.md.
+
+**Open:** medomni#38 awaiting CI + auto-merger.
+
+**Next:** iter-4 will check #38's merge state, smoke main's CI on `73e6823` post-merge, decide whether to start a careful per-rule lint cleanup PR (UP037 needs sky review per the new rule).
+
 ### iter-1 · 2026-05-04 23:48 PT — PR triage + worktree audit
 
 **State:** medomni#36 (24-commit landing) — `lint` + `unit` failing, `safety-engineer-review`/`secrets-scan`/`manifest-determinism` passing, safety-engineer returned `COMMENT_AND_WAIT` (could not parse rubric JSON, awaiting human). prism42-nemotron-med#37 (README refresh) — **MERGED** by auto-merger. Live smoke — `/4UWHAt/` returns 200 (308 trailing-slash redirect on bare `/4UWHAt` is correct), imaging assets serve 200. 9 worktrees with dirty state.
