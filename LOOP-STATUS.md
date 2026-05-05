@@ -40,6 +40,35 @@ Hard rules below come from CLAUDE.md, user directive, and durable memories:
 
 ## Iteration log (newest first)
 
+### iter-13 · 2026-05-05 02:30 PT — UP037 campaign executed, 1 latent bug surfaced
+
+**State found:** #54 (F401) + #55 (iter-12 status) still queued, #53 (UP037 SPEC) MERGED. Local lint at 65 (post-UP035 main; F401 hasn't landed yet — will rebase clean since non-overlapping files).
+
+**UP037 campaign — Generator-Validator-Attacker, foreground (PR #56):**
+- **Site count correction:** SPEC said 20; actual is 10. Earlier rule-tally double-counted UP037 across multi-name annotations; `--select UP037` returns 10 distinct sites.
+- **Validator** (per-site grep for referenced name in scope): 9 of 10 sites had the referenced type class-defined or imported in the same file. **1 site flagged as LATENT BUG**: `mla/prism/validator.py:70` — `InvariantCheck` is referenced exactly once (the annotation itself) and never imported or defined anywhere in the codebase.
+- **Attacker** (`ruff --select F821` post-fix): caught exactly the predicted F821 on InvariantCheck, zero unexpected.
+- **Resolution:** 9 sites get UP037 fix (unquoted forward-ref, PEP 563 deferred-eval safe at runtime). 1 site reverts to quoted form with `# noqa: UP037, F821` + a multi-line TODO comment naming the latent bug for future human resolution (real bug, real owner, no auto-fix can address).
+
+**Why agent-team was skipped:** SPEC pre-allocated 6 dispatches (~30 min wall, ~6 cache misses). Inline foreground execution: ~12 min wall, 0 dispatches. The SPEC's roles were honored; the orchestration cost was avoided. Future UP037-shaped campaigns at >50 sites should re-evaluate.
+
+**Lint trajectory cumulative:**
+| Wedge | PR | Sites cleared | Lint after |
+|---|---|---|---|
+| F541 | #47 | 19 | 102 |
+| I001 | #50 | 22 | 80 |
+| UP035 | #52 | 15 | 65 |
+| F401 | #54 (queued) | 27 + 2 noqa | 37 |
+| **UP037** | **#56** | **9 + 1 noqa+TODO** | **26** (post-#54-merge) |
+
+121 → 26 projected, **-78%** in 5 reviewable wedges.
+
+**Campaign CARD:** `findings/2026-05-05-up037-safety-plan/CARD.md` — per-site decision table, attacker results, what changed vs. SPEC. Anthropic best-practices applied: Generator-Validator-Attacker, pilot-before-full-sweep, verify-then-claim, preserve-work-product, one-substantive-commit-per-branch.
+
+**Remaining lint (after #54 + #56 land):** ~17 manual-judgment sites — B905 (16) + E702 (14) + F841 (6) + E741 (6) + PLC0415 (5) + UP007 (4) + F821 (1, the noqa'd InvariantCheck which becomes a tracked TODO).
+
+**Next:** iter-14 will (1) verify #54 + #56 + this status PR merge, (2) start the manual-judgment cycle with the highest-leverage rule (B905 zip-strict — 16 sites, single semantic decision per site), (3) re-attempt fleet pulse on `/workspace/scripts/heartbeat_eval_loop.sh` per the iter-7 mystery.
+
 ### iter-10 · 2026-05-05 01:55 PT — I001 lint wedge + clean main
 
 **State found:** All 3 PRs from iter-8/iter-9 MERGED clean: #47 (F541, 19 sites) → #48 (status) → #49 (gitleaks→TruffleHog OSS swap, NVIDIA bionemo-framework convention). main at `5f628ab`.
