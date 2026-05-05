@@ -40,6 +40,24 @@ Hard rules below come from CLAUDE.md, user directive, and durable memories:
 
 ## Iteration log (newest first)
 
+### iter-7 · 2026-05-05 01:55 PT — receipts live + heartbeat mystery resolved + 1 durable rule
+
+**State found:** all 5 PRs from iter-6 (#41 #43 #44 #45) MERGED. main at `a6f77c3`. **Live URL `/4UWHAt/receipts` initially returned 404.**
+
+**Root cause + fix:** Vercel auto-deploy on PR merge isn't wired here — the latest production deploy was 3 hours stale. Manual `vercel --prod` fixed it but **almost shipped wrong content** because I was on `docs/loop-iter-6` branch (which pre-dates #44). The deploy bundle came from my stale CWD, not the GitHub main HEAD. After `git checkout main && git pull`, redeployed (`medomni-dny473xy5`), aliased to `medomni.vercel.app`, both `medomni.vercel.app/4UWHAt/receipts` and `www.thegoatnote.com/4UWHAt/receipts` now return 200 with "Audit receipts" content rendering. Saved durable rule `feedback_vercel_deploy_from_main.md`: ALWAYS `git checkout main && git pull --ff-only` before any `vercel --prod`.
+
+**Heartbeat-path mystery resolved (read-only ssh probe to lobster):**
+- Documented path `/home/<user>/data-queue/heartbeat.jsonl` does **not exist** on lobster.
+- Real heartbeat process found via `pgrep -af heartbeat` — PID 423531 running `bash /workspace/scripts/heartbeat_eval_loop.sh`. Output presumably under `/workspace/`.
+- No `train_peft` or `factory_loop` processes running on lobster currently. V1 PEFT shipped 2026-05-03 per README, V2 SFT may not have started yet (or runs under a different process name).
+- Implication: the harmony-contract fleet pulse needs to probe `/workspace/`, not `~/data-queue/`. Carrying forward to iter-8 to confirm exact heartbeat output path before updating the charter — won't write into prism42-nemotron-med's CLAUDE.md unilaterally (write-boundary contract); will surface for user review.
+
+**Smoke (post-deploy):** `/4UWHAt/` 308 trailing-slash redirect, `/4UWHAt/receipts` 200, imaging assets 200. All live.
+
+**Memory:** `feedback_vercel_deploy_from_main.md` saved + indexed in MEMORY.md.
+
+**Next:** iter-8 will (1) probe `/workspace/` on lobster for the actual heartbeat output path, (2) extend probe to narwhal + catfish, (3) update charter's fleet-pulse step with the corrected paths once confirmed, (4) check for new CARDs in `findings/` or `results/` produced since iter-7.
+
 ### iter-6 · 2026-05-05 01:25 PT — parallel ship: receipts page + HF model card draft
 
 **Trigger:** user said "both as parallel" on the iter-5 strategic menu (Option A receipts + Option B HF model card).
