@@ -40,7 +40,7 @@ class Candidate:
         iteration: int = 0,
         parent_hash: str | None = None,
         raw_llm: str = "",
-    ) -> "Candidate":
+    ) -> Candidate:
         fn = compile_candidate(source)
         h = hashlib.sha256(source.encode("utf-8")).hexdigest()[:16]
         return cls(

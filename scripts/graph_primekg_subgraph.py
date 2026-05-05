@@ -167,7 +167,7 @@ class PrimeKG:
         self._name_set = set(self.name_to_index.keys())
 
     @classmethod
-    def from_pickle(cls, path: Path | str) -> "PrimeKG":
+    def from_pickle(cls, path: Path | str) -> PrimeKG:
         path = Path(path)
         if not path.exists():
             raise FileNotFoundError(f"PrimeKG pickle not found: {path}")

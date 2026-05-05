@@ -51,7 +51,7 @@ class Chunk:
     n_tokens_estimated: int
 
     @classmethod
-    def from_jsonl_line(cls, line: str) -> "Chunk":
+    def from_jsonl_line(cls, line: str) -> Chunk:
         d = json.loads(line)
         return cls(
             id=d["id"],
@@ -126,7 +126,7 @@ class HybridRetriever:
         rerank_model: str = "nvidia/llama-3.2-nv-rerankqa-1b-v2",
         use_cuvs: bool = False,
         **kwargs,
-    ) -> "HybridRetriever":
+    ) -> HybridRetriever:
         chunks = [
             Chunk.from_jsonl_line(line)
             for line in chunks_path.read_text().splitlines()
