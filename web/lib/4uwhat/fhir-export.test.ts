@@ -23,6 +23,7 @@ import {
   SAMPLE_LABS,
   SAMPLE_VITALS,
   SAMPLE_MEDS,
+  SAMPLE_IMAGING,
 } from "./sample-data";
 
 let passed = 0;
@@ -118,6 +119,80 @@ test("Bundle includes exactly one AllergyIntolerance (NKA stub)", () => {
   assertEq(al.length, 1, "allergy count");
 });
 
+test("Bundle.entry includes one ImagingStudy per SAMPLE_IMAGING", () => {
+  const b = buildFhirBundle();
+  const studies = b.entry.filter((e) => e.resource.resourceType === "ImagingStudy");
+  assertEq(studies.length, SAMPLE_IMAGING.length, "imaging count");
+  for (const s of studies) {
+    if (s.resource.resourceType !== "ImagingStudy") throw new Error("type narrow");
+    assertEq(s.resource.status, "available", `${s.resource.id} status`);
+    assert(typeof s.resource.subject?.reference === "string"
+      && s.resource.subject.reference.startsWith("urn:uuid:"),
+      `${s.resource.id} has urn:uuid subject reference`);
+    assert(Array.isArray(s.resource.modality) && s.resource.modality.length === 1,
+      `${s.resource.id} has exactly one modality coding`);
+    assert(typeof s.resource.started === "string" && s.resource.started.length > 0,
+      `${s.resource.id} has started date`);
+    // Description carries region + read narrative.
+    assert(typeof s.resource.description === "string"
+      && s.resource.description.includes("—"),
+      `${s.resource.id} description has region + read narrative`);
+    // Interpreter present (display-only Practitioner reference).
+    assert(Array.isArray(s.resource.interpreter)
+      && s.resource.interpreter.length === 1
+      && typeof s.resource.interpreter[0]?.display === "string",
+      `${s.resource.id} has display-only interpreter`);
+    // numberOfSeries / numberOfInstances populated (>= 1).
+    assert(typeof s.resource.numberOfSeries === "number" && s.resource.numberOfSeries >= 1,
+      `${s.resource.id} numberOfSeries >= 1`);
+    assert(typeof s.resource.numberOfInstances === "number" && s.resource.numberOfInstances >= 1,
+      `${s.resource.id} numberOfInstances >= 1`);
+  }
+});
+
+test("ImagingStudy modality codings honor DCM-vs-text policy", () => {
+  const b = buildFhirBundle();
+  const byKind = new Map<string, string>();
+  for (const im of SAMPLE_IMAGING) byKind.set(`imaging-${im.id}`, im.kind);
+  const studies = b.entry.filter((e) => e.resource.resourceType === "ImagingStudy");
+  for (const s of studies) {
+    if (s.resource.resourceType !== "ImagingStudy") throw new Error("type narrow");
+    const kind = byKind.get(s.resource.id) ?? "";
+    const m = s.resource.modality[0];
+    if (kind === "X-ray") {
+      assertEq(m.system, "http://dicom.nema.org/resources/ontology/DCM",
+        "X-ray modality system DCM");
+      assertEq(m.code, "CR", "X-ray modality code CR");
+    } else if (kind === "MRI") {
+      assertEq(m.system, "http://dicom.nema.org/resources/ontology/DCM",
+        "MRI modality system DCM");
+      assertEq(m.code, "MR", "MRI modality code MR");
+    } else {
+      // Panoramic / other — no high-confidence DCM pin; display-only.
+      assert(m.system === undefined && m.code === undefined,
+        `${kind} modality should be display-only (no system/code)`);
+      assert(typeof m.display === "string" && m.display.length > 0,
+        `${kind} modality has display string`);
+    }
+  }
+});
+
+test("ImagingStudy fullUrls are deterministic across rebuilds", () => {
+  const a = buildFhirBundle(new Date("2026-05-04T00:00:00.000Z"));
+  const b = buildFhirBundle(new Date("2026-05-04T12:00:00.000Z"));
+  const studyUrlsA = a.entry
+    .filter((e) => e.resource.resourceType === "ImagingStudy")
+    .map((e) => e.fullUrl);
+  const studyUrlsB = b.entry
+    .filter((e) => e.resource.resourceType === "ImagingStudy")
+    .map((e) => e.fullUrl);
+  assertEq(studyUrlsA.length, studyUrlsB.length, "study count stable");
+  for (let i = 0; i < studyUrlsA.length; i++) {
+    assertEq(studyUrlsA[i], studyUrlsB[i],
+      `ImagingStudy fullUrl deterministic across rebuilds at index ${i}`);
+  }
+});
+
 test("Each entry has urn:uuid: fullUrl", () => {
   const b = buildFhirBundle();
   for (const e of b.entry) {
@@ -126,7 +201,7 @@ test("Each entry has urn:uuid: fullUrl", () => {
   }
 });
 
-test("All Conditions/Observations/Meds/Allergies subject reference the Patient", () => {
+test("All Conditions/Observations/Meds/Allergies/ImagingStudy subject reference the Patient", () => {
   const b = buildFhirBundle();
   const patient = b.entry.find((e) => e.resource.resourceType === "Patient");
   assert(patient !== undefined, "patient entry exists");
@@ -135,8 +210,12 @@ test("All Conditions/Observations/Meds/Allergies subject reference the Patient",
     const r = e.resource;
     if (r.resourceType === "Patient") continue;
     let ref = "";
-    if (r.resourceType === "Condition" || r.resourceType === "Observation"
-        || r.resourceType === "MedicationRequest") {
+    if (
+      r.resourceType === "Condition" ||
+      r.resourceType === "Observation" ||
+      r.resourceType === "MedicationRequest" ||
+      r.resourceType === "ImagingStudy"
+    ) {
       ref = r.subject.reference;
     } else if (r.resourceType === "AllergyIntolerance") {
       ref = r.patient.reference;
@@ -156,15 +235,18 @@ test("Bundle round-trips through JSON.parse(JSON.stringify(...)) identically", (
   assertEq(round.entry.length, b.entry.length, "round-trip entry count");
 });
 
-test("formatBundleSummary produces a non-empty human summary", () => {
+test("formatBundleSummary produces a non-empty human summary including ImagingStudy", () => {
   const b = buildFhirBundle();
   const summary = formatBundleSummary(b);
   assert(summary.length > 0, "non-empty");
   assert(summary.includes("Patient"), "mentions Patient");
+  assert(summary.includes("ImagingStudy"), "mentions ImagingStudy");
   assert(summary.includes("KB"), "mentions size");
   const stats = bundleStats(b);
   assert(stats.totalEntries === b.entry.length, "stats totalEntries matches");
   assert(stats.byteSize > 0, "byteSize > 0");
+  assertEq(stats.resourceCounts.ImagingStudy ?? 0, SAMPLE_IMAGING.length,
+    "stats include ImagingStudy count");
 });
 
 console.log(`\n  ${passed} passed, ${failed} failed`);

@@ -28,6 +28,7 @@ const DEFAULT_SCOPES = [
   "MedicationRequest",
   "AllergyIntolerance",
   "DiagnosticReport",
+  "ImagingStudy",
 ] as const;
 
 export type FhirScope = (typeof DEFAULT_SCOPES)[number];
@@ -38,6 +39,7 @@ const CAPS = {
   MedicationRequest: 8,
   AllergyIntolerance: 6,
   DiagnosticReport: 4,
+  ImagingStudy: 5,
 } as const;
 
 const OBS_LOOKBACK_MS = 365 * 24 * 60 * 60 * 1000; // 12 months
@@ -52,6 +54,7 @@ export interface PatientContextResult {
     MedicationRequest: number;
     AllergyIntolerance: number;
     DiagnosticReport: number;
+    ImagingStudy: number;
   };
   truncated: boolean;
 }
@@ -125,6 +128,22 @@ interface FhirDiagnosticReport {
   issued?: string;
   conclusion?: string;
   status?: string;
+}
+interface FhirImagingStudy {
+  resourceType: "ImagingStudy";
+  id?: string;
+  status?: string;
+  // Modality is a list of DCM Codings on the resource itself (FHIR R4 §17.5.2).
+  modality?: Coding[];
+  started?: string;
+  description?: string;
+  numberOfSeries?: number;
+  numberOfInstances?: number;
+  // Practitioner reference; we only need the display when it's a contained
+  // or display-only reference (matches what the export emits).
+  interpreter?: Array<{ reference?: string; display?: string }>;
+  procedureCode?: CodeableConcept[];
+  note?: Array<{ text?: string }>;
 }
 
 interface BundleEntry<T> {
@@ -377,13 +396,23 @@ export async function getPatientContext(args: {
       ).catch((e: Error) => ({ _error: e.message }) as { _error: string })
     : Promise.resolve(null);
 
-  const [condRaw, obsRaw, medsRaw, allergiesRaw, reportsRaw] = await Promise.all([
-    conditionsP,
-    observationsP,
-    medsP,
-    allergiesP,
-    reportsP,
-  ]);
+  const imagingP = scopeSet.has("ImagingStudy")
+    ? fhirGet<Bundle<FhirImagingStudy>>(
+        baseUrl,
+        token,
+        `ImagingStudy?patient=${enc(patientId)}&_sort=-started&_count=10`,
+      ).catch((e: Error) => ({ _error: e.message }) as { _error: string })
+    : Promise.resolve(null);
+
+  const [condRaw, obsRaw, medsRaw, allergiesRaw, reportsRaw, imagingRaw] =
+    await Promise.all([
+      conditionsP,
+      observationsP,
+      medsP,
+      allergiesP,
+      reportsP,
+      imagingP,
+    ]);
 
   const sectionErr = (
     raw: Bundle<unknown> | null | { _error: string },
@@ -438,6 +467,24 @@ export async function getPatientContext(args: {
     );
     if (all.length > CAPS.DiagnosticReport) truncated = true;
     return all.slice(0, CAPS.DiagnosticReport);
+  })();
+
+  const imaging: FhirImagingStudy[] = (() => {
+    if (!imagingRaw || sectionErr(imagingRaw)) return [];
+    const all = bundleResources<FhirImagingStudy>(
+      imagingRaw as Bundle<FhirImagingStudy>,
+    );
+    // Sort by `started` descending. Resources without `started` sink to the
+    // bottom (Date.parse of undefined → NaN → 0).
+    const sorted = [...all].sort((a, b) => {
+      const ta = a.started ? Date.parse(a.started) : 0;
+      const tb = b.started ? Date.parse(b.started) : 0;
+      const sa = Number.isNaN(ta) ? 0 : ta;
+      const sb = Number.isNaN(tb) ? 0 : tb;
+      return sb - sa;
+    });
+    if (sorted.length > CAPS.ImagingStudy) truncated = true;
+    return sorted.slice(0, CAPS.ImagingStudy);
   })();
 
   // ---- render -------------------------------------------------------------
@@ -536,6 +583,37 @@ export async function getPatientContext(args: {
   }
 
   out.push("");
+  out.push("## Imaging Studies");
+  const imagingErr = sectionErr(imagingRaw);
+  if (imagingErr) {
+    out.push(`*(Imaging studies unavailable: ${imagingErr.slice(0, 120)})*`);
+  } else if (imaging.length === 0) {
+    out.push("- (none on record)");
+  } else {
+    for (const im of imaging) {
+      // Modality narrative: prefer DCM display, fall back to code, then to
+      // a literal "(modality unknown)".
+      const m = im.modality?.[0];
+      const modality = m?.display || m?.code || "(modality unknown)";
+      const d = fmtDate(im.started);
+      const desc = im.description ? ` — ${im.description.slice(0, 200)}` : "";
+      const interp = im.interpreter?.[0]?.display
+        ? ` (read by ${im.interpreter[0].display})`
+        : "";
+      const counts = (() => {
+        const s = typeof im.numberOfSeries === "number" ? im.numberOfSeries : null;
+        const i = typeof im.numberOfInstances === "number" ? im.numberOfInstances : null;
+        if (s === null && i === null) return "";
+        const parts: string[] = [];
+        if (s !== null) parts.push(`${s} series`);
+        if (i !== null) parts.push(`${i} instance${i === 1 ? "" : "s"}`);
+        return ` [${parts.join(", ")}]`;
+      })();
+      out.push(`- ${modality}${d ? ` [${d}]` : ""}${counts}${interp}${desc}`);
+    }
+  }
+
+  out.push("");
   out.push(
     "_Source: local Medplum FHIR R4 sandbox · Synthea synthetic data · spike Pattern B (no PrimeKG merge)._",
   );
@@ -552,6 +630,7 @@ export async function getPatientContext(args: {
       MedicationRequest: meds.length,
       AllergyIntolerance: allergies.length,
       DiagnosticReport: reports.length,
+      ImagingStudy: imaging.length,
     },
     truncated,
   };

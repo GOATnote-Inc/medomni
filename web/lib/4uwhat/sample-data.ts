@@ -79,6 +79,20 @@ export interface SampleImaging {
   region: string;
   read: string;
   radiologist: string;
+  // OPTIONAL FHIR-friendly extensions consumed only by lib/4uwhat/fhir-export.ts.
+  // Track B's UI does NOT read these — they're additive metadata so the FHIR
+  // ImagingStudy emitter can populate richer fields without inventing values.
+  // Backwards-compatible: every consumer that reads SampleImaging today
+  // (DetailDrawer, ImagingPanel, design-mode patient-context renderer)
+  // ignores any field it does not know about.
+  /** DICOM Study Instance UID — synthetic per-study, stable across rebuilds. */
+  studyUid?: string;
+  /** Accession number from the imaging center — synthetic. */
+  accessionNumber?: string;
+  /** Number of series in the study (1 for chest 2-view, ankle MRI, panoramic). */
+  seriesCount?: number;
+  /** Number of instances (images) across all series. */
+  instanceCount?: number;
 }
 
 export interface SampleCareTeamAppointment {
@@ -264,9 +278,42 @@ export const SAMPLE_SURGERIES: SampleSurgery[] = [
 ];
 
 export const SAMPLE_IMAGING: SampleImaging[] = [
-  { id: "cxr", date: "2026-03-08", kind: "X-ray", region: "Chest, 2-view", read: "No acute findings.", radiologist: "Dr. M. Hsu" },
-  { id: "mri", date: "2025-11-04", kind: "MRI", region: "Right ankle", read: "Grade II ATFL sprain. No fracture.", radiologist: "Dr. L. Sato" },
-  { id: "pan", date: "2024-06-12", kind: "Panoramic", region: "Dental", read: "Restorations stable.", radiologist: "Dr. T. Cohen" },
+  {
+    id: "cxr",
+    date: "2026-03-08",
+    kind: "X-ray",
+    region: "Chest, 2-view",
+    read: "No acute findings.",
+    radiologist: "Dr. M. Hsu",
+    studyUid: "1.2.840.113619.2.55.3.604688.1707.1709905200.cxr",
+    accessionNumber: "RSDIMG-2026-03-08-CXR-0001",
+    seriesCount: 2,
+    instanceCount: 2,
+  },
+  {
+    id: "mri",
+    date: "2025-11-04",
+    kind: "MRI",
+    region: "Right ankle",
+    read: "Grade II ATFL sprain. No fracture.",
+    radiologist: "Dr. L. Sato",
+    studyUid: "1.2.840.113619.2.55.3.604688.1707.1730707200.mri",
+    accessionNumber: "RSDIMG-2025-11-04-MRI-0007",
+    seriesCount: 4,
+    instanceCount: 96,
+  },
+  {
+    id: "pan",
+    date: "2024-06-12",
+    kind: "Panoramic",
+    region: "Dental",
+    read: "Restorations stable.",
+    radiologist: "Dr. T. Cohen",
+    studyUid: "1.2.840.113619.2.55.3.604688.1707.1718150400.pan",
+    accessionNumber: "COHEN-2024-06-12-PAN-0042",
+    seriesCount: 1,
+    instanceCount: 1,
+  },
 ];
 
 export const SAMPLE_CARE_TEAM: SampleCareTeamMember[] = [

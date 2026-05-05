@@ -8,12 +8,13 @@
 // system.
 //
 // FHIR R4 references:
-//   Bundle:       https://www.hl7.org/fhir/bundle.html
-//   Patient:      https://www.hl7.org/fhir/patient.html
-//   Condition:    https://www.hl7.org/fhir/condition.html
-//   Observation:  https://www.hl7.org/fhir/observation.html
-//   MedReq:       https://www.hl7.org/fhir/medicationrequest.html
-//   AllergyInt:   https://www.hl7.org/fhir/allergyintolerance.html
+//   Bundle:        https://www.hl7.org/fhir/bundle.html
+//   Patient:       https://www.hl7.org/fhir/patient.html
+//   Condition:     https://www.hl7.org/fhir/condition.html
+//   Observation:   https://www.hl7.org/fhir/observation.html
+//   MedReq:        https://www.hl7.org/fhir/medicationrequest.html
+//   AllergyInt:    https://www.hl7.org/fhir/allergyintolerance.html
+//   ImagingStudy:  https://www.hl7.org/fhir/imagingstudy.html
 //
 // LOINC mapping policy: best-effort. If we can pin a code with high
 // confidence we emit `code.coding[0]` with the LOINC system. Otherwise
@@ -30,11 +31,13 @@ import {
   SAMPLE_VITALS,
   SAMPLE_LABS,
   SAMPLE_MEDS,
+  SAMPLE_IMAGING,
   type SampleVital,
   type SampleLab,
   type SampleCondition,
   type SampleMed,
   type SamplePatient,
+  type SampleImaging,
 } from "./sample-data";
 
 // ── FHIR R4 minimal type stubs ────────────────────────────────────────
@@ -122,12 +125,33 @@ export interface FhirAllergyIntoleranceResource {
   patient: FhirReference;
 }
 
+export interface FhirAnnotation {
+  text: string;
+}
+
+export interface FhirImagingStudyResource {
+  resourceType: "ImagingStudy";
+  id: string;
+  identifier?: FhirIdentifier[];
+  status: "available";
+  modality: FhirCoding[];
+  subject: FhirReference;
+  started?: string;
+  numberOfSeries?: number;
+  numberOfInstances?: number;
+  description?: string;
+  interpreter?: FhirReference[];
+  procedureCode?: FhirCodeableConcept[];
+  note?: FhirAnnotation[];
+}
+
 export type FhirResource =
   | FhirPatientResource
   | FhirConditionResource
   | FhirObservationResource
   | FhirMedicationRequestResource
-  | FhirAllergyIntoleranceResource;
+  | FhirAllergyIntoleranceResource
+  | FhirImagingStudyResource;
 
 export interface FhirBundleEntry {
   fullUrl: string;
@@ -147,6 +171,7 @@ export interface FhirBundle {
 const LOINC = "http://loinc.org";
 const ICD10_CM = "http://hl7.org/fhir/sid/icd-10-cm";
 const SNOMED = "http://snomed.info/sct";
+const DCM = "http://dicom.nema.org/resources/ontology/DCM";
 const CLINICAL_STATUS_SYS =
   "http://terminology.hl7.org/CodeSystem/condition-clinical";
 const ALLERGY_CLINICAL_SYS =
@@ -157,6 +182,8 @@ const OBS_CATEGORY_SYS =
   "http://terminology.hl7.org/CodeSystem/observation-category";
 const IDENTIFIER_SYS = "https://medomni.example/identifier/mrn";
 const BUNDLE_ID_SYS = "https://medomni.example/identifier/export";
+const STUDY_UID_SYS = "urn:dicom:uid";
+const ACCESSION_SYS = "https://medomni.example/identifier/accession";
 
 // Browser-portable UUID v4. Falls back to a Math.random based generator
 // so this module works in jsdom-less test runners (npx tsx) and older
@@ -179,6 +206,37 @@ function uuid(): string {
 
 function urn(id: string): string {
   return `urn:uuid:${id}`;
+}
+
+// Deterministic UUID-shaped id derived from a stable string seed. Used for
+// resources where we want round-trip stability across rebuilds (e.g.
+// ImagingStudy keyed by study id) without paying for crypto digests we
+// don't have a guaranteed sync API for in every runtime. djb2-style
+// 32-bit hash blown into a v4-shaped uuid string. Not cryptographic;
+// purely a stable demo identifier.
+function deterministicUuid(seed: string): string {
+  // Two complementary 32-bit hashes give us 64 bits of seed material.
+  let h1 = 5381;
+  let h2 = 52711;
+  for (let i = 0; i < seed.length; i++) {
+    const c = seed.charCodeAt(i);
+    h1 = ((h1 << 5) + h1 + c) >>> 0; // djb2
+    h2 = ((h2 << 5) - h2 + c) >>> 0; // sdbm-ish
+  }
+  // Expand to 16 bytes by mixing the two streams.
+  const b = new Array<number>(16);
+  for (let i = 0; i < 16; i++) {
+    h1 = ((h1 ^ (h1 >>> 13)) * 0x9e3779b1) >>> 0;
+    h2 = ((h2 ^ (h2 >>> 17)) * 0x85ebca6b) >>> 0;
+    b[i] = (h1 ^ h2) & 0xff;
+  }
+  b[6] = (b[6] & 0x0f) | 0x40; // v4
+  b[8] = (b[8] & 0x3f) | 0x80; // variant
+  const h = b.map((x) => x.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(
+    16,
+    20,
+  )}-${h.slice(20, 32)}`;
 }
 
 function isoTimestamp(d: Date = new Date()): string {
@@ -461,6 +519,74 @@ function medToRequest(
   };
 }
 
+// DICOM modality mapping. The canonical code list is DICOM PS3.16 CID 29
+// "Acquisition Modality" (mirrored at http://dicom.nema.org/resources/ontology/DCM
+// — FHIR R4 §17.5.2 "Imaging Modality" cites this system explicitly).
+//
+// Policy: emit a DCM coding only when we have high confidence. For panoramic
+// dental imaging, the CID 29 code "PX" is widely used in dental DICOM but is
+// NOT a high-confidence pin from our reference set, so we fall through to a
+// `code.text`-only modality coding (`text` lives on the parent
+// FhirCodeableConcept; the FhirImagingStudy.modality field itself is a list
+// of FhirCoding, so we emit `display`-only there and let the parent
+// description carry the modality narrative). Same "no invented codes" rule
+// the rest of this file follows.
+interface ModalityPin {
+  code: string;
+  display: string;
+}
+
+const MODALITY_DCM: Record<string, ModalityPin> = {
+  // CR = Computed Radiography. Plain-film X-ray digital images are usually
+  // tagged CR (or DX = Digital Radiography). For demo plumbing we pin CR.
+  "X-ray": { code: "CR", display: "Computed Radiography" },
+  MRI: { code: "MR", display: "Magnetic Resonance Imaging" },
+  // Panoramic dental imaging: no high-confidence pin used here. Emit a
+  // display-only modality coding so the receiving system can render the
+  // human label without us inventing a code.
+};
+
+function modalityCoding(kind: string): FhirCoding {
+  const pin = MODALITY_DCM[kind];
+  if (pin) {
+    return { system: DCM, code: pin.code, display: pin.display };
+  }
+  // Fallback: display-only coding. No system, no code — this is the FHIR
+  // way of saying "modality narrative is `<kind>` but I won't pin a code
+  // I'm not confident in."
+  return { display: kind };
+}
+
+function buildImagingStudy(
+  im: SampleImaging,
+  patientFullUrl: string,
+): FhirImagingStudyResource {
+  const description = `${im.region} — ${im.read}`;
+  const identifiers: FhirIdentifier[] = [];
+  if (im.studyUid) {
+    identifiers.push({ system: STUDY_UID_SYS, value: im.studyUid });
+  }
+  if (im.accessionNumber) {
+    identifiers.push({ system: ACCESSION_SYS, value: im.accessionNumber });
+  }
+
+  const out: FhirImagingStudyResource = {
+    resourceType: "ImagingStudy",
+    id: `imaging-${im.id}`,
+    status: "available",
+    modality: [modalityCoding(im.kind)],
+    subject: { reference: patientFullUrl, display: SAMPLE_PATIENT.name },
+    started: im.date,
+    numberOfSeries: im.seriesCount ?? 1,
+    numberOfInstances: im.instanceCount ?? 1,
+    description,
+    interpreter: [{ reference: "#interpreter", display: im.radiologist }],
+    note: [{ text: im.read }],
+  };
+  if (identifiers.length > 0) out.identifier = identifiers;
+  return out;
+}
+
 // "NKA — no known drug allergies" is a real, codeable status.
 // SNOMED 409137002 = "No known drug allergy". We attach the pin
 // because it's stable and widely-used by FHIR servers.
@@ -538,7 +664,18 @@ export function buildFhirBundle(now: Date = new Date()): FhirBundle {
     });
   }
 
-  // 6. Single NKA AllergyIntolerance (Maya is NKA per the design).
+  // 6. ImagingStudy resources (one per SAMPLE_IMAGING entry). Stable
+  //    `urn:uuid` keyed off the study `id` so the round-trip test stays
+  //    deterministic and a receiver de-duplicating by fullUrl gets clean
+  //    cross-bundle identity.
+  for (const im of SAMPLE_IMAGING) {
+    entries.push({
+      fullUrl: urn(deterministicUuid(`imaging-${im.id}`)),
+      resource: buildImagingStudy(im, patientFullUrl),
+    });
+  }
+
+  // 7. Single NKA AllergyIntolerance (Maya is NKA per the design).
   entries.push({
     fullUrl: urn(uuid()),
     resource: buildNkaAllergy(patientFullUrl),
@@ -585,6 +722,7 @@ export function formatBundleSummary(b: FhirBundle): string {
     "Observation",
     "MedicationRequest",
     "AllergyIntolerance",
+    "ImagingStudy",
   ];
   const segs = order
     .filter((t) => s.resourceCounts[t])

@@ -168,7 +168,7 @@ const TOOL_SPEC = [
     function: {
       name: "get_patient_context",
       description:
-        "Retrieve a concise summary of the current patient's active conditions, recent labs, vitals, medications, allergies, and diagnostic reports from their EHR (FHIR R4). Call this in parallel with knowledge-base tools (pubmed_search, primekg_lookup) when the question involves the specific patient. Requires patientId from session context. SCOPE: this tool only fires if MEDOMNI_FHIR_BASE_URL is configured.",
+        "Retrieve a concise summary of the current patient's active conditions, recent labs, vitals, medications, allergies, diagnostic reports, and imaging studies (modality, started date, radiologist read) from their EHR (FHIR R4). Call this in parallel with knowledge-base tools (pubmed_search, primekg_lookup) when the question involves the specific patient. Requires patientId from session context. SCOPE: this tool only fires if MEDOMNI_FHIR_BASE_URL is configured.",
       parameters: {
         type: "object",
         properties: {
@@ -185,7 +185,7 @@ const TOOL_SPEC = [
           scopes: {
             type: "array",
             description:
-              "Optional list of FHIR resource types to pull. Defaults to all six: Patient, Condition, Observation, MedicationRequest, AllergyIntolerance, DiagnosticReport.",
+              "Optional list of FHIR resource types to pull. Defaults to all seven: Patient, Condition, Observation, MedicationRequest, AllergyIntolerance, DiagnosticReport, ImagingStudy.",
             items: {
               type: "string",
               enum: [
@@ -195,6 +195,7 @@ const TOOL_SPEC = [
                 "MedicationRequest",
                 "AllergyIntolerance",
                 "DiagnosticReport",
+                "ImagingStudy",
               ],
             },
           },
