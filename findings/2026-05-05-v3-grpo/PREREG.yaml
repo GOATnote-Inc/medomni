@@ -68,26 +68,50 @@ training_corpora:
 # Reward composition (load-bearing for GRPO)
 # ──────────────────────────────────────────────────────────────────────
 rewards:
+  # iter-50 amendment: 4-channel composite per
+  # findings/2026-05-05-process-supervision-verifiability/SPEC.md.
+  # Adds Med-PRM-style stepwise-verifier channel at weight 0.15;
+  # re-weights existing channels to make room. Med-PRM EMNLP 2025
+  # showed +13.5pp absolute on MedQA-class via guideline-grounded
+  # stepwise verification; MedS3 (arxiv 2501.12051) +6.45 across 11
+  # benchmarks via MCTS + soft dual-sided PRM.
   composite_components:
     - name: correctness
-      weight: 0.5
+      weight: 0.45  # was 0.5; -0.05 to fund PRM channel
       computation: |
         For each rollout, parse the final-answer slot from the structured
         output. Compare against the gold answer in the dataset. Boolean
         match → 1.0; non-match → 0.0. Per-problem deterministic.
     - name: format
-      weight: 0.2
+      weight: 0.15  # was 0.2; -0.05 to fund PRM channel
       computation: |
         Reward 1.0 if the rollout has exactly one <think>...</think>
         block followed by exactly one <answer>...</answer> block; else
         0.0. Prevents reasoning collapse.
     - name: medical-verifier-judge
-      weight: 0.3
+      weight: 0.25  # was 0.3; -0.05 to fund PRM channel
       computation: |
         Sovereign Qwen2.5-7B-Instruct on lobster, prompted as a medical
         rubric judge per HealthBench convention (gpt-4.1 fallback for
         N=200 calibration items). Returns 0.0-1.0 score. Per-rollout.
         Cost-bounded: 200 max judge calls per training step.
+    - name: process-reward-model  # NEW iter-50 — Med-PRM channel
+      weight: 0.15
+      computation: |
+        Stepwise process reward via Med-PRM-style 8B verifier
+        (see findings/2026-05-05-process-supervision-verifiability/SPEC.md).
+        Auto-labeled training: run V2.7 checkpoint with thinking=on,
+        retrieve guideline snippet (UpToDate/NICE/USPSTF) per step via
+        PrimeKG-anchored retrieval, NLI-classify
+        {entailed|neutral|contradicted}, train 8B PRM on per-step scores
+        (MSE) for 1 epoch, freeze backbone.
+        At GRPO time: PRM scores each step in the chain; per-rollout
+        reward = min(step_scores) per MedS3's min-step-score selector.
+        Promotion gate: PRMScore on MedPRMBench (arxiv 2604.17282) ≥80%.
+        FALLBACK: if PRM training delayed at V3 fire-time, reduce this
+        channel weight to 0 and rebalance other 3 to 0.5 / 0.2 / 0.3
+        (the original distribution); proceed without PRM channel as a
+        graceful degrade. Add PRM channel in V3.1 once PRM is trained.
 
   sovereign_judge_endpoint:
     url: http://127.0.0.1:8000/v1
