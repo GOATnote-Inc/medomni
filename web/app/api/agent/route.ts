@@ -668,7 +668,7 @@ export async function POST(req: NextRequest) {
       }
       return "";
     })();
-    const { content, intent } = buildVFinalSystemContent(
+    const { content, intent } = await buildVFinalSystemContent(
       baseSystemContent,
       lastUserText,
     );

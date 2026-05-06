@@ -46,8 +46,8 @@ PR #2 (skills router with proper LLM-based intent classification) supersedes the
 
 | Track | Status | Depends on |
 |---|---|---|
-| **#1 Wire skills to live /api/agent** | **SHIPPED (this PR)** | — |
-| #2 Skills router with LLM intent classification | next | #1 (replaces keyword heuristic) |
+| **#1 Wire skills to live /api/agent** | **SHIPPED (iter-181)** | — |
+| **#2 Skills router with LLM intent classification** | **SHIPPED (iter-182)** | #1 (replaces keyword heuristic) |
 | #3 Auto-clinical-review on `skills/*.md` PRs | next (parallel) | #1 |
 | #4 Adversarial probe daemon vs live `/api/agent` | next (parallel) | #1 |
 | #5 Public skill registry UI at `/4UWHAt/skills` | next (parallel) | #1 |
@@ -68,6 +68,34 @@ PR #2 (skills router with proper LLM-based intent classification) supersedes the
 - `make sync-skills` — round-trips canonical markdown into runtime location
 - 4 skill files present in `web/lib/agent/skills/`
 - Default `/api/agent` path unchanged
+
+## v2 update — LLM-based intent classifier (iter-182)
+
+**Status:** SHIPPED 2026-05-05 (iter-182). Track #2 of the 5-track Cherny initiative — supersedes the keyword heuristic without changing the public surface.
+
+### What changed
+
+- New `classifyIntentLLM(text)` in `web/lib/agent/skills.ts`. Calls `${MEDOMNI_TUNNEL_URL}/v1/chat/completions` (catfish vllm, model id `nemotron`) with a tight 7-line system prompt asking the model to pick exactly one of `{differential, calc, handoff, default}` and emit `{"intent":"<label>"}`. `temperature=0.0`, `max_tokens=30`, `response_format={"type":"json_object"}`, 2-second `AbortController` timeout.
+- New `parseIntentJson(raw)` — tolerant parser. Accepts strict JSON, JSON-wrapped-in-prose, and bare label tokens. Rejects unknown labels, non-objects, and empty input so the caller can fall back cleanly.
+- New `classifyIntentWithFallback(text)` — production entry point. Tries the LLM; on timeout / network error / parse failure / unknown label, logs a `[skills]` warning and falls back to the keyword `classifyIntent`. Always resolves; never throws.
+- `buildVFinalSystemContent` is now `async` and awaits the classifier. Route call site in `web/app/api/agent/route.ts` updated with `await`.
+- Keyword `classifyIntent` retained verbatim — fallback path + cheap unit-test target.
+
+### Default behavior still unchanged
+
+Without `?profile=v_final`, the LLM classifier never fires. The classifier is on the V_final dispatch path only, gated by the same opt-in flag the v1 keyword router used. No new dependencies; uses the existing `fetch`.
+
+### Verification
+
+- `npx tsc --noEmit` from `web/` — clean
+- `npx tsx lib/agent/__tests__/skills.test.ts` — 11/11 cases pass (keyword priority, JSON parser tolerance + rejection paths)
+- LLM round-trip not exercised in CI (no catfish tunnel from dev). Keyword fallback path is the safety net.
+
+### Why this is the right shape
+
+- The v1 keyword list misses messy clinical phrasings ("how worried should I be about clots in this AFib patient?" → human picks differential, keyword router picks default). Letting `nemotron` itself classify closes that gap on the prompts that actually matter.
+- 2s timeout + keyword fallback bounds the worst case. If catfish is down or slow, the route degrades to v1 behavior; the V_final user sees the same skill they would have seen yesterday.
+- `temperature=0.0` + JSON response format + 30-token cap keeps cost negligible. One extra short request per V_final turn.
 
 ## Cross-references
 
