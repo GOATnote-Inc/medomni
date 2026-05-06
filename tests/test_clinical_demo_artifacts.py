@@ -118,12 +118,10 @@ def test_rubric_cards_have_both_markers(tmp_path: Path) -> None:
     _run(out, commit=True, env_var=True)
     for case_id in CASES:
         text = (out / case_id / "rubric-card.md").read_text()
-        assert SYNTHETIC_MARKER in text, (
-            f"{case_id}/rubric-card.md missing '{SYNTHETIC_MARKER}'"
-        )
-        assert PHYSICIAN_REVIEW_MARKER in text, (
-            f"{case_id}/rubric-card.md missing '{PHYSICIAN_REVIEW_MARKER}'"
-        )
+        assert SYNTHETIC_MARKER in text, f"{case_id}/rubric-card.md missing '{SYNTHETIC_MARKER}'"
+        assert (
+            PHYSICIAN_REVIEW_MARKER in text
+        ), f"{case_id}/rubric-card.md missing '{PHYSICIAN_REVIEW_MARKER}'"
 
 
 def test_rubric_card_weights_sum_to_one(tmp_path: Path) -> None:
@@ -131,19 +129,14 @@ def test_rubric_card_weights_sum_to_one(tmp_path: Path) -> None:
     _run(out, commit=True, env_var=True)
     for case_id in CASES:
         text = (out / case_id / "rubric-card.md").read_text()
-        rows = [
-            ln for ln in text.splitlines()
-            if re.match(r"^\| R\d+ \|", ln)
-        ]
+        rows = [ln for ln in text.splitlines() if re.match(r"^\| R\d+ \|", ln)]
         assert rows, f"{case_id}: no rubric rows found in card"
         weights = []
         for row in rows:
             cells = [c.strip() for c in row.split("|")[1:-1]]
             weights.append(float(cells[1]))
         total = sum(weights)
-        assert abs(total - 1.0) < 1e-9, (
-            f"{case_id}: rubric card weight sum is {total}, not 1.0"
-        )
+        assert abs(total - 1.0) < 1e-9, f"{case_id}: rubric card weight sum is {total}, not 1.0"
 
 
 def test_delta_sign_is_positive(tmp_path: Path) -> None:
@@ -157,9 +150,7 @@ def test_delta_sign_is_positive(tmp_path: Path) -> None:
         )
         assert m, f"{case_id}: could not find delta line"
         delta = float(m.group(1))
-        assert delta > 0, (
-            f"{case_id}: modified must beat baseline; delta={delta}"
-        )
+        assert delta > 0, f"{case_id}: modified must beat baseline; delta={delta}"
 
 
 def test_index_has_both_cases(tmp_path: Path) -> None:
@@ -167,9 +158,7 @@ def test_index_has_both_cases(tmp_path: Path) -> None:
     _run(out, commit=True, env_var=True)
     text = (out / "INDEX.md").read_text()
     rows = [ln for ln in text.splitlines() if ln.startswith("| CLN-DEMO-")]
-    assert len(rows) == len(CASES), (
-        f"expected {len(CASES)} rows in INDEX.md, got {len(rows)}"
-    )
+    assert len(rows) == len(CASES), f"expected {len(CASES)} rows in INDEX.md, got {len(rows)}"
     for row in rows:
         cells = [c.strip() for c in row.split("|")[1:-1]]
         # Columns: case, axis, baseline, modified, delta, synthetic, review.
@@ -196,12 +185,9 @@ def test_metadata_shape(tmp_path: Path) -> None:
     assert "source_file_sha256" in meta
     assert meta["n_cases"] == len(CASES)
     for case_id in CASES:
-        for fname in ("case.json", "rubric.json", "grading.json",
-                      "baseline.md", "modified.md"):
+        for fname in ("case.json", "rubric.json", "grading.json", "baseline.md", "modified.md"):
             key = f"{case_id}/{fname}"
-            assert key in meta["source_file_sha256"], (
-                f"metadata.source_file_sha256 missing {key!r}"
-            )
+            assert key in meta["source_file_sha256"], f"metadata.source_file_sha256 missing {key!r}"
             assert len(meta["source_file_sha256"][key]) == 64
 
 
@@ -214,8 +200,7 @@ def test_no_phi_language_in_outputs(tmp_path: Path) -> None:
     """PHI should only appear in negated form ('not PHI', 'no PHI')."""
     out = tmp_path / "clinical-demo"
     _run(out, commit=True, env_var=True)
-    negated = re.compile(r"\b(no|not|never|without|negated)\s+PHI\b",
-                         re.IGNORECASE)
+    negated = re.compile(r"\b(no|not|never|without|negated)\s+PHI\b", re.IGNORECASE)
     for path in out.rglob("*"):
         if not path.is_file():
             continue
@@ -224,9 +209,7 @@ def test_no_phi_language_in_outputs(tmp_path: Path) -> None:
             start = max(0, match.start() - 30)
             end = min(len(text), match.end() + 5)
             snippet = text[start:end]
-            assert negated.search(snippet), (
-                f"{path.name}: unflagged PHI mention: {snippet!r}"
-            )
+            assert negated.search(snippet), f"{path.name}: unflagged PHI mention: {snippet!r}"
 
 
 def test_no_gpu_rail_forbidden_fields_in_clinical_outputs(
@@ -242,6 +225,5 @@ def test_no_gpu_rail_forbidden_fields_in_clinical_outputs(
         text = path.read_text()
         for f in forbidden:
             assert f not in text, (
-                f"{path.name}: forbidden GPU-rail substring {f!r} in "
-                f"clinical-demo output"
+                f"{path.name}: forbidden GPU-rail substring {f!r} in " f"clinical-demo output"
             )

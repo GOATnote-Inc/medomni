@@ -204,9 +204,7 @@ def test_judge_retries_on_429_then_succeeds(tmp_path: Path) -> None:
             _Response('{"criteria_met": false, "explanation": "nope"}'),
         ]
     )
-    judge = hbr._make_anthropic_judge(
-        client, audit_log_path=audit, sleep_fn=sleeps.append
-    )
+    judge = hbr._make_anthropic_judge(client, audit_log_path=audit, sleep_fn=sleeps.append)
     result = judge("conv", _ITEM)
     assert result["criteria_met"] is False
     assert result["attempt_count"] == 2
@@ -235,9 +233,7 @@ def test_judge_retries_on_5xx_then_succeeds(tmp_path: Path) -> None:
 
 def test_judge_exhausts_retries_then_recuses(tmp_path: Path) -> None:
     audit = tmp_path / "audit.jsonl"
-    client = _StubClient(
-        [_HTTPError(500), _HTTPError(500), _HTTPError(500)]
-    )
+    client = _StubClient([_HTTPError(500), _HTTPError(500), _HTTPError(500)])
     judge = hbr._make_anthropic_judge(
         client, audit_log_path=audit, max_retries=3, sleep_fn=lambda _s: None
     )

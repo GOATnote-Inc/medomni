@@ -11,6 +11,7 @@ Environment:
     PRISM_PAGE_SIZE  = page size (default 64)
     PRISM_Q_DTYPE    = "bfloat16" | "float16" (default bfloat16)
 """
+
 from __future__ import annotations
 
 import json
@@ -50,11 +51,15 @@ def main() -> int:
         tb = traceback.format_exc()
         print(tb, file=sys.stderr)
         # Emit a parseable JSON on last line even on failure.
-        print(json.dumps({
-            "verify": {"passed": False, "error": f"{type(e).__name__}: {e}"},
-            "bench": {},
-            "config": cfg.__dict__,
-        }))
+        print(
+            json.dumps(
+                {
+                    "verify": {"passed": False, "error": f"{type(e).__name__}: {e}"},
+                    "bench": {},
+                    "config": cfg.__dict__,
+                }
+            )
+        )
         return 3
 
     print(json.dumps(result))

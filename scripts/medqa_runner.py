@@ -84,13 +84,9 @@ def _load_manifest(path: Path) -> dict:
             if key not in ex:
                 raise ValueError(f"{path}: examples[{i}] missing required key '{key}'")
         if not isinstance(ex["choices"], list) or len(ex["choices"]) != 4:
-            raise ValueError(
-                f"{path}: examples[{i}].choices must be a list of 4 options"
-            )
+            raise ValueError(f"{path}: examples[{i}].choices must be a list of 4 options")
         if ex["answer_letter"] not in VALID_LETTERS:
-            raise ValueError(
-                f"{path}: examples[{i}].answer_letter must be one of {VALID_LETTERS}"
-            )
+            raise ValueError(f"{path}: examples[{i}].answer_letter must be one of {VALID_LETTERS}")
     return data
 
 
@@ -110,10 +106,7 @@ def _write_out(out_path: Path, payload: dict) -> None:
 
 def _now_iso() -> str:
     return (
-        _dt.datetime.now(_dt.timezone.utc)
-        .replace(tzinfo=None)
-        .isoformat(timespec="seconds")
-        + "Z"
+        _dt.datetime.now(_dt.timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
     )
 
 
@@ -155,8 +148,7 @@ def do_dry_run(args: argparse.Namespace, run_id: str) -> int:
 
     print("(dry-run) medqa_runner.py plan:")
     print("  benchmark        : medqa")
-    print("  role             : null-result control "
-          "(|harness - baseline| <= 0.01 noise floor)")
+    print("  role             : null-result control " "(|harness - baseline| <= 0.01 noise floor)")
     print(f"  manifest         : {manifest_path}")
     print(f"  out              : {out_path}")
     print(f"  seed             : {args.seed}")
@@ -220,7 +212,7 @@ def do_commit(args: argparse.Namespace, run_id: str) -> int:
         choices = example["choices"]
         letters = VALID_LETTERS[: len(choices)]
         choice_block = "\n".join(
-            f"{ltr}. {choice}" for ltr, choice in zip(letters, choices)
+            f"{ltr}. {choice}" for ltr, choice in zip(letters, choices, strict=False)
         )
         prompt = (
             f"{example['question']}\n\n"

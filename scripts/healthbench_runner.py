@@ -259,10 +259,8 @@ def _make_anthropic_judge(
             f.write(json.dumps(record, sort_keys=True, default=str) + "\n")
 
     def _judge(conversation: str, item: RubricItem) -> dict:
-        prompt = (
-            GRADER_TEMPLATE
-            .replace("<<conversation>>", conversation)
-            .replace("<<rubric_item>>", str(item))
+        prompt = GRADER_TEMPLATE.replace("<<conversation>>", conversation).replace(
+            "<<rubric_item>>", str(item)
         )
         messages = [{"role": "user", "content": prompt}]
         last_error: str | None = None
@@ -294,12 +292,10 @@ def _make_anthropic_judge(
                         "silently produces reward=0 across every rubric "
                         "item. Fix ANTHROPIC_API_KEY and rerun."
                     ) from exc
-                is_retriable = status == 429 or (
-                    status is not None and 500 <= status < 600
-                )
+                is_retriable = status == 429 or (status is not None and 500 <= status < 600)
                 if is_retriable and attempt + 1 < max_retries:
                     last_error = f"http-{status}: {exc}"
-                    sleep_fn(2 ** attempt)
+                    sleep_fn(2**attempt)
                     continue
                 # Non-retriable, or retries exhausted on transport
                 last_error = f"{status or 'transport'}: {exc}"
@@ -337,7 +333,7 @@ def _make_anthropic_judge(
                     }
                 )
                 if attempt + 1 < max_retries:
-                    sleep_fn(2 ** attempt)
+                    sleep_fn(2**attempt)
                     continue
                 break
 
@@ -411,9 +407,10 @@ def _per_axis_scores(
     overall score was correctly non-zero — the Stage 2 T4.7b pilot
     caught this.
     """
+
     def _canonical_axis(tag: str) -> str | None:
         if tag.startswith("axis:"):
-            return tag[len("axis:"):]
+            return tag[len("axis:") :]
         if tag in HEALTHBENCH_AXES:
             return tag
         return None
@@ -463,9 +460,7 @@ def _real_grader(
     # minimal two-turn transcript (user prompt + assistant completion)
     # because simple-evals scores the LAST turn.
     prompt_text = ""
-    msgs = example.get("messages") or [
-        {"role": "user", "content": example.get("prompt", "")}
-    ]
+    msgs = example.get("messages") or [{"role": "user", "content": example.get("prompt", "")}]
     for m in msgs:
         prompt_text += f"{m.get('role', 'user')}: {m.get('content', '')}\n"
     conversation = prompt_text + f"assistant: {response_text}"
@@ -493,9 +488,7 @@ def _real_grader(
     # fabricate a pass/fail when the judge could not produce one —
     # calculate_score runs over ONLY the successfully judged subset.
     paired = list(zip(rubric_items, grading_responses, strict=True))
-    ok_pairs = [
-        (it, resp) for (it, resp) in paired if resp.get("criteria_met") is not None
-    ]
+    ok_pairs = [(it, resp) for (it, resp) in paired if resp.get("criteria_met") is not None]
     n_total = len(paired)
     n_incomplete = n_total - len(ok_pairs)
 
@@ -594,10 +587,7 @@ def _write_out(out_path: Path, payload: dict) -> None:
 
 def _now_iso() -> str:
     return (
-        _dt.datetime.now(_dt.timezone.utc)
-        .replace(tzinfo=None)
-        .isoformat(timespec="seconds")
-        + "Z"
+        _dt.datetime.now(_dt.timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
     )
 
 
@@ -737,18 +727,14 @@ def do_commit(args: argparse.Namespace, run_id: str) -> int:
                 "per_axis": grade["per_axis"],
                 "stub_grader": grade.get("stub", False),
                 "judge_incomplete": grade.get("judge_incomplete", 0),
-                "judge_incomplete_fraction": grade.get(
-                    "judge_incomplete_fraction", 0.0
-                ),
+                "judge_incomplete_fraction": grade.get("judge_incomplete_fraction", 0.0),
                 "input_tokens": in_toks,
                 "output_tokens": out_toks,
                 "est_cost_usd": round(cost, 6),
                 "response_text": response_text,
             }
         )
-        score_str = (
-            f"{grade['score']:.3f}" if grade["score"] is not None else "RECUSED"
-        )
+        score_str = f"{grade['score']:.3f}" if grade["score"] is not None else "RECUSED"
         print(
             f"(commit) [{idx + 1}/{len(examples)}] id={example.get('id', '?')} "
             f"score={score_str} incomplete={grade.get('judge_incomplete', 0)} "

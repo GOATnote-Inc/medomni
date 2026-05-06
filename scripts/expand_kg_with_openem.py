@@ -67,9 +67,7 @@ def _resolve_openem_root(cli_root: str | None) -> Path:
     for c in candidates:
         if (c / "corpus" / "tier1" / "conditions").is_dir():
             return c
-    raise SystemExit(
-        f"openem corpus not found at any of: {[str(c) for c in candidates]}"
-    )
+    raise SystemExit(f"openem corpus not found at any of: {[str(c) for c in candidates]}")
 
 
 def _parse_frontmatter(path: Path) -> dict | None:
@@ -240,7 +238,9 @@ def validate(g: Any) -> bool:
         return False
 
     if g.number_of_nodes() < 1500:
-        print(f"FAIL: graph has only {g.number_of_nodes()} nodes; expected >= 1500", file=sys.stderr)
+        print(
+            f"FAIL: graph has only {g.number_of_nodes()} nodes; expected >= 1500", file=sys.stderr
+        )
         return False
 
     # Sample a known life-threatening condition with its differential.
@@ -249,8 +249,11 @@ def validate(g: Any) -> bool:
         print("WARN: cond:acute-appendicitis missing — corpus may have shifted", file=sys.stderr)
         return True
 
-    diffs = [v for u, v, d in g.out_edges("cond:acute-appendicitis", data=True)
-             if d.get("kind") == "condition_to_differential"]
+    diffs = [
+        v
+        for u, v, d in g.out_edges("cond:acute-appendicitis", data=True)
+        if d.get("kind") == "condition_to_differential"
+    ]
     if not diffs:
         print("FAIL: acute-appendicitis has no differential edges", file=sys.stderr)
         return False

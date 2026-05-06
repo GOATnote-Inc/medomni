@@ -32,6 +32,7 @@ Run on B300:
 Dependencies in Alpha's venv: stdlib http.server only. No fastapi /
 uvicorn install needed.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -54,9 +55,7 @@ def _make_handler():
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt, *args):  # noqa: A003,N802
-            sys.stderr.write(
-                f"[primekg-svc] {self.address_string()} - {fmt % args}\n"
-            )
+            sys.stderr.write(f"[primekg-svc] {self.address_string()} - {fmt % args}\n")
 
         def do_GET(self):  # noqa: N802
             if self.path == "/health":
@@ -102,9 +101,7 @@ def _make_handler():
                 edge_filter=edge_filter,
             )
             block = pkg.serialize_to_context(sub, max_tokens=max_tokens)
-            seed_names = [
-                pkg.graph.nodes[s].get("node_name", str(s)) for s in seeds
-            ]
+            seed_names = [pkg.graph.nodes[s].get("node_name", str(s)) for s in seeds]
 
             body = json.dumps(
                 {
@@ -138,6 +135,7 @@ def main() -> int:
     global _PKG
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from graph_primekg_subgraph import load_primekg  # noqa: WPS433
+
     print(f"[primekg-svc] loading {args.primekg_path}...", file=sys.stderr)
     _PKG = load_primekg(args.primekg_path)
     print(

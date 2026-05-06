@@ -20,6 +20,7 @@ Usage:
 
 Both URLs must be 127.0.0.1/localhost (sovereign-stack constraint).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -90,7 +91,9 @@ async def _one_request(
         return {"ok": False, "err": str(e), "latency_s": time.perf_counter() - t0}
 
 
-async def _run_concurrency(url: str, model: str, n: int, concurrency: int, max_tokens: int, timeout_s: float) -> dict:
+async def _run_concurrency(
+    url: str, model: str, n: int, concurrency: int, max_tokens: int, timeout_s: float
+) -> dict:
     async with httpx.AsyncClient() as client:
         # Warmup: 1 sequential to load engine.
         await _one_request(client, url, model, max_tokens=max_tokens, timeout_s=timeout_s)
@@ -98,7 +101,9 @@ async def _run_concurrency(url: str, model: str, n: int, concurrency: int, max_t
 
         async def _bound():
             async with sem:
-                return await _one_request(client, url, model, max_tokens=max_tokens, timeout_s=timeout_s)
+                return await _one_request(
+                    client, url, model, max_tokens=max_tokens, timeout_s=timeout_s
+                )
 
         t0 = time.perf_counter()
         results = await asyncio.gather(*[_bound() for _ in range(n)])
@@ -118,14 +123,18 @@ async def _run_concurrency(url: str, model: str, n: int, concurrency: int, max_t
         "throughput_tok_per_s": (total_out_tokens / wall_s) if wall_s > 0 else 0.0,
         "throughput_req_per_s": (len(ok_results) / wall_s) if wall_s > 0 else 0.0,
         "p50_latency_s": statistics.median(latencies) if latencies else None,
-        "p95_latency_s": (sorted(latencies)[int(0.95 * len(latencies))] if len(latencies) >= 5 else None),
+        "p95_latency_s": (
+            sorted(latencies)[int(0.95 * len(latencies))] if len(latencies) >= 5 else None
+        ),
         "mean_latency_s": (sum(latencies) / len(latencies)) if latencies else None,
     }
 
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--url", required=True, help="OpenAI-compatible base URL, e.g. http://127.0.0.1:9003/v1")
+    p.add_argument(
+        "--url", required=True, help="OpenAI-compatible base URL, e.g. http://127.0.0.1:9003/v1"
+    )
     p.add_argument("--model", required=True)
     p.add_argument("--label", required=True, help="label for this run, e.g. prism-trtllm-fp8")
     p.add_argument("--concurrencies", default="1,8")
@@ -143,7 +152,11 @@ def main() -> int:
     runs = []
     for c in cs:
         print(f"[bench] {args.label}: concurrency={c} n={args.requests_per_c} ...", flush=True)
-        r = asyncio.run(_run_concurrency(args.url, args.model, args.requests_per_c, c, args.max_tokens, args.timeout_s))
+        r = asyncio.run(
+            _run_concurrency(
+                args.url, args.model, args.requests_per_c, c, args.max_tokens, args.timeout_s
+            )
+        )
         runs.append(r)
         print(json.dumps(r, indent=2))
     payload = {

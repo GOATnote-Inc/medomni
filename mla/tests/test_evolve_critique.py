@@ -1,4 +1,5 @@
 """End-to-end evolve with critique + Pareto enabled."""
+
 from __future__ import annotations
 
 from agent.critique import CritiqueResponse
@@ -35,9 +36,7 @@ def test_critique_gate_filters_rejected_candidates():
 
     # At least one iteration recorded critique verdicts.
     any_critiques = any(
-        len(isl.get("critiques", [])) > 0
-        for it in summary["history"]
-        for isl in it["islands"]
+        len(isl.get("critiques", [])) > 0 for it in summary["history"] for isl in it["islands"]
     )
     assert any_critiques
 
@@ -64,8 +63,7 @@ def test_pareto_keep_adds_non_linear_survivors():
     # Build a stub with 4 mutations + forced critique=accept for all so Pareto
     # logic is tested independently.
     all_accept = [
-        CritiqueResponse("low", "none", "structural", "accept", rationale="ok")
-        for _ in range(8)
+        CritiqueResponse("low", "none", "structural", "accept", rationale="ok") for _ in range(8)
     ]
     client = StubClient(critiques=all_accept)
 

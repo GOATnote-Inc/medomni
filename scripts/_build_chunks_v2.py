@@ -48,6 +48,7 @@ Verify after run:
        [layers.setdefault(json.loads(l).get('corpus_layer','v0'),0) or layers.update({json.loads(l).get('corpus_layer','v0'): layers.get(json.loads(l).get('corpus_layer','v0'),0)+1}) for l in lines]; \
        print('total:', len(lines), 'by layer:', layers)"
 """
+
 from __future__ import annotations
 
 import json
@@ -205,9 +206,7 @@ SOURCES_V2: list[dict] = [
     {
         "source_doc_id": "CDC-adult-imz-schedule-HPV-notes",
         "source_url": "https://www.cdc.gov/vaccines/hcp/imz-schedules/adult-notes.html",
-        "source_title": (
-            "Adult Immunization Schedule by Vaccine and Age Group — Notes (HPV)"
-        ),
+        "source_title": ("Adult Immunization Schedule by Vaccine and Age Group — Notes (HPV)"),
         "source_authors": "Centers for Disease Control and Prevention; ACIP",
         "source_year": 2025,
         "license": "CDC public domain (US federal, 17 USC §105).",
@@ -268,9 +267,7 @@ SOURCES_V2: list[dict] = [
             "Adjuvant bisphosphonate treatment in early breast cancer: meta-"
             "analyses of individual patient data from randomised trials"
         ),
-        "source_authors": (
-            "Early Breast Cancer Trialists' Collaborative Group (EBCTCG)"
-        ),
+        "source_authors": ("Early Breast Cancer Trialists' Collaborative Group (EBCTCG)"),
         "source_year": 2015,
         "license": (
             "PubMed abstract — paraphrased structured summary of the public "
@@ -590,11 +587,7 @@ def chunk_documents(sources: list[dict]) -> list[Document]:
 def main() -> int:
     # Determine the next chunk-index by reading existing chunks.jsonl.
     existing_lines = OUT_PATH.read_text().splitlines() if OUT_PATH.exists() else []
-    existing_ids = {
-        json.loads(l)["id"]
-        for l in existing_lines
-        if l.strip()
-    }
+    existing_ids = {json.loads(line)["id"] for line in existing_lines if line.strip()}
     next_idx = len(existing_lines)
 
     docs = chunk_documents(SOURCES_V2)
@@ -635,7 +628,7 @@ def main() -> int:
 
     print(f"appended {len(new_records)} v2 chunks to {OUT_PATH}")
     print(
-        "verify: .venv/bin/python -c \"import json; "
+        'verify: .venv/bin/python -c "import json; '
         "L=[json.loads(l) for l in open('corpus/medical-guidelines/chunks.jsonl')]; "
         "print('total:', len(L)); "
         "print('by layer:', {k: sum(1 for c in L if c.get('corpus_layer','v0')==k) "

@@ -27,6 +27,7 @@ installed) it imports cleanly but the constructor raises ImportError.
 The bench harness can therefore import the module unconditionally; only
 B300-side runs build the index.
 """
+
 from __future__ import annotations
 
 import json
@@ -88,7 +89,7 @@ class NumpyDenseIndex:
 
     def search(self, query_emb: list[float], k: int) -> list[tuple[int, float]]:
         def _cos(a: list[float], b: list[float]) -> float:
-            dot = sum(x * y for x, y in zip(a, b))
+            dot = sum(x * y for x, y in zip(a, b, strict=True))
             na = math.sqrt(sum(x * x for x in a))
             nb = math.sqrt(sum(y * y for y in b))
             return 0.0 if na == 0.0 or nb == 0.0 else dot / (na * nb)
@@ -180,19 +181,15 @@ class CuvsDenseIndex:
         if self._index_kind == "brute_force":
             # cuVS 26.04 brute_force.search: (index, queries, k, neighbors=,
             # distances=, resources=, prefilter=). No SearchParams class.
-            distances, indices = brute_force.search(
-                self._index, q, k, resources=self._resources
-            )
+            distances, indices = brute_force.search(self._index, q, k, resources=self._resources)
         else:
             params = ivf_pq.SearchParams()
-            distances, indices = ivf_pq.search(
-                params, self._index, q, k, resources=self._resources
-            )
+            distances, indices = ivf_pq.search(params, self._index, q, k, resources=self._resources)
 
         # cuVS 26.04 returns pylibraft device_ndarray; cp.asarray is a no-copy view.
         idx = cp.asnumpy(cp.asarray(indices)).reshape(-1).tolist()
         score = cp.asnumpy(cp.asarray(distances)).reshape(-1).tolist()
-        return [(int(i), float(s)) for i, s in zip(idx, score) if int(i) >= 0]
+        return [(int(i), float(s)) for i, s in zip(idx, score, strict=True) if int(i) >= 0]
 
 
 # ----------------------------------------------------------------------------
@@ -289,12 +286,28 @@ def bench(
         "n_queries": len(queries),
         "top_k": top_k,
         "embed_total_s": t_embed,
-        "numpy_p50_ms": (pp(np_lat, 50) if len(np_lat) >= 100 else statistics.median(np_lat) if np_lat else float("nan")),
-        "numpy_p99_ms": (pp(np_lat, 99) if len(np_lat) >= 100 else max(np_lat) if np_lat else float("nan")),
+        "numpy_p50_ms": (
+            pp(np_lat, 50)
+            if len(np_lat) >= 100
+            else statistics.median(np_lat)
+            if np_lat
+            else float("nan")
+        ),
+        "numpy_p99_ms": (
+            pp(np_lat, 99) if len(np_lat) >= 100 else max(np_lat) if np_lat else float("nan")
+        ),
         "cuvs_available": cu_index is not None,
         "cuvs_index_kind": getattr(cu_index, "index_kind", None),
-        "cuvs_p50_ms": (pp(cu_lat, 50) if len(cu_lat) >= 100 else statistics.median(cu_lat) if cu_lat else float("nan")),
-        "cuvs_p99_ms": (pp(cu_lat, 99) if len(cu_lat) >= 100 else max(cu_lat) if cu_lat else float("nan")),
+        "cuvs_p50_ms": (
+            pp(cu_lat, 50)
+            if len(cu_lat) >= 100
+            else statistics.median(cu_lat)
+            if cu_lat
+            else float("nan")
+        ),
+        "cuvs_p99_ms": (
+            pp(cu_lat, 99) if len(cu_lat) >= 100 else max(cu_lat) if cu_lat else float("nan")
+        ),
         "recall_at_k_jaccard_mean": (sum(overlap) / len(overlap)) if overlap else float("nan"),
     }
 
@@ -317,9 +330,7 @@ def main() -> int:
 
     if args.queries_file:
         queries = [
-            ln.strip()
-            for ln in Path(args.queries_file).read_text().splitlines()
-            if ln.strip()
+            ln.strip() for ln in Path(args.queries_file).read_text().splitlines() if ln.strip()
         ]
     else:
         queries = [

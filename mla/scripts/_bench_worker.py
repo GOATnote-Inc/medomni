@@ -16,6 +16,7 @@ Subject grammar:
 
 Output: one JSON object per run, one line. Always valid JSON even on failure.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -43,6 +44,7 @@ def _env_snapshot() -> dict:
     }
     try:
         import torch
+
         info["torch"] = torch.__version__
         if torch.cuda.is_available():
             info["device_name"] = torch.cuda.get_device_name(0)
@@ -52,6 +54,7 @@ def _env_snapshot() -> dict:
         info["torch_err"] = f"{type(e).__name__}: {e}"
     try:
         import flashinfer
+
         info["flashinfer"] = getattr(flashinfer, "__version__", "unknown")
     except Exception:
         info["flashinfer"] = None
@@ -61,10 +64,12 @@ def _env_snapshot() -> dict:
 def _stats(samples_ns: list[int]) -> dict:
     s = sorted(samples_ns)
     n = len(s)
+
     def pct(p: float) -> float:
         if n == 0:
             return 0.0
         return float(s[min(int(p * n), n - 1)])
+
     return {
         "n": n,
         "p10_ns": pct(0.10),
@@ -80,13 +85,18 @@ def _stats(samples_ns: list[int]) -> dict:
 def _nvidia_smi_clocks() -> dict:
     """Best-effort capture of current GPU clock and power. No sudo needed."""
     import subprocess
+
     out: dict = {}
     try:
         r = subprocess.run(
-            ["nvidia-smi",
-             "--query-gpu=clocks.sm,clocks.max.sm,power.draw,uuid",
-             "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=5,
+            [
+                "nvidia-smi",
+                "--query-gpu=clocks.sm,clocks.max.sm,power.draw,uuid",
+                "--format=csv,noheader,nounits",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if r.returncode == 0 and r.stdout.strip():
             parts = [x.strip() for x in r.stdout.strip().split("\n")[0].split(",")]
@@ -110,10 +120,17 @@ def _build_flashinfer(config: dict, backend: str = "auto") -> tuple[callable, di
     `flashinfer=fa3`, `flashinfer=fa2`. Subject string parsed in main().
     """
     from runner.flashinfer_runner import FlashInferMLAConfig, FlashInferMLAHarness
+
     fi_cfg = FlashInferMLAConfig(
-        batch_size=config["batch"], kv_len=config["kv_len"], page_size=64,
-        num_heads=128, head_dim_ckv=512, head_dim_kpe=64,
-        q_dtype=config["dtype"], kv_dtype=config["dtype"], backend=backend,
+        batch_size=config["batch"],
+        kv_len=config["kv_len"],
+        page_size=64,
+        num_heads=128,
+        head_dim_ckv=512,
+        head_dim_kpe=64,
+        q_dtype=config["dtype"],
+        kv_dtype=config["dtype"],
+        backend=backend,
     )
     h = FlashInferMLAHarness(fi_cfg, seed=config.get("seed", 0))
     v = h.verify_matches_reference()
@@ -133,10 +150,17 @@ def _build_flashinfer_cudagraph(config: dict) -> tuple[callable, dict]:
     p50 = 13.0 ± 1.5 µs at H100 T=1024 (from 17.6 µs uncaptured).
     """
     from runner.flashinfer_runner import FlashInferMLAConfig, FlashInferMLAHarness
+
     fi_cfg = FlashInferMLAConfig(
-        batch_size=config["batch"], kv_len=config["kv_len"], page_size=64,
-        num_heads=128, head_dim_ckv=512, head_dim_kpe=64,
-        q_dtype=config["dtype"], kv_dtype=config["dtype"], backend="auto",
+        batch_size=config["batch"],
+        kv_len=config["kv_len"],
+        page_size=64,
+        num_heads=128,
+        head_dim_ckv=512,
+        head_dim_kpe=64,
+        q_dtype=config["dtype"],
+        kv_dtype=config["dtype"],
+        backend="auto",
         use_cuda_graph=True,
     )
     h = FlashInferMLAHarness(fi_cfg, seed=config.get("seed", 0))
@@ -168,6 +192,7 @@ def _build_torch_subject(subject: str, config: dict, candidates_json: str | None
         if not rec.get("compile_ok"):
             raise RuntimeError(f"claude record #{idx} failed safety: {rec.get('compile_error')}")
         from agent.safety import compile_candidate_torch
+
         fn = compile_candidate_torch(rec["source"])
     else:
         raise ValueError(f"unknown torch subject: {subject}")
@@ -186,15 +211,18 @@ def _build_torch_subject(subject: str, config: dict, candidates_json: str | None
 
     # Inputs.
     t_cfg = TorchMLAConfig(
-        batch=config["batch"], heads=128, kv_len=config["kv_len"],
-        d_ckv=512, d_pe=64, dtype=config["dtype"],
+        batch=config["batch"],
+        heads=128,
+        kv_len=config["kv_len"],
+        d_ckv=512,
+        d_pe=64,
+        dtype=config["dtype"],
     )
     inputs = make_torch_inputs(t_cfg, seed=config.get("seed", 0))
 
     # First call triggers any JIT / autotune — measure compile_s.
     t0 = time.perf_counter()
-    v = validate_torch(fn, mla_decode_torch_reference, inputs,
-                       tolerance=5e-2, run_tier2=False)
+    v = validate_torch(fn, mla_decode_torch_reference, inputs, tolerance=5e-2, run_tier2=False)
     compile_s = time.perf_counter() - t0
     if not v.passed:
         raise RuntimeError(f"validator rejected {subject}: {v.failed_check}")
@@ -207,10 +235,16 @@ def _build_torch_subject(subject: str, config: dict, candidates_json: str | None
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--subject", required=True,
-                    help="flashinfer | baseline_eager | baseline_compiled[=MODE] | claude:INDEX")
-    ap.add_argument("--candidates-json", default=None,
-                    help="path to mutations JSON (required for claude:INDEX subjects)")
+    ap.add_argument(
+        "--subject",
+        required=True,
+        help="flashinfer | baseline_eager | baseline_compiled[=MODE] | claude:INDEX",
+    )
+    ap.add_argument(
+        "--candidates-json",
+        default=None,
+        help="path to mutations JSON (required for claude:INDEX subjects)",
+    )
     ap.add_argument("--batch", type=int, default=1)
     ap.add_argument("--kv-len", type=int, default=1024)
     ap.add_argument("--dtype", default="bfloat16")
@@ -218,12 +252,18 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--warmup", type=int, default=30)
     ap.add_argument("--iters", type=int, default=200)
-    ap.add_argument("--discard-first", type=int, default=5,
-                    help="number of timed samples to discard (post-warmup stabilization)")
+    ap.add_argument(
+        "--discard-first",
+        type=int,
+        default=5,
+        help="number of timed samples to discard (post-warmup stabilization)",
+    )
     args = ap.parse_args()
 
     config = {
-        "batch": args.batch, "kv_len": args.kv_len, "dtype": args.dtype,
+        "batch": args.batch,
+        "kv_len": args.kv_len,
+        "dtype": args.dtype,
         "seed": args.seed,
     }
     env = _env_snapshot()
@@ -243,9 +283,11 @@ def main() -> int:
 
     try:
         import torch
+
         if not torch.cuda.is_available():
             result["status"] = "no_cuda"
-            emit(result); return 2
+            emit(result)
+            return 2
 
         # Build subject.
         t_build0 = time.perf_counter()
@@ -255,8 +297,7 @@ def main() -> int:
             backend = args.subject.split("=", 1)[1]
             if backend not in ("auto", "cutlass", "fa3", "fa2"):
                 raise ValueError(
-                    f"flashinfer backend {backend!r} not in "
-                    f"{{auto, cutlass, fa3, fa2}}"
+                    f"flashinfer backend {backend!r} not in " f"{{auto, cutlass, fa3, fa2}}"
                 )
             invoke, build_info = _build_flashinfer(config, backend=backend)
         elif args.subject == "flashinfer_cudagraph":
@@ -282,10 +323,12 @@ def main() -> int:
 
         times_ns = [int(starts[i].elapsed_time(ends[i]) * 1e6) for i in range(args.iters)]
         result["cold_ns"] = times_ns[0] if times_ns else 0
-        kept = times_ns[args.discard_first:]
+        kept = times_ns[args.discard_first :]
         result["warm"] = _stats(kept)
         result["tokens_per_sec"] = (
-            config["batch"] / (result["warm"]["p50_ns"] / 1e9) if result["warm"]["p50_ns"] > 0 else 0.0
+            config["batch"] / (result["warm"]["p50_ns"] / 1e9)
+            if result["warm"]["p50_ns"] > 0
+            else 0.0
         )
         result["clock_end"] = _nvidia_smi_clocks()
         result["ts_end"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -294,7 +337,8 @@ def main() -> int:
         result["status"] = "error"
         result["error"] = f"{type(e).__name__}: {e}"
         result["traceback"] = traceback.format_exc()
-        emit(result); return 3
+        emit(result)
+        return 3
 
     emit(result)
     return 0

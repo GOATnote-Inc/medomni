@@ -5,6 +5,7 @@ the validator sees only distinct candidates.
 Used by loop/evolve.py. The generation step is intentionally cheap —
 expensive filtering happens downstream in validate → benchmark → score.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -49,18 +50,23 @@ def generate_candidates(
     failures: list[MutationFailure] = []
     for _ in range(n):
         outcome = mutate_once(
-            client, req,
-            island=island, iteration=iteration, parent_hash=parent_hash,
+            client,
+            req,
+            island=island,
+            iteration=iteration,
+            parent_hash=parent_hash,
         )
         if isinstance(outcome, MutationFailure):
             failures.append(outcome)
             continue
         if outcome.source_hash in seen_hashes:
-            failures.append(MutationFailure(
-                reason="duplicate_source_hash",
-                reasoning=outcome.reasoning,
-                source=outcome.source,
-            ))
+            failures.append(
+                MutationFailure(
+                    reason="duplicate_source_hash",
+                    reasoning=outcome.reasoning,
+                    source=outcome.source,
+                )
+            )
             continue
         seen_hashes.add(outcome.source_hash)
         passes.append(outcome)

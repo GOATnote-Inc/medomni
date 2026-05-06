@@ -11,6 +11,7 @@ on real H100/B200.
 Cross-ref: mental-models/munger-inversion.md §6 (benchmarks are often wrong);
 config_sweep in the validator is the measurement-side complement.
 """
+
 from __future__ import annotations
 
 import statistics

@@ -14,6 +14,7 @@ for speed — accepting the bf16 error budget established at 5e-2.
 
 Four "honest" variants + one negative control.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -71,13 +72,18 @@ def _sdpa_wrap(q_nope, q_pe, ckv, kpe, sm_scale):
     B, H, D_ckv = q_nope.shape
     D_pe = q_pe.shape[-1]
     T = ckv.shape[1]
-    q_cat = torch.cat([q_nope, q_pe], dim=-1).unsqueeze(2)             # (B, H, 1, D_ckv+D_pe)
+    q_cat = torch.cat([q_nope, q_pe], dim=-1).unsqueeze(2)  # (B, H, 1, D_ckv+D_pe)
     k_cat = torch.cat([ckv, kpe], dim=-1).unsqueeze(1).expand(B, H, T, D_ckv + D_pe)
-    v     = ckv.unsqueeze(1).expand(B, H, T, D_ckv)
+    v = ckv.unsqueeze(1).expand(B, H, T, D_ckv)
     # SDPA applies its own 1/sqrt(d_k) scale by default; override with ours.
     out = F.scaled_dot_product_attention(
-        q_cat, k_cat, v, attn_mask=None, dropout_p=0.0,
-        is_causal=False, scale=sm_scale,
+        q_cat,
+        k_cat,
+        v,
+        attn_mask=None,
+        dropout_p=0.0,
+        is_causal=False,
+        scale=sm_scale,
     )
     return out.squeeze(2)  # (B, H, D_ckv)
 
@@ -92,7 +98,7 @@ def _chunked_kv(q_nope, q_pe, ckv, kpe, sm_scale):
 
     # Running max, running sum, running output.
     m = torch.full((B, H), -float("inf"), dtype=torch.float32, device=q_nope.device)
-    l = torch.zeros((B, H), dtype=torch.float32, device=q_nope.device)
+    l = torch.zeros((B, H), dtype=torch.float32, device=q_nope.device)  # noqa: E741 — flash-attn convention
     o = torch.zeros((B, H, d_ckv), dtype=torch.float32, device=q_nope.device)
 
     for start in range(0, T, chunk):
@@ -101,12 +107,12 @@ def _chunked_kv(q_nope, q_pe, ckv, kpe, sm_scale):
         kpe_c = kpe[:, start:end]
         s_n = torch.einsum("bhd,btd->bht", q_nope, ckv_c)
         s_p = torch.einsum("bhd,btd->bht", q_pe, kpe_c)
-        s = (s_n + s_p).float() * float(sm_scale)   # (B, H, chunk)
-        m_new_chunk = s.amax(dim=-1)                # (B, H)
+        s = (s_n + s_p).float() * float(sm_scale)  # (B, H, chunk)
+        m_new_chunk = s.amax(dim=-1)  # (B, H)
         m_new = torch.maximum(m, m_new_chunk)
-        exp_old = torch.exp(m - m_new)              # (B, H)
-        exp_s   = torch.exp(s - m_new.unsqueeze(-1)) # (B, H, chunk)
-        l = l * exp_old + exp_s.sum(dim=-1)
+        exp_old = torch.exp(m - m_new)  # (B, H)
+        exp_s = torch.exp(s - m_new.unsqueeze(-1))  # (B, H, chunk)
+        l = l * exp_old + exp_s.sum(dim=-1)  # noqa: E741 — flash-attn convention
         o = o * exp_old.unsqueeze(-1) + torch.einsum("bht,btd->bhd", exp_s, ckv_c.float())
         m = m_new
     return (o / l.unsqueeze(-1)).to(q_nope.dtype)

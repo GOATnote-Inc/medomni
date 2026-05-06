@@ -101,9 +101,7 @@ def load_graph(path: Path | None = None) -> Any:
 
     target = path or (KG_PATH if KG_PATH.exists() else SEED_KG_PATH)
     if not target.exists():
-        raise SystemExit(
-            f"KG not found at {target}. Run scripts/expand_kg_with_openem.py first."
-        )
+        raise SystemExit(f"KG not found at {target}. Run scripts/expand_kg_with_openem.py first.")
     with target.open("rb") as f:
         return pickle.load(f)
 

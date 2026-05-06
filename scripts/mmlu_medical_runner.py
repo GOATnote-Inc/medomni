@@ -100,24 +100,18 @@ def _load_manifest(path: Path) -> dict:
         raise ValueError(f"{path}: manifest missing required key 'subsets' (mapping)")
     for subset_name, examples in data["subsets"].items():
         if not isinstance(examples, list):
-            raise ValueError(
-                f"{path}: subsets['{subset_name}'] must be a list of examples"
-            )
+            raise ValueError(f"{path}: subsets['{subset_name}'] must be a list of examples")
         for i, ex in enumerate(examples):
             if not isinstance(ex, dict):
-                raise ValueError(
-                    f"{path}: subsets['{subset_name}'][{i}] is not a mapping"
-                )
+                raise ValueError(f"{path}: subsets['{subset_name}'][{i}] is not a mapping")
             for key in ("id", "question", "choices", "answer_letter"):
                 if key not in ex:
                     raise ValueError(
-                        f"{path}: subsets['{subset_name}'][{i}] "
-                        f"missing required key '{key}'"
+                        f"{path}: subsets['{subset_name}'][{i}] " f"missing required key '{key}'"
                     )
             if not isinstance(ex["choices"], list) or len(ex["choices"]) != 4:
                 raise ValueError(
-                    f"{path}: subsets['{subset_name}'][{i}].choices "
-                    f"must be a list of 4 options"
+                    f"{path}: subsets['{subset_name}'][{i}].choices " f"must be a list of 4 options"
                 )
             if ex["answer_letter"] not in VALID_LETTERS:
                 raise ValueError(
@@ -154,10 +148,7 @@ def _write_out(out_path: Path, payload: dict) -> None:
 
 def _now_iso() -> str:
     return (
-        _dt.datetime.now(_dt.timezone.utc)
-        .replace(tzinfo=None)
-        .isoformat(timespec="seconds")
-        + "Z"
+        _dt.datetime.now(_dt.timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
     )
 
 
@@ -202,8 +193,7 @@ def do_dry_run(args: argparse.Namespace, run_id: str) -> int:
 
     print("(dry-run) mmlu_medical_runner.py plan:")
     print("  benchmark        : mmlu_medical")
-    print("  role             : null-result breadth control "
-          "(same |delta| <= 0.01 gate as B2)")
+    print("  role             : null-result breadth control " "(same |delta| <= 0.01 gate as B2)")
     print(f"  manifest         : {manifest_path}")
     print(f"  out              : {out_path}")
     print(f"  seed             : {args.seed}")
@@ -221,8 +211,7 @@ def do_dry_run(args: argparse.Namespace, run_id: str) -> int:
     print("(dry-run) no network activity; no anthropic SDK import")
 
     subset_results_skeleton = {
-        name: {"n": 0, "correct": 0, "accuracy": 0.0, "examples": []}
-        for name in subsets
+        name: {"n": 0, "correct": 0, "accuracy": 0.0, "examples": []} for name in subsets
     }
 
     payload = {
@@ -290,7 +279,7 @@ def do_commit(args: argparse.Namespace, run_id: str) -> int:
             choices = example["choices"]
             letters = VALID_LETTERS[: len(choices)]
             choice_block = "\n".join(
-                f"{ltr}. {choice}" for ltr, choice in zip(letters, choices)
+                f"{ltr}. {choice}" for ltr, choice in zip(letters, choices, strict=False)
             )
             prompt = (
                 f"{example['question']}\n\n"

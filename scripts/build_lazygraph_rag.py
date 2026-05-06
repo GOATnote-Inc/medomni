@@ -128,6 +128,7 @@ def _smoke_pipeline(g: Any, out_dir: Path) -> dict[str, Any]:
     # Stage 4 — Leiden via networkx fallback (community.greedy_modularity)
     try:
         from networkx.algorithms.community import greedy_modularity_communities  # noqa: PLC0415
+
         undirected = g.to_undirected() if g.is_directed() else g
         comms = list(greedy_modularity_communities(undirected))
         community_labels = {n: i for i, c in enumerate(comms) for n in c}
@@ -173,11 +174,15 @@ def _full_build(g: Any, embedding_model: str, out_dir: Path) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--kg", help="path to .gpickle KG (default: expansion if present, else seed)")
+    parser.add_argument(
+        "--kg", help="path to .gpickle KG (default: expansion if present, else seed)"
+    )
     parser.add_argument("--smoke", action="store_true", help="CPU-only pipeline smoke")
     parser.add_argument("--embedding-model", default="nvidia/NV-Embed-v2")
     parser.add_argument("--out", default=str(OUT_DIR))
-    parser.add_argument("--commit", action="store_true", help="full GPU build (with PRISM42_BUILD_LAZYGRAPH=1)")
+    parser.add_argument(
+        "--commit", action="store_true", help="full GPU build (with PRISM42_BUILD_LAZYGRAPH=1)"
+    )
     args = parser.parse_args()
 
     kg_path = Path(args.kg) if args.kg else (EXPANDED_KG if EXPANDED_KG.exists() else SEED_KG)
@@ -186,7 +191,7 @@ def main() -> int:
     print(f"loaded KG: {kg_path} ({g.number_of_nodes()} nodes, {g.number_of_edges()} edges)")
 
     if args.smoke:
-        manifest = _smoke_pipeline(g, out_dir)
+        _smoke_pipeline(g, out_dir)
         print(f"[smoke] wrote {out_dir}/manifest.json (smoke=True)")
         return 0
 

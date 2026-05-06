@@ -10,6 +10,7 @@ the structural threshold for non-degeneracy.
 
 Sources: notes in ../papers/notes-robust-kbench.md.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -234,6 +235,7 @@ def check_no_trivial_delegation(
 
 
 # ---- Convenience roll-up ----
+
 
 def run_all_gaming_checks(
     candidate: Kernel,

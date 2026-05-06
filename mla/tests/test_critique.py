@@ -1,4 +1,5 @@
 """Critique agent tests — parsing, stub cycling, rejected? flag."""
+
 from __future__ import annotations
 
 from agent.critique import CritiqueRequest, CritiqueResponse, parse_critique, render_critique_prompt

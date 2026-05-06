@@ -4,6 +4,7 @@ Contract-compatible BenchmarkResult with runner/numpy_runner.py and
 runner/flashinfer_runner.py — the evolve loop can be pointed at any of
 the three without changes to its scoring code.
 """
+
 from __future__ import annotations
 
 import statistics
@@ -13,6 +14,7 @@ from typing import Any
 
 try:
     import torch
+
     _HAVE_TORCH = True
 except ImportError:
     torch = None  # type: ignore
@@ -78,6 +80,11 @@ def benchmark_torch(
     std = statistics.stdev(times_ns) if len(times_ns) > 1 else 0.0
     tps = (batch_size / (median / 1e9)) if median > 0 else 0.0
     return BenchmarkResult(
-        mean_ns=mean, median_ns=median, p90_ns=float(p90), std_ns=std,
-        iters=iters, tokens_per_sec=tps, raw_ns=times_ns,
+        mean_ns=mean,
+        median_ns=median,
+        p90_ns=float(p90),
+        std_ns=std,
+        iters=iters,
+        tokens_per_sec=tps,
+        raw_ns=times_ns,
     )

@@ -146,27 +146,21 @@ class TestClinicalRequiredFields:
 class TestClinicalConditional:
     """Regression guards around the `if rail==clinical` branch."""
 
-    def test_cuda_rail_not_forced_to_include_clinical_fields(
-        self, tmp_path: Path
-    ) -> None:
+    def test_cuda_rail_not_forced_to_include_clinical_fields(self, tmp_path: Path) -> None:
         """rail=='cuda' must pass without target_axis/rubric_ref/HBH id."""
 
         _write(tmp_path / "case.json", _cuda_case_with_rail())
         rc, out = _run(["--case-dir", str(tmp_path), "--artifact", "case.json"])
         assert rc == 0, out
 
-    def test_missing_rail_defaults_to_non_clinical_path(
-        self, tmp_path: Path
-    ) -> None:
+    def test_missing_rail_defaults_to_non_clinical_path(self, tmp_path: Path) -> None:
         """No `rail` at all (KERNEL-GOLDEN shape) must still validate."""
 
         _write(tmp_path / "case.json", _cuda_case_no_rail())
         rc, out = _run(["--case-dir", str(tmp_path), "--artifact", "case.json"])
         assert rc == 0, out
 
-    def test_clinical_rail_plus_all_three_required_fields_validates(
-        self, tmp_path: Path
-    ) -> None:
+    def test_clinical_rail_plus_all_three_required_fields_validates(self, tmp_path: Path) -> None:
         """Positive control: clinical rail with all three fields set passes."""
 
         _write(tmp_path / "case.json", _clinical_case())
@@ -282,14 +276,10 @@ class TestClinicalRubricSchema:
         assert errors, "expected schema error on string weight"
         # jsonschema reports the type error on the weight path.
         assert any(
-            "weight" in list(map(str, e.absolute_path))
-            or "number" in e.message
-            for e in errors
+            "weight" in list(map(str, e.absolute_path)) or "number" in e.message for e in errors
         ), [e.message for e in errors]
 
-    def test_criteria_missing_id_fails(
-        self, validator: Draft202012Validator
-    ) -> None:
+    def test_criteria_missing_id_fails(self, validator: Draft202012Validator) -> None:
         doc = _minimal_rubric()
         del doc["criteria"][0]["id"]
         errors = list(validator.iter_errors(doc))
