@@ -14,6 +14,100 @@ body {
 }
 
 /* =========================================================================
+   Records OS — responsive layout overrides (2026-05-06).
+
+   The dashboard uses inline grid styles. Media-query overrides below
+   target data-attributes set in RecordsOS.tsx and use `!important` so
+   they win over the inline `style` properties at narrow viewports.
+
+   Breakpoints:
+     - >= 1280px : full 3-column layout (left rail | main | right rail).
+     - 1024-1279 : right rail stacks below main; vitals strip 3 cols.
+     - <  1024   : left rail also stacks; hero row + bottom rows go 1 col.
+
+   No utility shrinks the desktop layout above 1280px.
+   ========================================================================= */
+
+@media (max-width: 1279px) {
+  /* Collapse the 3-col grid: left rail | main | right-rail-stacked-below */
+  [data-records-os-grid] {
+    grid-template-columns: var(--col-left) 4px minmax(0, 1fr) !important;
+  }
+  /* Right resizer + right rail jump onto a new row spanning all 3 cols. */
+  [data-records-os-grid] [role="separator"][aria-label="Resize AI rail"] {
+    display: none !important;
+  }
+  [data-records-os-rail="right"] {
+    grid-column: 1 / -1 !important;
+    border-left: none !important;
+    border-top: 1px solid #1f1f1f !important;
+  }
+  /* Hero cards (patient + signal-of-day) stack so the prose has room. */
+  [data-records-os-hero] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  /* Vitals strip goes from 6 to 3 columns; cells reflow rather than crush. */
+  [data-records-os-vitals] {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  /* Vitals borders: hide every 3rd cell's right-border to avoid double rules.
+     Targets the Clickable wrapper button directly (it's a direct child). */
+  [data-records-os-vitals] > *:nth-child(3n) {
+    border-right: none !important;
+  }
+  /* Labs+sharing+timeline rows: stack at narrow widths so each panel keeps
+     its full readable width instead of two cramped halves. */
+  [data-records-os-row="labs-meds"],
+  [data-records-os-row="timeline-shares"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  /* Patient name hero: shrink with viewport so single-syllable wrapping
+     stops happening at narrow widths. clamp() keeps it readable on phones
+     and crisp at 1280+. */
+  [data-records-os-patient-name] {
+    font-size: clamp(20px, 3.5vw, 36px) !important;
+  }
+  /* Signal-of-day prose ("Your LDL dropped 50 points...") — same idea. */
+  [data-records-os-signal-headline] {
+    font-size: clamp(15px, 1.8vw, 22px) !important;
+  }
+  [data-records-os-signal-figure] {
+    font-size: clamp(28px, 4.5vw, 48px) !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  /* Left rail also stacks; entire content becomes single column. */
+  [data-records-os-grid] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  [data-records-os-grid] [role="separator"][aria-label="Resize navigation rail"] {
+    display: none !important;
+  }
+  [data-records-os-rail="left"] {
+    border-right: none !important;
+    border-bottom: 1px solid #1f1f1f !important;
+  }
+  /* Vitals strip: 2 cols at phone-ish widths. */
+  [data-records-os-vitals] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  [data-records-os-vitals] > *:nth-child(3n) {
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+  [data-records-os-vitals] > *:nth-child(2n) {
+    border-right: none !important;
+  }
+  /* Trim main padding so cards keep margins when the rail dropped. */
+  [data-records-os-main-content] {
+    padding: 16px !important;
+  }
+  [data-records-os-topbar] {
+    padding: 0 16px !important;
+  }
+}
+
+/* =========================================================================
    4UWHAt design tokens — ported from /Users/kiteboard/medomni/assets/lib/colors_and_type.css
    Source of truth: assets/README.md §Design Tokens.
    The default theme is DARK; .theme-light flips semantic foreground/background.
