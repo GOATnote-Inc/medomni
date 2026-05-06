@@ -794,5 +794,17 @@ export async function POST(req: NextRequest) {
     onError: (e) => `Agent error: ${(e as Error).message}`,
   });
 
-  return createUIMessageStreamResponse({ stream });
+  // X-Active-Skill: surfaces which skill (if any) the V_final router
+  // dispatched for this request, so the /4UWHAt frontend can highlight
+  // the matching card on the public /skills registry. Sent only when
+  // the V_final profile is in use; otherwise the header is omitted so
+  // we don't suggest a router fired when none did. CORS-exposed via
+  // Access-Control-Expose-Headers because /4UWHAt is served via the
+  // www.thegoatnote.com reverse proxy.
+  const responseHeaders: Record<string, string> = {};
+  if (useVFinal) {
+    responseHeaders["X-Active-Skill"] = activeSkill;
+    responseHeaders["Access-Control-Expose-Headers"] = "X-Active-Skill";
+  }
+  return createUIMessageStreamResponse({ stream, headers: responseHeaders });
 }
