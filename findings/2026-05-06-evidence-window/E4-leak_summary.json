@@ -1,0 +1,35 @@
+{
+  "config": {
+    "ngram_n": 5,
+    "num_perm": 128,
+    "jaccard_threshold": 0.7,
+    "sample_limit_train_per_corpus": 5000,
+    "sample_limit_eval_per_benchmark": 1000
+  },
+  "n_train_inserted": 10000,
+  "wall_time_s": 46,
+  "results": {
+    "MedQA-USMLE-4opt": {
+      "n_eval": 1000,
+      "n_flag": 0,
+      "pct_overlap_at_jaccard_>=_0.7": 0.0,
+      "first_5_flagged": []
+    },
+    "PubMedQA": {
+      "n_eval": 1000,
+      "n_flag": 0,
+      "pct_overlap_at_jaccard_>=_0.7": 0.0,
+      "first_5_flagged": []
+    },
+    "MedXpertQA-Text": {
+      "n_eval": 1000,
+      "n_flag": 0,
+      "pct_overlap_at_jaccard_>=_0.7": 0.0,
+      "first_5_flagged": []
+    },
+    "HealthBench-Hard": {
+      "note": "manifest not found at /home/ubuntu/medomni/corpus/pins/healthbench-hard-1000.yaml; run from laptop or check repo path",
+      "skipped": true
+    }
+  }
+}

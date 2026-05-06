@@ -1,0 +1,78 @@
+---
+# B3 — NVFP4 vs BF16 quality diff (catfish vs lobster on same items)
+#
+# Pre-registered before any B3 run. Git commit timestamp = pre-reg proof.
+
+name: b3-nvfp4-vs-bf16-diff
+hypothesis: |
+  Serving V2.5 LoRA on NVFP4 (catfish, B300) costs <=1pp on each
+  ship-rule benchmark vs serving the same adapter on BF16 (lobster,
+  H200). Equivalence-margin design: we want to FAIL TO REJECT the
+  null hypothesis "no difference" — paired CI half-width <=1pp.
+
+hardware:
+  pod_a: unnecessary-peach-catfish (B300, NVFP4)
+  pod_b: evil-cyan-lobster (H200, BF16)
+  paired_design: same items, same prompts, same seeds, same eval script,
+    same judge endpoint (single-source-of-judgment via lobster's port 8003).
+
+success_criteria:
+  primary_equivalence:
+    - |MedQA-USMLE_NVFP4 - MedQA-USMLE_BF16| <= 1pp (point estimate)
+    - paired-CI half-width on the diff <= 1.5pp (n=500 sufficient)
+  secondary:
+    - HealthBench-Hard same equivalence margin
+    - PubMedQA-L same equivalence margin
+    - judge_incomplete rate matches +/- 1pp (judge sees comparable text)
+  on_pass: NVFP4 deploy on catfish is the prod default for V2.5 ship
+  on_fail: revert prod to BF16 on H200 (no NVFP4 deploy); investigate
+
+exclusion_rules:
+  - any item where one arm's response is empty (serve failure) drops
+    THE PAIR (don't bias by half-pair retention)
+  - any item where judge recused on either arm drops the pair
+  - skip any benchmark in E4 with >5% contamination (covered by
+    E4 verdict; NVFP4 vs BF16 diff still sound but not the primary
+    quality claim)
+
+sample_size:
+  per_benchmark_n: 500
+  trials: 1                  # paired design — trial-replication via seeds within
+  seeds: [42, 123, 7919]
+  rationale: |
+    n=500 paired with sigma_diff~5pp gives <=1.5pp CI half-width at 95%.
+    Power to detect a 1pp delta at 80% needs n>=393 -> 500 has headroom.
+
+decode_params:
+  temperature: 0.0
+  top_p: 1.0
+  max_new_tokens: 2048
+  thinking_enabled: false
+  batch_size: 1
+  seed: 42                   # SAME seed both arms
+
+manifest_fields_required:
+  - weights_sha256              # V2.5 adapter (SAME on both arms)
+  - base_weights_sha256_nvfp4   # nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4
+  - base_weights_sha256_bf16    # nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16
+  - eval_script_git_sha         # IDENTICAL git sha both arms
+  - prompt_template_sha256      # IDENTICAL
+  - system_prompt_sha256        # IDENTICAL
+  - grader_model_id             # qwen2.5-7b on lobster:8003 — single source
+  - grader_prompt_sha256
+  - decode_params               # IDENTICAL
+  - seed_list                   # [42,123,7919] both
+  - item_manifest_sha256        # IDENTICAL — same exact item ids
+  - hardware_a                  # catfish manifest from E2
+  - hardware_b                  # lobster manifest from E2
+  - runtime_seconds_per_arm
+  - total_tokens_in_per_arm
+  - total_tokens_out_per_arm
+  - cost_usd_per_arm
+
+stats_protocol: findings/2026-05-06-evidence-window/STATS-PROTOCOL.md
+notes: |
+  Equivalence test (TOST) — NOT the standard "is delta > 0" test.
+  Reject H0_low: delta < -margin AND H0_hi: delta > +margin, both at
+  alpha=0.025 one-tailed -> equivalence at alpha=0.05 overall.
+  Margin = 1pp. Reported alongside paired bootstrap CI.

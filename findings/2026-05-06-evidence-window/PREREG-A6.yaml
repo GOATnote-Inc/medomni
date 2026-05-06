@@ -1,0 +1,88 @@
+---
+# A6 — GRPO rollouts on V2.5 LoRA (V3 stage)
+#
+# Pre-registered before any GRPO training run. Git commit timestamp =
+# pre-reg proof. Supersedes any rough V3 gestures in
+# findings/2026-05-05-v3-grpo/ that predate this PREREG.
+
+name: a6-v3-grpo-on-v2.5
+hypothesis: |
+  Reinforcement learning from a verifiable reward signal (USMLE answer
+  correctness + rubric-grader score) on top of the V2.5 reasoning-SFT
+  adapter lifts MedQA-USMLE and MedXpertQA-Text by an additional
+  >=+3pp (lower-CI-bound) on top of V2.5's own delta vs V0. GRPO is
+  chosen over PPO/DPO because (a) verifiable medical rewards exist
+  (USMLE has gold labels; HealthBench has rubrics), (b) GRPO requires
+  no critic/value model — saves H200 memory.
+
+hardware:
+  pod: evil-cyan-lobster
+  gpu: NVIDIA H200 (Hopper, 144 GB HBM)
+  framework: NeMo Aligner OR trl-grpo (decision tree below)
+  framework_decision_rule: |
+    Use NeMo Aligner if it supports LoRA-on-LoRA composition (V2.5 adapter
+    frozen as new "base"). Else trl-grpo with manually merged V2.5+base
+    in bf16, then new LoRA on top. Decision logged in run-start CARD.
+
+success_criteria:
+  pass_conditions_all_required:
+    - V3 (GRPO) delta over V2.5 on MedQA-USMLE: lower-CI-bound > 0
+    - V3 delta over V2.5 on MedXpertQA-Text: lower-CI-bound >= +3pp
+    - V3 NO-regression on PubMedQA-L: lower-CI-bound >= -1pp
+    - V3 NO-regression on HealthBench-Hard: point estimate >= V2.5 point estimate
+    - reward-hacking probe (E5-style verbatim recall on rubric-targeted items): <5%
+  on_pass: proceed to V3.5 DPO refusal; promote V3 adapter to V_final candidate
+  on_fail: revert to V2.5; document GRPO as not-helpful with current reward shape
+
+exclusion_rules:
+  - any benchmark in E4 with >5% n-gram overlap to V3 GRPO rollout prompts
+    is excluded from primary pass criteria (would be train-eval contamination)
+  - reward-model collapse signal: if mean reward across last 1000 steps
+    diverges (>2 sigma above expected ceiling) without held-out gains,
+    HALT and revert
+  - if the rollout policy starts emitting verbatim USMLE-ground-truth
+    answers without explanation (reward-hacking), HALT and audit
+
+sample_size:
+  rollout:
+    n_prompts_per_step: 8
+    n_rollouts_per_prompt: 4   # GRPO group size
+    total_steps: 2000          # ~16K total rollouts
+    rationale: |
+      DeepSeekMath-RL precedent (arXiv 2402.03300): GRPO converges in
+      ~1-2K steps on 8B-class. Conservative ceiling.
+  eval:
+    per_benchmark_n: 500
+    trials: 3
+    seeds: [42, 123, 7919]
+
+decode_params:
+  rollout:
+    temperature: 1.0           # exploration during RL
+    top_p: 0.95
+    max_new_tokens: 2048
+    thinking_enabled: true     # GRPO trains the trace
+  evaluation:
+    temperature: 0.0
+    top_p: 1.0
+    max_new_tokens: 2048
+    thinking_enabled: false    # match V2.5 ship-rule eval contract
+    batch_size: 1
+
+manifest_fields_required:
+  - weights_sha256              # V3 adapter
+  - parent_weights_sha256       # V2.5 adapter sha 94d1f8d1...
+  - base_weights_sha256
+  - reward_model_id             # USMLE gold answer + qwen2.5-7b rubric
+  - reward_prompt_sha256
+  - eval_script_git_sha
+  - rollout_prompt_set_sha256
+  - rollout_prompt_set_id_list
+  - decode_params (rollout AND eval, separate)
+  - hardware
+  - runtime_seconds
+  - rollout_total_tokens
+  - eval_total_tokens
+  - cost_usd
+
+stats_protocol: findings/2026-05-06-evidence-window/STATS-PROTOCOL.md

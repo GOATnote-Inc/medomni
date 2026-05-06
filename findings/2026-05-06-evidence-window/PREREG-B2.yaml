@@ -1,0 +1,74 @@
+---
+# B2 — Throughput sweep (B300 NVFP4 prod path)
+#
+# Pre-registered before any B2 run. Git commit timestamp = pre-reg proof.
+
+name: b2-b300-throughput-sweep
+hypothesis: |
+  unnecessary-peach-catfish (B300, NVFP4) sustains >=300 tok/s decode
+  throughput at concurrency=8 with V2.5 LoRA hot-loaded, against the
+  Nemotron-3-Nano-30B-A3B-NVFP4 base. p95 TTFT <500ms at concurrency=8
+  on 1024-token prompts. p99 not regressed >10% vs no-LoRA baseline
+  measured at the same concurrency.
+
+hardware:
+  pod: unnecessary-peach-catfish
+  gpu: NVIDIA B300 (Blackwell, SM 10.x, NVFP4-native)
+  serve: vllm with NVFP4 + LoRA hot-load
+  baseline_no_lora_run_path: TBD     # paired with run, recorded in artifact
+
+success_criteria:
+  primary:
+    - decode_throughput_tok_per_s_at_concurrency_8 >= 300
+    - p95_ttft_ms_at_concurrency_8 <= 500
+    - p99_ttft_ms_at_concurrency_8_with_lora <= 1.10 * p99_no_lora
+  secondary:
+    - decode_throughput_at_concurrency_16 >= 600 (linear scaling sanity)
+    - LoRA hot-swap latency: <500ms (measured by unload->load pair)
+
+exclusion_rules:
+  - skip any concurrency level where >5% of requests timeout at 60s
+  - skip any window where co-tenant on the pod (judge, eval) shows
+    GPU util >5% (would invalidate isolated throughput measurement)
+
+sample_size:
+  warmup_requests: 200
+  measurement_requests_per_concurrency: 1000
+  concurrency_levels: [1, 2, 4, 8, 16, 32]
+  prompt_lengths: [256, 1024, 4096]
+  rationale: |
+    1000 reqs at C=8 -> 8000 total -> ~3 min wall-clock at 300 tok/s.
+    Bootstrap CI on tail latencies needs >=500 samples.
+
+decode_params:
+  temperature: 0.0
+  top_p: 1.0
+  max_new_tokens: 256
+  thinking_enabled: false
+  ignore_eos: false
+
+manifest_fields_required:
+  - weights_sha256              # V2.5 adapter sha 94d1f8d1...
+  - base_weights_sha256
+  - serve_engine_version        # vllm version
+  - hardware                    # full pod manifest from E2
+  - benchmark_script_git_sha
+  - benchmark_script_url
+  - benchmark_input_prompts_sha256
+  - tokenizer_id
+  - tokenizer_revision
+  - p50_ttft_ms                 # per concurrency level
+  - p95_ttft_ms
+  - p99_ttft_ms
+  - decode_throughput_tok_per_s
+  - prefill_throughput_tok_per_s
+  - gpu_util_avg_pct            # via nvidia-smi sampling
+  - vram_used_max_mib
+  - runtime_seconds
+
+stats_protocol: findings/2026-05-06-evidence-window/STATS-PROTOCOL.md
+notes: |
+  This is a perf benchmark, not a quality eval — Holm-Bonferroni
+  doesn't apply directly. We DO bootstrap-CI the p95/p99 tail latencies
+  (10000 resamples) and report Cohen's d on throughput delta vs
+  baseline. n=1000 per cell gives <1% half-width on median throughput.

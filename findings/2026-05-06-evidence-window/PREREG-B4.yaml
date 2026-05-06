@@ -1,0 +1,83 @@
+---
+# B4 — Multimodal paths (image + audio + text) on V2.5 LoRA
+#
+# Pre-registered before any B4 run. Git commit timestamp = pre-reg proof.
+
+name: b4-multimodal-paths
+hypothesis: |
+  V2.5 LoRA preserves the Omni base's multimodal capability: vision
+  (radiology image -> finding) and audio (clinical-narration -> ASR)
+  paths show <2pp degradation on held-out multimodal benchmarks vs the
+  un-LoRA'd Omni base. V2.5 trained only on text reasoning corpora;
+  this is a no-regression test against the V2.5 PREREG corpora-excluded
+  modules (`mlp1` was a target_module so vision should not have suffered).
+
+hardware:
+  pod: unnecessary-peach-catfish (B300, NVFP4) for serve
+  pod_alt: evil-cyan-lobster (H200, BF16) — fallback if catfish busy
+  serve_endpoint: http://127.0.0.1:8000/v1
+
+success_criteria:
+  primary_no_regression:
+    - VQA-RAD score: V2.5 - V0 >= -2pp (no regression)
+    - SLAKE-image score: V2.5 - V0 >= -2pp
+    - clinical-ASR WER: V2.5 - V0 <= +2pp (lower is better -> bound on delta)
+  secondary:
+    - text-only re-run on same items as V2.5 ship-rule: identical to
+      ship-rule output (sanity that pulling multimodal doesn't break text)
+  on_pass: V2.5 cleared for V_final merge; multimodal serving path unblocked
+  on_fail: revert mlp1 LoRA target; rerun text-only V2.5b without mlp1
+
+exclusion_rules:
+  - any image that fails to decode (corrupt jpg) drops the item
+  - any audio file with duration <2s or >60s skipped (out-of-distribution
+    for clinical-narration set)
+  - VQA-RAD items that require visual grounding for which the radiology
+    set lacks ground-truth bounding boxes are reported as text-only
+
+sample_size:
+  vqa_rad_n: 300
+  slake_n: 300
+  asr_n: 200
+  trials: 1                  # paired same-item; seed sweep within
+  seeds: [42, 123, 7919]
+  rationale: |
+    n=300 with paired bootstrap detects a 2pp degradation at 80% power,
+    alpha=0.05 two-tailed, sigma~5pp.
+
+decode_params:
+  text_arm:
+    temperature: 0.0
+    top_p: 1.0
+    max_new_tokens: 1024
+    thinking_enabled: false
+  asr_arm:
+    temperature: 0.0
+    top_p: 1.0
+    max_new_tokens: 512    # transcripts are short
+  vision_arm:
+    temperature: 0.0
+    top_p: 1.0
+    max_new_tokens: 256
+
+manifest_fields_required:
+  - weights_sha256              # V2.5 adapter
+  - base_weights_sha256
+  - eval_script_git_sha
+  - vision_processor_id         # Omni's HF processor revision
+  - audio_processor_id
+  - prompt_template_sha256_per_modality
+  - decode_params
+  - seed_list
+  - item_manifest_sha256_per_modality
+  - dataset_revision_per_modality
+  - hardware
+  - runtime_seconds_per_modality
+  - total_tokens_in
+  - total_tokens_out
+
+stats_protocol: findings/2026-05-06-evidence-window/STATS-PROTOCOL.md
+notes: |
+  This is a no-regression test, not an improvement test. Equivalence
+  margin = 2pp (more lenient than B3's 1pp because multimodal noise
+  floor is wider). Holm-Bonferroni k=3 across the three modalities.

@@ -1,0 +1,82 @@
+---
+# A5 — Thinking-on vs thinking-off ablation on V2.5 LoRA
+#
+# Pre-registered before any A5 run. Git commit timestamp = pre-reg proof.
+
+name: a5-thinking-on-vs-off
+hypothesis: |
+  V2.5 reasoning-SFT was trained with reasoning-trace targets but the
+  ship-rule eval runs with `enable_thinking=False` (CLAUDE-baked
+  decision in sovereign_bench.py:125 to reduce variance). A5 measures
+  the cost of that decision: enabling thinking should ADD >=+5pp to
+  MedXpertQA-Text and >=+3pp to MedQA-USMLE on the same paired item
+  set. If thinking adds <2pp on either, the SFT did not actually
+  internalize the reasoning trace and the +loss-curve gains were
+  pattern-matching the rubric — important null result.
+
+hardware:
+  pod: evil-cyan-lobster
+  gpu: NVIDIA H200 (Hopper, 144 GB HBM)
+  serve_endpoint: http://127.0.0.1:8000/v1 (vllm-BF16 + V2.5 LoRA hot-load)
+
+success_criteria:
+  primary:
+    - thinking-on delta over thinking-off on MedXpertQA-Text >= +5pp (paired)
+    - thinking-on delta over thinking-off on MedQA-USMLE >= +3pp (paired)
+  secondary:
+    - thinking-on tokens-out median <=4x thinking-off median
+      (cost ceiling: not worth deploying thinking-on if it 10x's tokens)
+  on_pass: V_final default decoder = thinking-on; whitepaper Table 3
+  on_fail: V_final default decoder = thinking-off; document as null result
+
+exclusion_rules:
+  - same item set on both arms (paired design); skip any item whose
+    thinking-on attempt times out at max_new_tokens=4096
+  - any item where thinking-on `reasoning` field is empty (Omni not
+    actually emitting CoT) is excluded and counted in n_thinking_empty
+
+sample_size:
+  per_arm_n: 300            # MedXpertQA-Text + MedQA-USMLE held-out
+  trials: 1                 # paired same-item; trial replication via seed sweep below
+  seeds: [42, 123, 7919]    # 3 seeds within the single paired run
+  rationale: |
+    Paired bootstrap with n=300, 10000 resamples, gives ~1.5pp CI half-width
+    on a 0.7-baseline; sufficient to detect a 3pp delta at 95%.
+
+decode_params:
+  arm_a_thinking_off:
+    temperature: 0.0
+    top_p: 1.0
+    max_new_tokens: 2048
+    thinking_enabled: false
+    batch_size: 1
+  arm_b_thinking_on:
+    temperature: 0.0
+    top_p: 1.0
+    max_new_tokens: 4096       # 2x for CoT budget
+    thinking_enabled: true
+    batch_size: 1
+    seed: 42
+
+manifest_fields_required:
+  - weights_sha256
+  - base_weights_sha256
+  - eval_script_git_sha
+  - prompt_template_sha256
+  - system_prompt_sha256
+  - grader_model_id
+  - grader_prompt_sha256
+  - decode_params (BOTH arms verbatim)
+  - seed_list
+  - item_manifest_sha256
+  - hardware
+  - runtime_seconds (per arm)
+  - total_tokens_in
+  - total_tokens_out
+  - thinking_tokens_emitted_median (NEW field for A5)
+  - cost_usd
+
+stats_protocol: findings/2026-05-06-evidence-window/STATS-PROTOCOL.md
+notes: |
+  Holm-Bonferroni k=2 (the two primary criteria). Effect size = paired
+  Cohen's d. Power post-hoc reported alongside CI in CARD.md.
