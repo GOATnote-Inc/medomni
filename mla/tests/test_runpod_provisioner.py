@@ -4,6 +4,7 @@ Every cost-incurring operation must refuse without confirm=True. These
 tests enforce that contract; if a future refactor breaks it, the suite
 fails loudly before anyone burns GPU hours.
 """
+
 from __future__ import annotations
 
 import pytest

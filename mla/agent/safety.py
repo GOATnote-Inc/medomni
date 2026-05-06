@@ -13,6 +13,7 @@ References:
     mental-models/red-team-adversarial.md §4, §7
     prism/gaming_patterns.py check_no_trivial_delegation (complementary)
 """
+
 from __future__ import annotations
 
 import ast
@@ -21,7 +22,7 @@ from collections.abc import Callable
 import numpy as np
 
 _BANNED_TOKENS: tuple[str, ...] = (
-    "import ",          # any import statement
+    "import ",  # any import statement
     "__import__",
     "eval(",
     "exec(",
@@ -61,7 +62,7 @@ _BANNED_TORCH_TOKENS: tuple[str, ...] = (
     "torch.multiprocessing",
     "torch.distributed",
     "torch.cuda.nvtx",  # debugging only; out of scope for mutations
-    "torch._C",          # raw C bindings
+    "torch._C",  # raw C bindings
     "torch.classes",
     "torch.fx.wrap",
     "load_inline",
@@ -179,13 +180,29 @@ def compile_candidate_torch(source: str, *, fn_name: str = "mla_decode_candidate
         ) from e
 
     safe_builtins = {
-        "range": range, "len": len, "min": min, "max": max, "abs": abs,
-        "sum": sum, "float": float, "int": int, "bool": bool, "tuple": tuple,
-        "list": list, "True": True, "False": False, "None": None,
-        "Exception": Exception, "ValueError": ValueError, "TypeError": TypeError,
-        "NameError": NameError, "RuntimeError": RuntimeError,
-        "AssertionError": AssertionError, "ArithmeticError": ArithmeticError,
-        "ZeroDivisionError": ZeroDivisionError, "OverflowError": OverflowError,
+        "range": range,
+        "len": len,
+        "min": min,
+        "max": max,
+        "abs": abs,
+        "sum": sum,
+        "float": float,
+        "int": int,
+        "bool": bool,
+        "tuple": tuple,
+        "list": list,
+        "True": True,
+        "False": False,
+        "None": None,
+        "Exception": Exception,
+        "ValueError": ValueError,
+        "TypeError": TypeError,
+        "NameError": NameError,
+        "RuntimeError": RuntimeError,
+        "AssertionError": AssertionError,
+        "ArithmeticError": ArithmeticError,
+        "ZeroDivisionError": ZeroDivisionError,
+        "OverflowError": OverflowError,
     }
     ns: dict = {
         "np": np,

@@ -23,6 +23,7 @@ Usage (on the H100 pod):
     export PATH="/workspace/prism-mla/.venv/bin:/usr/local/cuda/bin:$PATH"
     .venv/bin/python scripts/evolve_plus_flashinfer.py
 """
+
 from __future__ import annotations
 
 import json
@@ -60,8 +61,10 @@ def run_stub_evolve() -> dict:
         for isl in it["islands"]:
             cr = isl.get("critiques", [])
             rejs = sum(1 for c in cr if c["recommendation"] == "reject")
-            print(f"  iter={it['iteration']}  island={isl['name']:<8s}  "
-                  f"top={isl['top_score']:,.1f}  critique_reject={rejs}")
+            print(
+                f"  iter={it['iteration']}  island={isl['name']:<8s}  "
+                f"top={isl['top_score']:,.1f}  critique_reject={rejs}"
+            )
     print(f"  best.score          = {summary['best']['score']:,.2f}")
     print(f"  best.tokens_per_sec = {summary['best']['tokens_per_sec']:,.0f}")
     print(f"  best.median_ns      = {summary['best']['median_ns']:,.0f}")
@@ -76,22 +79,30 @@ def run_flashinfer_sweep() -> list[dict]:
         environment_report,
         run_flashinfer_mla_decode,
     )
+
     print("\n=== 2. flashinfer MLA decode sweep (GPU, DeepSeek dims) ===")
     print(f"  environment: {environment_report().get('device_name', '?')}")
     sweep_lens = [int(x) for x in os.environ.get("PRISM_SWEEP", "256,1024,4096,8192").split(",")]
     results = []
     for kv_len in sweep_lens:
         cfg = FlashInferMLAConfig(
-            batch_size=1, kv_len=kv_len, page_size=64,
-            q_dtype="bfloat16", kv_dtype="bfloat16", backend="auto",
+            batch_size=1,
+            kv_len=kv_len,
+            page_size=64,
+            q_dtype="bfloat16",
+            kv_dtype="bfloat16",
+            backend="auto",
         )
         t0 = time.perf_counter()
         r = run_flashinfer_mla_decode(cfg)
         wall = time.perf_counter() - t0
-        v = r["verify"]; b = r["bench"]
-        print(f"  kv_len={kv_len:>5d}  max_err={v['max_abs_error']:.2e}  "
-              f"median={b['median_ns']/1000:7.1f} us  p90={b['p90_ns']/1000:7.1f} us  "
-              f"tok/s={b['tokens_per_sec']:>8.0f}  setup_s={wall-(b['median_ns']*b['iters']/1e9):.2f}")
+        v = r["verify"]
+        b = r["bench"]
+        print(
+            f"  kv_len={kv_len:>5d}  max_err={v['max_abs_error']:.2e}  "
+            f"median={b['median_ns']/1000:7.1f} us  p90={b['p90_ns']/1000:7.1f} us  "
+            f"tok/s={b['tokens_per_sec']:>8.0f}  setup_s={wall-(b['median_ns']*b['iters']/1e9):.2f}"
+        )
         results.append({"kv_len": kv_len, "verify": v, "bench": b, "config": r["config"]})
     return results
 
@@ -106,25 +117,33 @@ def main() -> int:
         "context": {
             "stub_evolve_note": "numpy-backed mutations at toy dims; measures loop mechanics",
             "flashinfer_note": "production DeepSeek dims (128 heads, 512 d_ckv, 64 d_pe), bf16; measures real GPU floor",
-            "dimension_mismatch": ("stub mutations use a numpy signature "
-                                   "(q_nope, q_rope, c_KV, k_R, W_UK, W_UV, scale) "
-                                   "that does not match flashinfer's paged "
-                                   "layout; bridging requires torch-GPU mutations"),
+            "dimension_mismatch": (
+                "stub mutations use a numpy signature "
+                "(q_nope, q_rope, c_KV, k_R, W_UK, W_UV, scale) "
+                "that does not match flashinfer's paged "
+                "layout; bridging requires torch-GPU mutations"
+            ),
         },
     }
-    out = Path(__file__).resolve().parent.parent / "results" / "logs" / "evolve_plus_flashinfer.json"
+    out = (
+        Path(__file__).resolve().parent.parent / "results" / "logs" / "evolve_plus_flashinfer.json"
+    )
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(combined, indent=2))
 
     print("\n=== summary ===")
     best = evolve_result["summary"]["best"]
-    print(f"  stub evolve winner      :: {best['tokens_per_sec']:>10.0f} tok/s  "
-          f"median={best['median_ns']/1000:>6.1f} us   (numpy, toy dims)")
+    print(
+        f"  stub evolve winner      :: {best['tokens_per_sec']:>10.0f} tok/s  "
+        f"median={best['median_ns']/1000:>6.1f} us   (numpy, toy dims)"
+    )
     for r in flashinfer_sweep:
-        print(f"  flashinfer kv_len={r['kv_len']:>5d} :: "
-              f"{r['bench']['tokens_per_sec']:>10.0f} tok/s  "
-              f"median={r['bench']['median_ns']/1000:>6.1f} us   "
-              f"(GPU, DeepSeek dims, bf16)")
+        print(
+            f"  flashinfer kv_len={r['kv_len']:>5d} :: "
+            f"{r['bench']['tokens_per_sec']:>10.0f} tok/s  "
+            f"median={r['bench']['median_ns']/1000:>6.1f} us   "
+            f"(GPU, DeepSeek dims, bf16)"
+        )
     print(f"\n[log] {out}")
     return 0
 

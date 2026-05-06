@@ -15,12 +15,12 @@ Flow:
 No agent involved. This is the measurement infrastructure working against a
 known-good mutation so we can trust the loop before wiring an LLM to it.
 """
+
 from __future__ import annotations
 
 import json
 import sys
 from pathlib import Path
-
 
 # Allow `python loop/manual_mutation.py` from repo root.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -78,7 +78,7 @@ def main() -> int:
     # Build extra configs for Tier-2 sweep.
     sweep_configs = [
         make_inputs(MLAConfig(1, 8, 128, 64, 16, 32, 32), seed=1),
-        make_inputs(MLAConfig(4, 8, 64,  64, 16, 32, 32), seed=2),
+        make_inputs(MLAConfig(4, 8, 64, 64, 16, 32, 32), seed=2),
         make_inputs(MLAConfig(2, 16, 256, 64, 16, 32, 32), seed=3),
     ]
     result = validate(
@@ -89,8 +89,10 @@ def main() -> int:
         config_sweep=sweep_configs,
         invariants=DEFAULT_INVARIANTS,
     )
-    print(f"  passed={result.passed}  tier_reached={result.tier_reached}  "
-          f"max_err={result.max_abs_error:.3e}")
+    print(
+        f"  passed={result.passed}  tier_reached={result.tier_reached}  "
+        f"max_err={result.max_abs_error:.3e}"
+    )
     if not result.passed:
         print(f"  FAIL at tier {result.tier_failed_at}: {result.failed_check}")
         return 1
@@ -98,13 +100,17 @@ def main() -> int:
     # ---- Step 2: benchmark both kernels ----
     print("\n[bench] baseline mla_decode_naive")
     naive = benchmark(mla_decode_naive, inputs, warmup=5, iters=50)
-    print(f"  median={naive.median_ns:9.0f} ns  mean={naive.mean_ns:9.0f} ns  "
-          f"std={naive.std_ns:8.0f} ns  tokens/sec={naive.tokens_per_sec:,.0f}")
+    print(
+        f"  median={naive.median_ns:9.0f} ns  mean={naive.mean_ns:9.0f} ns  "
+        f"std={naive.std_ns:8.0f} ns  tokens/sec={naive.tokens_per_sec:,.0f}"
+    )
 
     print("[bench] candidate mla_decode_absorbed")
     absorbed = benchmark(mla_decode_absorbed, inputs, warmup=5, iters=50)
-    print(f"  median={absorbed.median_ns:9.0f} ns  mean={absorbed.mean_ns:9.0f} ns  "
-          f"std={absorbed.std_ns:8.0f} ns  tokens/sec={absorbed.tokens_per_sec:,.0f}")
+    print(
+        f"  median={absorbed.median_ns:9.0f} ns  mean={absorbed.mean_ns:9.0f} ns  "
+        f"std={absorbed.std_ns:8.0f} ns  tokens/sec={absorbed.tokens_per_sec:,.0f}"
+    )
 
     speedup = naive.median_ns / absorbed.median_ns if absorbed.median_ns > 0 else float("inf")
     print(f"\n[speedup] absorbed is {speedup:.2f}x over naive (median)")
@@ -122,8 +128,9 @@ def main() -> int:
     naive_score = score(naive.tokens_per_sec, cov_stability(naive))
     absorbed_score = score(absorbed.tokens_per_sec, cov_stability(absorbed))
     winner = "absorbed" if absorbed_score > naive_score else "naive"
-    print(f"\n[score] naive={naive_score:,.2f}  absorbed={absorbed_score:,.2f}  "
-          f"winner={winner}")
+    print(
+        f"\n[score] naive={naive_score:,.2f}  absorbed={absorbed_score:,.2f}  " f"winner={winner}"
+    )
 
     # ---- Step 5: persist ----
     out_path = Path(__file__).resolve().parent.parent / "results" / "logs" / "manual_mutation.json"
@@ -137,20 +144,26 @@ def main() -> int:
         },
         "bench": {
             "naive": {
-                "median_ns": naive.median_ns, "mean_ns": naive.mean_ns,
-                "std_ns": naive.std_ns, "p90_ns": naive.p90_ns,
+                "median_ns": naive.median_ns,
+                "mean_ns": naive.mean_ns,
+                "std_ns": naive.std_ns,
+                "p90_ns": naive.p90_ns,
                 "tokens_per_sec": naive.tokens_per_sec,
             },
             "absorbed": {
-                "median_ns": absorbed.median_ns, "mean_ns": absorbed.mean_ns,
-                "std_ns": absorbed.std_ns, "p90_ns": absorbed.p90_ns,
+                "median_ns": absorbed.median_ns,
+                "mean_ns": absorbed.mean_ns,
+                "std_ns": absorbed.std_ns,
+                "p90_ns": absorbed.p90_ns,
                 "tokens_per_sec": absorbed.tokens_per_sec,
             },
             "speedup_median": speedup,
         },
         "physics": {
-            "naive_flops": naive_flops, "absorbed_flops": absorbed_flops,
-            "flop_ratio": flop_ratio, "bytes_moved_from_cache": bytes_moved,
+            "naive_flops": naive_flops,
+            "absorbed_flops": absorbed_flops,
+            "flop_ratio": flop_ratio,
+            "bytes_moved_from_cache": bytes_moved,
         },
         "score": {"naive": naive_score, "absorbed": absorbed_score, "winner": winner},
     }

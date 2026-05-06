@@ -12,6 +12,7 @@ Usage:
     set -a && source /Users/kiteboard/lostbench/.env && set +a && \\
     .venv/bin/python scripts/claude_torch_mutate.py
 """
+
 from __future__ import annotations
 
 import ast
@@ -54,7 +55,9 @@ def get_parent_source(parent_fn_name: str = "_baseline_bf16") -> str:
 
 def main() -> int:
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("ERROR: ANTHROPIC_API_KEY not in env; source the canonical .env first", file=sys.stderr)
+        print(
+            "ERROR: ANTHROPIC_API_KEY not in env; source the canonical .env first", file=sys.stderr
+        )
         return 1
 
     parent_src = get_parent_source()
@@ -80,16 +83,20 @@ def main() -> int:
             wall = time.perf_counter() - t0
         except Exception as e:
             print(f"  LLM call failed: {type(e).__name__}: {e}")
-            records.append({
-                "index": i, "objective": objective,
-                "error": f"{type(e).__name__}: {e}",
-                "wall_s": time.perf_counter() - t0,
-            })
+            records.append(
+                {
+                    "index": i,
+                    "objective": objective,
+                    "error": f"{type(e).__name__}: {e}",
+                    "wall_s": time.perf_counter() - t0,
+                }
+            )
             continue
 
         # Safety token check locally (lightweight — no torch required).
         # The pod-side evaluator runs compile_candidate_torch with real torch.
         from agent.safety import _BANNED_TORCH_TOKENS, scan_ast, scan_tokens
+
         bad_tokens = scan_tokens(resp.source)
         bad_torch = [t for t in _BANNED_TORCH_TOKENS if t in resp.source]
         try:
@@ -99,27 +106,44 @@ def main() -> int:
         compile_ok = not (bad_tokens or bad_torch or bad_ast)
         compile_err = None
         if not compile_ok:
-            compile_err = f"banned_tokens={bad_tokens} banned_torch={bad_torch} banned_ast={bad_ast}"
+            compile_err = (
+                f"banned_tokens={bad_tokens} banned_torch={bad_torch} banned_ast={bad_ast}"
+            )
 
-        print(f"  wall={wall:.1f}s  src_len={len(resp.source)}  safety_ok={compile_ok}"
-              + (f"  err={compile_err}" if compile_err else ""))
+        print(
+            f"  wall={wall:.1f}s  src_len={len(resp.source)}  safety_ok={compile_ok}"
+            + (f"  err={compile_err}" if compile_err else "")
+        )
         print(f"  reasoning[:200]: {resp.reasoning[:200]!r}")
-        records.append({
-            "index": i, "objective": objective,
-            "wall_s": wall, "reasoning": resp.reasoning,
-            "source": resp.source, "raw": resp.raw,
-            "compile_ok": compile_ok, "compile_error": compile_err,
-        })
+        records.append(
+            {
+                "index": i,
+                "objective": objective,
+                "wall_s": wall,
+                "reasoning": resp.reasoning,
+                "source": resp.source,
+                "raw": resp.raw,
+                "compile_ok": compile_ok,
+                "compile_error": compile_err,
+            }
+        )
 
     out = Path("/tmp/claude_torch_mutations.json")
-    out.write_text(json.dumps({
-        "parent_name": "baseline_bf16",
-        "parent_source": parent_src,
-        "records": records,
-        "total_wall_s": time.perf_counter() - total_t0,
-    }, indent=2))
+    out.write_text(
+        json.dumps(
+            {
+                "parent_name": "baseline_bf16",
+                "parent_source": parent_src,
+                "records": records,
+                "total_wall_s": time.perf_counter() - total_t0,
+            },
+            indent=2,
+        )
+    )
     n_ok = sum(1 for r in records if r.get("compile_ok"))
-    print(f"\n[done] {n_ok}/{len(records)} compile-clean; total wall {time.perf_counter() - total_t0:.1f}s")
+    print(
+        f"\n[done] {n_ok}/{len(records)} compile-clean; total wall {time.perf_counter() - total_t0:.1f}s"
+    )
     print(f"[log] {out}")
     return 0
 

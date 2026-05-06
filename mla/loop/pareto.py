@@ -12,6 +12,7 @@ linear-score winner is additionally surfaced as the headline kernel.
 Cross-ref: mental-models/munger-inversion.md §9 (don't collapse to one
 scalar; keep the front).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -22,7 +23,7 @@ class ParetoPoint:
     identifier: str
     tokens_per_sec: float
     stability: float
-    max_abs_error: float   # lower is better; we invert inside dominates()
+    max_abs_error: float  # lower is better; we invert inside dominates()
 
     @property
     def axes(self) -> tuple[float, float, float]:
@@ -33,8 +34,8 @@ def dominates(a: ParetoPoint, b: ParetoPoint) -> bool:
     """A dominates B iff A >= B on every axis and A > B on at least one."""
     a_axes = a.axes
     b_axes = b.axes
-    all_ge = all(x >= y for x, y in zip(a_axes, b_axes))
-    any_gt = any(x > y for x, y in zip(a_axes, b_axes))
+    all_ge = all(x >= y for x, y in zip(a_axes, b_axes, strict=False))
+    any_gt = any(x > y for x, y in zip(a_axes, b_axes, strict=False))
     return all_ge and any_gt
 
 

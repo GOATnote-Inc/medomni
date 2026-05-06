@@ -91,7 +91,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("baseline", type=Path, help="path to baseline artifact JSON")
     parser.add_argument("candidate", type=Path, help="path to candidate artifact JSON")
-    parser.add_argument("--out", type=Path, default=None, help="write Markdown to this path (default: stdout)")
+    parser.add_argument(
+        "--out", type=Path, default=None, help="write Markdown to this path (default: stdout)"
+    )
     parser.add_argument("--baseline-label", default=None, help="display label for baseline")
     parser.add_argument("--candidate-label", default=None, help="display label for candidate")
     args = parser.parse_args()
@@ -127,7 +129,9 @@ def main() -> int:
     a("")
     a(f"- **Baseline**: `{args.baseline}`")
     a(f"- **Candidate**: `{args.candidate}`")
-    a(f"- **Mean score**: `{base_mean:.3f}` → `{cand_mean:.3f}` ({_delta_arrow(base_mean, cand_mean)})")
+    a(
+        f"- **Mean score**: `{base_mean:.3f}` → `{cand_mean:.3f}` ({_delta_arrow(base_mean, cand_mean)})"
+    )
     a(f"- **Verdict**: {_verdict(base_mean, cand_mean, fix_deltas)}")
     a("")
     a("## Per-fixture deltas")
