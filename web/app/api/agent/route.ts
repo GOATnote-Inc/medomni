@@ -40,6 +40,11 @@ import {
   getPatientContext,
   type PatientContextResult,
 } from "@/lib/tools/patient-context";
+import {
+  buildVFinalSystemContent,
+  isVFinalProfile,
+  type SkillIntent,
+} from "@/lib/agent/skills";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -636,9 +641,45 @@ export async function POST(req: NextRequest) {
   const patientContextBlock = await buildPatientContextForSystemPrompt(
     requestPatientId,
   );
-  const systemContent = patientContextBlock
+  const baseSystemContent = patientContextBlock
     ? `${SYSTEM_PROMPT}\n\n---\n\n# Active patient session\n\nThe user is currently viewing the following patient's record. Reason from this context whenever the question concerns this patient. Do NOT ask for "patient ID" — the patient is already loaded.\n\n${patientContextBlock}`
     : SYSTEM_PROMPT;
+
+  // V_final profile (per Boris Cherny / Claude Code skills pattern):
+  // `?profile=v_final` opts the request into the markdown-driven skills
+  // router. Default behavior unchanged. The profile splices a plan-then-act
+  // header + the matched skill (differential / calc / handoff) into the
+  // system prompt before dispatch. Ships every future skill at markdown
+  // cadence rather than at training-cycle cadence.
+  const url = new URL(req.url);
+  const useVFinal = isVFinalProfile(url.searchParams);
+  let activeSkill: SkillIntent | "default" = "default";
+  let systemContent = baseSystemContent;
+  if (useVFinal) {
+    const lastUserText = (() => {
+      for (let i = incoming.length - 1; i >= 0; i--) {
+        const m = incoming[i];
+        if (m.role !== "user") continue;
+        const text = ((m.parts ?? []) as UIMessagePartLike[])
+          .filter((p) => p.type === "text" && typeof p.text === "string")
+          .map((p) => p.text as string)
+          .join(" ");
+        if (text.trim()) return text;
+      }
+      return "";
+    })();
+    const { content, intent } = buildVFinalSystemContent(
+      baseSystemContent,
+      lastUserText,
+    );
+    systemContent = content;
+    activeSkill = intent;
+    // Server log for observability. PR #5 will surface this to the UI as
+    // a "skill registry" badge so clinicians can see which skill answered.
+    console.log(
+      `[agent] profile=v_final intent=${activeSkill} systemPromptBytes=${systemContent.length}`,
+    );
+  }
 
   const stream = createUIMessageStream({
     async execute({ writer }) {
