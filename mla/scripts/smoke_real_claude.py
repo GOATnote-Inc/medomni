@@ -3,6 +3,7 @@ parsing + safety gate + validator all survive real LLM output.
 
 Small, cheap, deliberate. Budget cap: max_tokens=4096 per call, 2 calls.
 """
+
 from __future__ import annotations
 
 import json
@@ -42,7 +43,9 @@ def main() -> int:
     t0 = time.perf_counter()
     mresp = client.mutate(req)
     t_mut = time.perf_counter() - t0
-    print(f"[smoke] mutate returned in {t_mut:.1f}s; reasoning_len={len(mresp.reasoning)}, source_len={len(mresp.source)}")
+    print(
+        f"[smoke] mutate returned in {t_mut:.1f}s; reasoning_len={len(mresp.reasoning)}, source_len={len(mresp.source)}"
+    )
     print(f"[smoke] reasoning (first 300 chars):\n  {mresp.reasoning[:300]!r}")
     print(f"[smoke] source (first 200 chars):\n  {mresp.source[:200]!r}")
 
@@ -61,17 +64,21 @@ def main() -> int:
     cfg = MLAConfig(batch=1, heads=4, kv_len=32, d_c=16, d_r=8, qk_nope=16, v_head=16)
     inputs = make_inputs(cfg, seed=0)
     vresult = validate(fn, mla_decode_naive, inputs, tolerance=1e-3)
-    print(f"[smoke] validator: passed={vresult.passed}  tier_reached={vresult.tier_reached}  max_err={vresult.max_abs_error:.3e}")
+    print(
+        f"[smoke] validator: passed={vresult.passed}  tier_reached={vresult.tier_reached}  max_err={vresult.max_abs_error:.3e}"
+    )
     if not vresult.passed:
         print(f"[smoke] validator failure: {vresult.failed_check}")
 
     # --- critique call ---
     print("[smoke] calling critique()...")
     t0 = time.perf_counter()
-    cresp = client.critique(CritiqueRequest(
-        baseline_source=baseline_src,
-        candidate_source=mresp.source,
-    ))
+    cresp = client.critique(
+        CritiqueRequest(
+            baseline_source=baseline_src,
+            candidate_source=mresp.source,
+        )
+    )
     t_crit = time.perf_counter() - t0
     print(f"[smoke] critique returned in {t_crit:.1f}s")
     print(f"[smoke] numerical_risk={cresp.numerical_risk}")
@@ -91,7 +98,8 @@ def main() -> int:
         },
         "compile": {"passed": True},
         "validator": {
-            "passed": vresult.passed, "tier_reached": vresult.tier_reached,
+            "passed": vresult.passed,
+            "tier_reached": vresult.tier_reached,
             "max_abs_error": vresult.max_abs_error,
             "failed_check": vresult.failed_check,
         },
@@ -109,14 +117,18 @@ def main() -> int:
     out.write_text(json.dumps(log, indent=2))
     print(f"[smoke] log written: {out}")
 
-    print(json.dumps({
-        "smoke": "ok" if vresult.passed else "validator_failed",
-        "validator_passed": vresult.passed,
-        "max_abs_error": vresult.max_abs_error,
-        "critique_recommendation": cresp.recommendation,
-        "mutate_wall_s": t_mut,
-        "critique_wall_s": t_crit,
-    }))
+    print(
+        json.dumps(
+            {
+                "smoke": "ok" if vresult.passed else "validator_failed",
+                "validator_passed": vresult.passed,
+                "max_abs_error": vresult.max_abs_error,
+                "critique_recommendation": cresp.recommendation,
+                "mutate_wall_s": t_mut,
+                "critique_wall_s": t_crit,
+            }
+        )
+    )
     return 0 if vresult.passed else 1
 
 

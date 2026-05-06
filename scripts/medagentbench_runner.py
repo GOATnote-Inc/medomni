@@ -165,6 +165,7 @@ class Turn:
     refsol.py's scorers inspect `results.history[i].role` (either 'agent'
     or 'user') and `results.history[i].content`. We match that exactly
     so refsol scoring stays untouched."""
+
     role: str
     content: str
 
@@ -172,6 +173,7 @@ class Turn:
 @dataclass
 class TaskRunOutput:
     """Mirror of upstream TaskOutput shape for refsol compatibility."""
+
     status: str
     result: Any  # str (for FINISH) or None
     history: list[Turn]
@@ -183,10 +185,7 @@ def _now_stamp() -> str:
 
 def _now_iso() -> str:
     return (
-        _dt.datetime.now(_dt.timezone.utc)
-        .replace(tzinfo=None)
-        .isoformat(timespec="seconds")
-        + "Z"
+        _dt.datetime.now(_dt.timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
     )
 
 
@@ -220,8 +219,11 @@ def _load_refsol():
 def _verify_fhir_server(fhir_api_base: str) -> bool:
     import urllib.error
     import urllib.request
+
     try:
-        req = urllib.request.Request(fhir_api_base + "metadata", headers={"Accept": "application/json"})
+        req = urllib.request.Request(
+            fhir_api_base + "metadata", headers={"Accept": "application/json"}
+        )
         with urllib.request.urlopen(req, timeout=5) as resp:
             return resp.status == 200
     except (urllib.error.URLError, urllib.error.HTTPError):
@@ -271,6 +273,7 @@ def _send_get_request(url: str) -> dict:
     """Mirror utils.send_get_request's response shape."""
     import urllib.error
     import urllib.request
+
     try:
         req = urllib.request.Request(url, headers={"Accept": "application/json"})
         with urllib.request.urlopen(req, timeout=15) as resp:
@@ -300,7 +303,7 @@ def _claude_call_with_retry(client, messages: list[dict], max_retries: int = 4) 
             if status in (401, 403):
                 raise
             if status is not None and (status == 429 or 500 <= status < 600):
-                sleep_s = min(2 ** attempt, 10) + 0.5
+                sleep_s = min(2**attempt, 10) + 0.5
                 print(f"    retry {attempt + 1}/{max_retries} after {status}: sleep {sleep_s}s")
                 time.sleep(sleep_s)
                 continue
@@ -364,28 +367,34 @@ def run_one_task(
                 data_s = get_res["data"]
                 if not isinstance(data_s, str):
                     data_s = json.dumps(data_s)
-                history.append(Turn(
-                    role="user",
-                    content=f"Here is the response from the GET request:\n{data_s}. Please call FINISH if you have got answers for all the questions and finished all the requested tasks",
-                ))
+                history.append(
+                    Turn(
+                        role="user",
+                        content=f"Here is the response from the GET request:\n{data_s}. Please call FINISH if you have got answers for all the questions and finished all the requested tasks",
+                    )
+                )
             else:
-                history.append(Turn(
-                    role="user",
-                    content=f"Error in sending the GET request: {get_res.get('error', 'unknown')}",
-                ))
+                history.append(
+                    Turn(
+                        role="user",
+                        content=f"Error in sending the GET request: {get_res.get('error', 'unknown')}",
+                    )
+                )
         elif text.startswith("POST"):
             try:
                 json.loads("\n".join(text.split("\n")[1:]))
             except Exception:  # noqa: BLE001
                 history.append(Turn(role="user", content="Invalid POST request"))
             else:
-                history.append(Turn(
-                    role="user",
-                    content="POST request accepted and executed successfully. Please call FINISH if you have got answers for all the questions and finished all the requested tasks",
-                ))
+                history.append(
+                    Turn(
+                        role="user",
+                        content="POST request accepted and executed successfully. Please call FINISH if you have got answers for all the questions and finished all the requested tasks",
+                    )
+                )
         elif text.startswith("FINISH("):
             # Trim to the inside of FINISH(...) — refsol parses as JSON.
-            result = text[len("FINISH("):-1] if text.endswith(")") else text[len("FINISH("):]
+            result = text[len("FINISH(") : -1] if text.endswith(")") else text[len("FINISH(") :]
             status = "COMPLETED"
             break
         else:
@@ -403,7 +412,9 @@ def run_one_task(
     return TaskRunOutput(status=status, result=result, history=history), stats
 
 
-def _score_task(refsol, case: dict, run: TaskRunOutput, fhir_api_base: str) -> tuple[bool, str | None]:
+def _score_task(
+    refsol, case: dict, run: TaskRunOutput, fhir_api_base: str
+) -> tuple[bool, str | None]:
     """Apply refsol scorer. Returns (passed, error_str)."""
     if run.result is None:
         return False, f"no result (status={run.status})"
@@ -428,22 +439,34 @@ def do_dry_run(args: argparse.Namespace, run_id: str, stamp: str) -> int:
     print(f"  FHIR reachable  : {_verify_fhir_server(args.fhir_api_base)}")
     refsol_ok = REFSOL_FILE.exists()
     print(f"  refsol present  : {refsol_ok}  ({REFSOL_FILE.relative_to(REPO)})")
-    print(f"  tasks planned   : {len(tasks)}  (--n-limit={args.n_limit or 'full'}, --task-filter={args.task_filter or 'all'})")
-    print(f"  out dir         : {out_dir.relative_to(REPO) if out_dir.is_relative_to(REPO) else out_dir}")
+    print(
+        f"  tasks planned   : {len(tasks)}  (--n-limit={args.n_limit or 'full'}, --task-filter={args.task_filter or 'all'})"
+    )
+    print(
+        f"  out dir         : {out_dir.relative_to(REPO) if out_dir.is_relative_to(REPO) else out_dir}"
+    )
     print(f"  budget cap      : ${args.budget_cap_usd:.2f}")
     print(f"  max round       : {MAX_ROUND}")
-    print(f"  cost envelope   : ~${len(tasks) * 0.04:.2f}-${len(tasks) * 0.10:.2f} for {len(tasks)} tasks")
+    print(
+        f"  cost envelope   : ~${len(tasks) * 0.04:.2f}-${len(tasks) * 0.10:.2f} for {len(tasks)} tasks"
+    )
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "aggregate.json").write_text(json.dumps({
-        "dry_run": True,
-        "run_id": run_id,
-        "generated_at": _now_iso(),
-        "variant": args.variant,
-        "n_tasks": len(tasks),
-        "fhir_api_base": args.fhir_api_base,
-        "aggregate": {"success_rate": None, "n_correct": 0, "n_total": len(tasks)},
-    }, indent=2) + "\n")
+    (out_dir / "aggregate.json").write_text(
+        json.dumps(
+            {
+                "dry_run": True,
+                "run_id": run_id,
+                "generated_at": _now_iso(),
+                "variant": args.variant,
+                "n_tasks": len(tasks),
+                "fhir_api_base": args.fhir_api_base,
+                "aggregate": {"success_rate": None, "n_correct": 0, "n_total": len(tasks)},
+            },
+            indent=2,
+        )
+        + "\n"
+    )
     print(f"(dry-run) wrote: {out_dir / 'aggregate.json'}")
     print("(dry-run) no network activity; no anthropic SDK import")
     return 0
@@ -455,7 +478,10 @@ def do_commit(args: argparse.Namespace, run_id: str, stamp: str) -> int:
 
     if not _verify_fhir_server(args.fhir_api_base):
         print(f"error: FHIR server not reachable at {args.fhir_api_base}", file=sys.stderr)
-        print("Start the container: docker run -d -p 8080:8080 jyxsu6/medagentbench:latest", file=sys.stderr)
+        print(
+            "Start the container: docker run -d -p 8080:8080 jyxsu6/medagentbench:latest",
+            file=sys.stderr,
+        )
         return 2
 
     refsol = _load_refsol()
@@ -471,7 +497,9 @@ def do_commit(args: argparse.Namespace, run_id: str, stamp: str) -> int:
     # Preflight the key on a minimal call so we halt LOUD on auth failures
     # before spending a single task's tokens.
     try:
-        client.messages.create(model=MODEL_ID, max_tokens=4, messages=[{"role": "user", "content": "ok"}])
+        client.messages.create(
+            model=MODEL_ID, max_tokens=4, messages=[{"role": "user", "content": "ok"}]
+        )
     except Exception as exc:  # noqa: BLE001
         print(f"error: preflight call failed: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 3
@@ -489,7 +517,9 @@ def do_commit(args: argparse.Namespace, run_id: str, stamp: str) -> int:
 
     for idx, case in enumerate(tasks):
         if total_cost_usd >= args.budget_cap_usd:
-            halted_reason = f"budget cap hit at task {idx}/{len(tasks)} (spent=${total_cost_usd:.2f})"
+            halted_reason = (
+                f"budget cap hit at task {idx}/{len(tasks)} (spent=${total_cost_usd:.2f})"
+            )
             print(f"(commit) HALT: {halted_reason}")
             break
 
@@ -498,12 +528,20 @@ def do_commit(args: argparse.Namespace, run_id: str, stamp: str) -> int:
 
         try:
             run, stats = run_one_task(
-                client, case, funcs, args.fhir_api_base,
-                max_round=MAX_ROUND, harness=args.harness,
+                client,
+                case,
+                funcs,
+                args.fhir_api_base,
+                max_round=MAX_ROUND,
+                harness=args.harness,
             )
         except Exception as exc:  # noqa: BLE001
             print(f"(commit)   -> TASK_EXCEPTION: {type(exc).__name__}: {exc}")
-            err = {"task_id": case["id"], "phase": "run", "error": f"{type(exc).__name__}: {str(exc)[:500]}"}
+            err = {
+                "task_id": case["id"],
+                "phase": "run",
+                "error": f"{type(exc).__name__}: {str(exc)[:500]}",
+            }
             errors.append(err)
             with errors_path.open("a") as f:
                 f.write(json.dumps(err) + "\n")
@@ -513,7 +551,9 @@ def do_commit(args: argparse.Namespace, run_id: str, stamp: str) -> int:
         if score_err:
             errors.append({"task_id": case["id"], "phase": "score", "error": score_err})
             with errors_path.open("a") as f:
-                f.write(json.dumps({"task_id": case["id"], "phase": "score", "error": score_err}) + "\n")
+                f.write(
+                    json.dumps({"task_id": case["id"], "phase": "score", "error": score_err}) + "\n"
+                )
 
         total_cost_usd += stats["est_cost_usd"]
         if passed:
@@ -525,34 +565,45 @@ def do_commit(args: argparse.Namespace, run_id: str, stamp: str) -> int:
             by_category[category]["n_correct"] += 1
 
         # Persist per-task history for audit.
-        (history_dir / f"{case['id']}.json").write_text(json.dumps({
-            "task_id": case["id"],
-            "status": run.status,
-            "result": run.result,
-            "passed": passed,
-            "score_error": score_err,
-            "history": [{"role": h.role, "content": h.content} for h in run.history],
-            "stats": stats,
-        }, indent=2, default=str) + "\n")
+        (history_dir / f"{case['id']}.json").write_text(
+            json.dumps(
+                {
+                    "task_id": case["id"],
+                    "status": run.status,
+                    "result": run.result,
+                    "passed": passed,
+                    "score_error": score_err,
+                    "history": [{"role": h.role, "content": h.content} for h in run.history],
+                    "stats": stats,
+                },
+                indent=2,
+                default=str,
+            )
+            + "\n"
+        )
 
-        per_task.append({
-            "id": case["id"],
-            "category": category,
-            "status": run.status,
-            "result": run.result,
-            "passed": passed,
-            "score_error": score_err,
-            "rounds_used": stats["rounds_used"],
-            "input_tokens": stats["input_tokens"],
-            "output_tokens": stats["output_tokens"],
-            "est_cost_usd": stats["est_cost_usd"],
-            "history_len": len(run.history),
-        })
+        per_task.append(
+            {
+                "id": case["id"],
+                "category": category,
+                "status": run.status,
+                "result": run.result,
+                "passed": passed,
+                "score_error": score_err,
+                "rounds_used": stats["rounds_used"],
+                "input_tokens": stats["input_tokens"],
+                "output_tokens": stats["output_tokens"],
+                "est_cost_usd": stats["est_cost_usd"],
+                "history_len": len(run.history),
+            }
+        )
         mark = "PASS" if passed else "FAIL"
-        print(f"(commit)   -> {mark} rounds={stats['rounds_used']} cost=${stats['est_cost_usd']:.4f} cum=${total_cost_usd:.2f}")
+        print(
+            f"(commit)   -> {mark} rounds={stats['rounds_used']} cost=${stats['est_cost_usd']:.4f} cum=${total_cost_usd:.2f}"
+        )
 
     # Aggregate per category
-    for cat, counts in by_category.items():
+    for _cat, counts in by_category.items():
         counts["success_rate"] = counts["n_correct"] / counts["n"] if counts["n"] else 0.0
 
     success_rate = n_correct / len(per_task) if per_task else 0.0
@@ -577,8 +628,12 @@ def do_commit(args: argparse.Namespace, run_id: str, stamp: str) -> int:
         "by_category": by_category,
     }
 
-    (out_dir / "aggregate.json").write_text(json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n")
-    (out_dir / "per_task.json").write_text(json.dumps(per_task, indent=2, sort_keys=True, default=str) + "\n")
+    (out_dir / "aggregate.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n"
+    )
+    (out_dir / "per_task.json").write_text(
+        json.dumps(per_task, indent=2, sort_keys=True, default=str) + "\n"
+    )
     print(f"(commit) aggregate -> {out_dir / 'aggregate.json'}")
     print(f"(commit) per-task  -> {out_dir / 'per_task.json'}")
     print(f"(commit) success_rate: {success_rate:.4f}  ({n_correct}/{len(per_task)})")
@@ -587,33 +642,59 @@ def do_commit(args: argparse.Namespace, run_id: str, stamp: str) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    ap.add_argument("--variant", default="baseline-opus47",
-                    help="Identifier for this run's variant (baseline-opus47, harness-opus47, etc.).")
-    ap.add_argument("--out-root", default=str(DEFAULT_OUT_ROOT),
-                    help=f"Root for results/medagentbench-<variant>-<stamp>/ (default: {DEFAULT_OUT_ROOT.relative_to(REPO)}).")
-    ap.add_argument("--n-limit", type=int, default=None,
-                    help="Cap on number of tasks (default: all 300).")
-    ap.add_argument("--task-filter", default=None,
-                    help="Only run tasks with this id prefix (e.g. 'task1' for MRN-lookup category only).")
-    ap.add_argument("--fhir-api-base", default=DEFAULT_FHIR_API_BASE,
-                    help=f"FHIR API root (default: {DEFAULT_FHIR_API_BASE}).")
-    ap.add_argument("--budget-cap-usd", type=float, default=50.0,
-                    help="Hard stop when cumulative cost exceeds this (default $50).")
+    ap.add_argument(
+        "--variant",
+        default="baseline-opus47",
+        help="Identifier for this run's variant (baseline-opus47, harness-opus47, etc.).",
+    )
+    ap.add_argument(
+        "--out-root",
+        default=str(DEFAULT_OUT_ROOT),
+        help=f"Root for results/medagentbench-<variant>-<stamp>/ (default: {DEFAULT_OUT_ROOT.relative_to(REPO)}).",
+    )
+    ap.add_argument(
+        "--n-limit", type=int, default=None, help="Cap on number of tasks (default: all 300)."
+    )
+    ap.add_argument(
+        "--task-filter",
+        default=None,
+        help="Only run tasks with this id prefix (e.g. 'task1' for MRN-lookup category only).",
+    )
+    ap.add_argument(
+        "--fhir-api-base",
+        default=DEFAULT_FHIR_API_BASE,
+        help=f"FHIR API root (default: {DEFAULT_FHIR_API_BASE}).",
+    )
+    ap.add_argument(
+        "--budget-cap-usd",
+        type=float,
+        default=50.0,
+        help="Hard stop when cumulative cost exceeds this (default $50).",
+    )
     ap.add_argument("--run-id", default=None, help="Optional UUID.")
-    ap.add_argument("--harness", action="store_true",
-                    help="Append Prism's format-discipline addendum to each prompt "
-                         "(targets the task7 format + task9 verbosity baseline failure modes).")
-    ap.add_argument("--commit", action="store_true",
-                    help="Run for real. Requires PRISM_MEDAGENTBENCH_COMMIT=1 in env.")
+    ap.add_argument(
+        "--harness",
+        action="store_true",
+        help="Append Prism's format-discipline addendum to each prompt "
+        "(targets the task7 format + task9 verbosity baseline failure modes).",
+    )
+    ap.add_argument(
+        "--commit",
+        action="store_true",
+        help="Run for real. Requires PRISM_MEDAGENTBENCH_COMMIT=1 in env.",
+    )
     args = ap.parse_args(argv)
 
     run_id = args.run_id or str(uuid.uuid4())
     stamp = _now_stamp()
 
     if args.commit and os.environ.get("PRISM_MEDAGENTBENCH_COMMIT") != "1":
-        print("error: refusing — set BOTH --commit and PRISM_MEDAGENTBENCH_COMMIT=1", file=sys.stderr)
+        print(
+            "error: refusing — set BOTH --commit and PRISM_MEDAGENTBENCH_COMMIT=1", file=sys.stderr
+        )
         return 1
 
     if args.commit:

@@ -55,6 +55,7 @@ Verify:
         print('by layer:', Counter(c.get('corpus_layer','v0') for c in L)); \
         print('by tier:', Counter(c.get('source_tier','none') for c in L))"
 """
+
 from __future__ import annotations
 
 import json
@@ -330,9 +331,9 @@ SOURCES_V3: list[dict] = [
                 "versus 6.2 per 1,000 person-years on placebo (HR 1.38; 95% CI, "
                 "1.18–1.62). Aspirin statistically significantly increased the "
                 "rate of major hemorrhage in this elderly cohort.\n\n"
-                "Conclusion from the editorial: \"Participants that took aspirin "
+                'Conclusion from the editorial: "Participants that took aspirin '
                 "derived no benefit but suffered more haemorrhagic events than "
-                "those that took placebo.\"",
+                'those that took placebo."',
             ),
             (
                 "ASPREE Mortality and Cancer Findings",
@@ -347,9 +348,9 @@ SOURCES_V3: list[dict] = [
                 "- Colorectal cancer: HR 1.77 (95% CI, 1.02–3.06)\n\n"
                 "Disability-free survival showed no benefit: HR 1.01 (95% CI, "
                 "0.92–1.11; p = 0.79).\n\n"
-                "Clinical verdict from the PMC commentary: \"Clinicians should "
+                'Clinical verdict from the PMC commentary: "Clinicians should '
                 "not offer aspirin as primary prevention to otherwise well "
-                "elderly patients\" aged 70 or older (or 65 or older in Black "
+                'elderly patients" aged 70 or older (or 65 or older in Black '
                 "or Hispanic adults in the US).",
             ),
         ],
@@ -371,9 +372,9 @@ SOURCES_V3: list[dict] = [
                 "USPSTF 2022 Reversal Rationale",
                 "The 2022 USPSTF aspirin recommendation reversed the 2016 "
                 "guidance that had included a colorectal cancer (CRC) prevention "
-                "indication. The Task Force concluded: \"the evidence is "
+                'indication. The Task Force concluded: "the evidence is '
                 "inadequate that low-dose aspirin use reduces CRC incidence or "
-                "mortality.\" Key contributors to the reversal include:\n\n"
+                'mortality." Key contributors to the reversal include:\n\n'
                 "- ASPREE's finding of *increased* CRC mortality with aspirin "
                 "in the elderly cohort (Peto OR, 1.74; 95% CI, 1.02–2.95 at "
                 "4.7 years follow-up)\n"
@@ -382,16 +383,16 @@ SOURCES_V3: list[dict] = [
             ),
             (
                 "USPSTF 2022 Age-Cutoff Guidance",
-                "For adults 60 years or older: \"Do not initiate aspirin for the "
-                "primary prevention of cardiovascular disease.\" Grade: D.\n\n"
+                'For adults 60 years or older: "Do not initiate aspirin for the '
+                'primary prevention of cardiovascular disease." Grade: D.\n\n'
                 "For adults 40 to 59 years with 10% or higher 10-year ASCVD "
                 "risk: the decision to initiate aspirin should be individualized. "
                 "Grade: C.\n\n"
                 "For continuing aspirin in patients already taking it: "
-                "\"modeling data suggest that it may be reasonable to consider "
-                "stopping aspirin use around age 75 years.\"\n\n"
-                "The USPSTF noted: \"the absolute incidence of bleeding "
-                "increases with age, and more so in adults 60 years or older.\" "
+                '"modeling data suggest that it may be reasonable to consider '
+                'stopping aspirin use around age 75 years."\n\n'
+                'The USPSTF noted: "the absolute incidence of bleeding '
+                'increases with age, and more so in adults 60 years or older." '
                 "This bleeding-risk-by-age gradient is the primary reason for "
                 "the Grade D recommendation in adults 60+.",
             ),
@@ -416,12 +417,12 @@ SOURCES_V3: list[dict] = [
         "sections": [
             (
                 "EAGLES Neuropsychiatric Safety",
-                "From the USPSTF 2021 tobacco cessation evidence review: \"No "
+                'From the USPSTF 2021 tobacco cessation evidence review: "No '
                 "difference in moderate and severe neuropsychiatric events, "
                 "including rates of suicidal behavior and ideation, were found "
                 "with bupropion SR (compared with varenicline or NRT) in the "
                 "recent Evaluating Adverse Events in a Global Smoking Cessation "
-                "Study (EAGLES) trial.\"\n\n"
+                'Study (EAGLES) trial."\n\n'
                 "EAGLES (Anthenelli et al., Lancet 2016) was a randomized, "
                 "double-blind, triple-dummy, placebo-controlled and active-"
                 "controlled trial of varenicline (1 mg twice daily) and "
@@ -441,18 +442,18 @@ SOURCES_V3: list[dict] = [
                 "EAGLES Comparative Efficacy",
                 "Pharmacotherapy comparative effectiveness from the USPSTF 2021 "
                 "review:\n\n"
-                "Varenicline vs. NRT: \"Eight studies (n = 6,264) compared "
+                'Varenicline vs. NRT: "Eight studies (n = 6,264) compared '
                 "varenicline and NRT and found that varenicline was associated "
-                "with a greater smoking cessation rate over any form of NRT.\"\n\n"
-                "Varenicline vs. Bupropion SR: \"Six studies (n = 6,286) "
+                'with a greater smoking cessation rate over any form of NRT."\n\n'
+                'Varenicline vs. Bupropion SR: "Six studies (n = 6,286) '
                 "evaluated varenicline vs bupropion SR and found that "
-                "varenicline was associated with a higher cessation rate.\"\n\n"
-                "NRT vs. Bupropion SR: \"Smoking cessation rates among "
+                'varenicline was associated with a higher cessation rate."\n\n'
+                'NRT vs. Bupropion SR: "Smoking cessation rates among '
                 "participants using NRT vs bupropion SR at 6 months or more "
-                "did not significantly differ (10 studies; n = 9,230).\"\n\n"
-                "Overall efficacy summary: \"Based on a smaller number of "
+                'did not significantly differ (10 studies; n = 9,230)."\n\n'
+                'Overall efficacy summary: "Based on a smaller number of '
                 "studies, varenicline appears to be more effective than NRT or "
-                "bupropion SR.\" Varenicline therefore sits at the top of the "
+                'bupropion SR." Varenicline therefore sits at the top of the '
                 "first-line pharmacotherapy efficacy ladder for smoking "
                 "cessation, followed by combination NRT, then bupropion SR or "
                 "monotherapy NRT.",
@@ -492,10 +493,10 @@ SOURCES_V3: list[dict] = [
                 "ranking was varenicline > bupropion ≈ nicotine patch > "
                 "placebo, mirroring the meta-analytic ordering established by "
                 "the 2008 PHS guideline.\n\n"
-                "Safety: \"No statistically significant increase in overall or "
+                'Safety: "No statistically significant increase in overall or '
                 "serious neuropsychiatric events with any smoking cessation "
                 "agent versus placebo in both patients with and without "
-                "previous psychiatric disorder.\" A single completed suicide "
+                'previous psychiatric disorder." A single completed suicide '
                 "occurred in the non-psychiatric placebo group during the "
                 "trial. Serious adverse events remained below 1% across all "
                 "groups.\n\n"
@@ -541,25 +542,25 @@ SOURCES_V3: list[dict] = [
                 "The 2008 PHS Guideline frames the brief tobacco intervention "
                 "around five major steps, the 5 A's:\n\n"
                 "1. ASK — Identify and document tobacco-use status for every "
-                "patient at every visit. \"Implement an officewide system that "
+                'patient at every visit. "Implement an officewide system that '
                 "ensures that, for EVERY patient at EVERY clinic visit, "
-                "tobacco-use status is queried and documented.\"\n\n"
+                'tobacco-use status is queried and documented."\n\n'
                 "2. ADVISE — In a clear, strong, and personalized manner, urge "
                 "every tobacco user to quit. The advice should be unambiguous "
-                "(\"As your clinician, I need you to know that quitting smoking "
+                '("As your clinician, I need you to know that quitting smoking '
                 "is the most important thing you can do to protect your health"
                 "\"), strong, and personalized to the patient's clinical "
                 "circumstances and values.\n\n"
                 "3. ASSESS — Determine willingness to make a quit attempt. "
                 "\"Assess every tobacco user's willingness to make a quit "
-                "attempt at this time.\"\n\n"
+                'attempt at this time."\n\n'
                 "4. ASSIST — For patients willing to make a quit attempt, offer "
                 "medication and provide or refer to counseling. Use STAR for "
                 "preparation: Set quit date; Tell family, friends, coworkers; "
                 "Anticipate challenges; Remove tobacco products from environment.\n\n"
                 "5. ARRANGE — Schedule follow-up contact, in person or via "
-                "telephone. \"Follow-up contact should begin soon after the quit "
-                "date, preferably during the first week.\"",
+                'telephone. "Follow-up contact should begin soon after the quit '
+                'date, preferably during the first week."',
             ),
             (
                 "Five R's for Unwilling Smokers",
@@ -602,10 +603,10 @@ SOURCES_V3: list[dict] = [
                 "7. Varenicline (Chantix; 0.5 mg PO daily for 3 days, then 0.5 "
                 "mg twice daily for 4 days, then 1 mg twice daily for 11 weeks; "
                 "start 1 week before quit date)\n\n"
-                "All seven are recommended with Strength of Evidence A. \"Both "
+                'All seven are recommended with Strength of Evidence A. "Both '
                 "counseling and medication are effective when used by themselves "
                 "for treating tobacco dependence. The combination of counseling "
-                "and medication, however, is more effective than either alone.\"",
+                'and medication, however, is more effective than either alone."',
             ),
             (
                 "Recommended Combination Pharmacotherapies",
@@ -638,10 +639,10 @@ SOURCES_V3: list[dict] = [
                 "and intra-treatment social support are the two counseling "
                 "elements with the strongest evidence base.\n"
                 "- Telephone quitline counseling is effective and broadly "
-                "scalable. \"Quitline counseling is effective with diverse "
+                'scalable. "Quitline counseling is effective with diverse '
                 "populations and has broad reach. Therefore, both clinicians "
                 "and health care delivery systems should ensure patient "
-                "access to quitlines and promote quitline use.\"\n\n"
+                'access to quitlines and promote quitline use."\n\n'
                 "The Guideline recommends that all clinicians refer patients "
                 "to 1-800-QUIT-NOW (the U.S. national tobacco cessation "
                 "quitline portal) as a baseline counseling intervention even "
@@ -649,10 +650,10 @@ SOURCES_V3: list[dict] = [
             ),
             (
                 "Special Populations: Pregnancy, Adolescents, Light Smokers, Comorbidity",
-                "Pregnancy: \"Because of the serious risks of smoking to the "
+                'Pregnancy: "Because of the serious risks of smoking to the '
                 "pregnant smoker and the fetus, whenever possible pregnant "
                 "smokers should be offered person-to-person psychosocial "
-                "interventions that exceed minimal advice to quit.\" "
+                'interventions that exceed minimal advice to quit." '
                 "Pharmacotherapy in pregnancy is recommended only when the "
                 "increased likelihood of cessation outweighs risk; NRT is "
                 "Category D and bupropion / varenicline are limited-data.\n\n"
@@ -686,9 +687,9 @@ SOURCES_V3: list[dict] = [
                 "(counseling and pharmacotherapy) as paid benefits in "
                 "insurance plans.\n"
                 "- Track abstinence outcomes as a quality metric.\n\n"
-                "Evidence principle: \"Making tobacco-dependence treatment a "
+                'Evidence principle: "Making tobacco-dependence treatment a '
                 "covered benefit of insurance plans increases the likelihood "
-                "that a tobacco user will receive treatment.\" The Affordable "
+                'that a tobacco user will receive treatment." The Affordable '
                 "Care Act (post-2010) operationalized this for US insurance "
                 "plans by mandating cessation treatment as an essential health "
                 "benefit; the 2008 Guideline established the evidence base "
@@ -764,11 +765,7 @@ def chunk_documents(sources: list[dict]) -> list[Document]:
 
 def main() -> int:
     existing_lines = OUT_PATH.read_text().splitlines() if OUT_PATH.exists() else []
-    existing_ids = {
-        json.loads(line)["id"]
-        for line in existing_lines
-        if line.strip()
-    }
+    existing_ids = {json.loads(line)["id"] for line in existing_lines if line.strip()}
     next_idx = len(existing_lines)
 
     docs = chunk_documents(SOURCES_V3)
@@ -810,7 +807,7 @@ def main() -> int:
 
     print(f"appended {len(new_records)} v3 chunks to {OUT_PATH}")
     print(
-        "verify: .venv/bin/python -c \"import json; "
+        'verify: .venv/bin/python -c "import json; '
         "L=[json.loads(l) for l in open('corpus/medical-guidelines/chunks.jsonl')]; "
         "from collections import Counter; "
         "print('total:', len(L)); "

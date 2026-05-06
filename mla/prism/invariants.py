@@ -8,6 +8,7 @@ An InvariantCheck has a name and a `run(out_cand, out_ref, inputs) -> dict`
 returning `{"passed": bool, "reason": str, "value": Any}`. The validator
 short-circuits on the first failure.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
@@ -26,7 +27,11 @@ class InvariantCheck:
         try:
             result = self.fn(out_cand, out_ref, inputs)
         except Exception as e:
-            return {"passed": False, "reason": f"invariant raised {type(e).__name__}: {e}", "value": None}
+            return {
+                "passed": False,
+                "reason": f"invariant raised {type(e).__name__}: {e}",
+                "value": None,
+            }
         # Sanity on the result shape.
         return {
             "passed": bool(result.get("passed", False)),
@@ -36,6 +41,7 @@ class InvariantCheck:
 
 
 # --- canonical invariants ---
+
 
 def _softmax_rows_sum_to_one(
     out_cand: np.ndarray,
@@ -115,7 +121,11 @@ def _topk_agreement(
     """For attention weights or logits, the top-k indices should agree between
     candidate and reference. Only runs if the last axis is >= k."""
     if out_cand.shape[-1] < k:
-        return {"passed": True, "reason": f"last dim {out_cand.shape[-1]} < k={k}; skipped", "value": None}
+        return {
+            "passed": True,
+            "reason": f"last dim {out_cand.shape[-1]} < k={k}; skipped",
+            "value": None,
+        }
     # Flatten all leading dims.
     c = out_cand.reshape(-1, out_cand.shape[-1])
     r = out_ref.reshape(-1, out_ref.shape[-1])
@@ -123,7 +133,7 @@ def _topk_agreement(
     top_r = np.argpartition(r, -k, axis=-1)[:, -k:]
     # Per-row overlap ratio.
     overlaps = []
-    for cr, rr in zip(top_c, top_r):
+    for cr, rr in zip(top_c, top_r, strict=False):
         overlap = len(np.intersect1d(cr, rr)) / k
         overlaps.append(overlap)
     mean_overlap = float(np.mean(overlaps))

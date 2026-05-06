@@ -15,6 +15,7 @@ Skipped (incompatible with per-call CUDA-event timing):
 
 Compile warmup is bumped to 30 iters so the autotune search has room to settle.
 """
+
 from __future__ import annotations
 
 import json
@@ -51,47 +52,68 @@ def _compile(fn, mode: str | None):
     return torch.compile(fn, mode=mode, fullgraph=False, dynamic=False)
 
 
-def _try_one(name: str, fn, inputs, sweep_inputs, *, warmup: int, iters: int,
-             batch_size: int) -> dict:
+def _try_one(
+    name: str, fn, inputs, sweep_inputs, *, warmup: int, iters: int, batch_size: int
+) -> dict:
     """Validate + benchmark one (candidate, compile_mode). Returns a record."""
     t_start = time.perf_counter()
     # First-call compile cost is baked into validate's first call. Time it.
     try:
         t_compile_start = time.perf_counter()
         v = validate_torch(
-            fn, mla_decode_torch_reference, inputs,
-            tolerance=5e-2, config_sweep=sweep_inputs,
+            fn,
+            mla_decode_torch_reference,
+            inputs,
+            tolerance=5e-2,
+            config_sweep=sweep_inputs,
         )
         compile_s = time.perf_counter() - t_compile_start
     except Exception as e:
         return {
-            "name": name, "passed": False,
+            "name": name,
+            "passed": False,
             "reason": f"validate raised: {type(e).__name__}: {e}",
-            "max_abs_error": None, "median_ns": None, "tokens_per_sec": None,
-            "compile_s": None, "total_s": time.perf_counter() - t_start,
+            "max_abs_error": None,
+            "median_ns": None,
+            "tokens_per_sec": None,
+            "compile_s": None,
+            "total_s": time.perf_counter() - t_start,
         }
     if not v.passed:
         return {
-            "name": name, "passed": False, "reason": v.failed_check,
-            "max_abs_error": v.max_abs_error, "median_ns": None,
-            "tokens_per_sec": None, "compile_s": compile_s,
+            "name": name,
+            "passed": False,
+            "reason": v.failed_check,
+            "max_abs_error": v.max_abs_error,
+            "median_ns": None,
+            "tokens_per_sec": None,
+            "compile_s": compile_s,
             "total_s": time.perf_counter() - t_start,
         }
     try:
         b = benchmark_torch(fn, inputs, warmup=warmup, iters=iters, batch_size=batch_size)
     except Exception as e:
         return {
-            "name": name, "passed": False,
+            "name": name,
+            "passed": False,
             "reason": f"benchmark raised: {type(e).__name__}: {e}",
-            "max_abs_error": v.max_abs_error, "median_ns": None,
-            "tokens_per_sec": None, "compile_s": compile_s,
+            "max_abs_error": v.max_abs_error,
+            "median_ns": None,
+            "tokens_per_sec": None,
+            "compile_s": compile_s,
             "total_s": time.perf_counter() - t_start,
         }
     return {
-        "name": name, "passed": True, "reason": "ok",
-        "max_abs_error": v.max_abs_error, "median_ns": b.median_ns,
-        "mean_ns": b.mean_ns, "p90_ns": b.p90_ns, "std_ns": b.std_ns,
-        "tokens_per_sec": b.tokens_per_sec, "compile_s": compile_s,
+        "name": name,
+        "passed": True,
+        "reason": "ok",
+        "max_abs_error": v.max_abs_error,
+        "median_ns": b.median_ns,
+        "mean_ns": b.mean_ns,
+        "p90_ns": b.p90_ns,
+        "std_ns": b.std_ns,
+        "tokens_per_sec": b.tokens_per_sec,
+        "compile_s": compile_s,
         "total_s": time.perf_counter() - t_start,
     }
 
@@ -101,9 +123,15 @@ def run(cfg: TorchMLAConfig) -> dict:
     sweep_kv_lens = [cfg.kv_len // 4, cfg.kv_len * 4]
     sweep_inputs = []
     for kv in sweep_kv_lens:
-        alt = TorchMLAConfig(batch=cfg.batch, heads=cfg.heads, kv_len=kv,
-                             d_ckv=cfg.d_ckv, d_pe=cfg.d_pe, dtype=cfg.dtype,
-                             device=cfg.device)
+        alt = TorchMLAConfig(
+            batch=cfg.batch,
+            heads=cfg.heads,
+            kv_len=kv,
+            d_ckv=cfg.d_ckv,
+            d_pe=cfg.d_pe,
+            dtype=cfg.dtype,
+            device=cfg.device,
+        )
         sweep_inputs.append(make_torch_inputs(alt, seed=100 + kv))
 
     results: list[dict] = []
@@ -122,25 +150,37 @@ def run(cfg: TorchMLAConfig) -> dict:
             iters = 50
             rec = _try_one(
                 name=f"{cand.name}::{mode_label}",
-                fn=fn_compiled, inputs=inputs, sweep_inputs=sweep_inputs,
-                warmup=warmup, iters=iters, batch_size=cfg.batch,
+                fn=fn_compiled,
+                inputs=inputs,
+                sweep_inputs=sweep_inputs,
+                warmup=warmup,
+                iters=iters,
+                batch_size=cfg.batch,
             )
             rec["candidate"] = cand.name
             rec["mode"] = mode_label
             results.append(rec)
             if rec["passed"]:
-                print(f"  {mode_label:<20s} median={rec['median_ns']/1000:7.1f}us  "
-                      f"tok/s={rec['tokens_per_sec']:>8.0f}  "
-                      f"compile={rec['compile_s']:>5.1f}s  "
-                      f"max_err={rec['max_abs_error']:.2e}")
+                print(
+                    f"  {mode_label:<20s} median={rec['median_ns']/1000:7.1f}us  "
+                    f"tok/s={rec['tokens_per_sec']:>8.0f}  "
+                    f"compile={rec['compile_s']:>5.1f}s  "
+                    f"max_err={rec['max_abs_error']:.2e}"
+                )
             else:
                 print(f"  {mode_label:<20s} FAIL: {rec['reason']}")
 
     # Flashinfer ceiling at same primary kv_len.
     fi_cfg = FlashInferMLAConfig(
-        batch_size=cfg.batch, kv_len=cfg.kv_len, page_size=64,
-        num_heads=cfg.heads, head_dim_ckv=cfg.d_ckv, head_dim_kpe=cfg.d_pe,
-        q_dtype=cfg.dtype, kv_dtype=cfg.dtype, backend="auto",
+        batch_size=cfg.batch,
+        kv_len=cfg.kv_len,
+        page_size=64,
+        num_heads=cfg.heads,
+        head_dim_ckv=cfg.d_ckv,
+        head_dim_kpe=cfg.d_pe,
+        q_dtype=cfg.dtype,
+        kv_dtype=cfg.dtype,
+        backend="auto",
     )
     fi = run_flashinfer_mla_decode(fi_cfg)
     return {
@@ -152,10 +192,16 @@ def run(cfg: TorchMLAConfig) -> dict:
 
 def main() -> int:
     if not torch.cuda.is_available():
-        print("ERROR: torch.cuda not available"); return 2
+        print("ERROR: torch.cuda not available")
+        return 2
 
     cfg = TorchMLAConfig(
-        batch=1, heads=128, kv_len=1024, d_ckv=512, d_pe=64, dtype="bfloat16",
+        batch=1,
+        heads=128,
+        kv_len=1024,
+        d_ckv=512,
+        d_pe=64,
+        dtype="bfloat16",
     )
     print(f"[cfg] {cfg}")
     print(f"[gpu] {torch.cuda.get_device_name(0)} cc={torch.cuda.get_device_capability(0)}")
@@ -176,7 +222,9 @@ def main() -> int:
     for c in cands_seen:
         row = f"{c:<20s} "
         for m in modes_order:
-            rec = next((r for r in summary["results"] if r["candidate"] == c and r["mode"] == m), None)
+            rec = next(
+                (r for r in summary["results"] if r["candidate"] == c and r["mode"] == m), None
+            )
             if rec is None or not rec["passed"] or rec["median_ns"] is None:
                 row += f"{'--':>15s} "
             else:
@@ -184,16 +232,20 @@ def main() -> int:
         print(row)
 
     fi_median = summary["flashinfer"]["bench"]["median_ns"]
-    print(f"\nflashinfer@{cfg.kv_len}: {fi_median/1000:.1f} us  "
-          f"(tok/s={summary['flashinfer']['bench']['tokens_per_sec']:.0f})")
+    print(
+        f"\nflashinfer@{cfg.kv_len}: {fi_median/1000:.1f} us  "
+        f"(tok/s={summary['flashinfer']['bench']['tokens_per_sec']:.0f})"
+    )
 
     # Best candidate x mode overall
     passing = [r for r in summary["results"] if r["passed"] and r["median_ns"] is not None]
     if passing:
         best = min(passing, key=lambda r: r["median_ns"])
         ratio = best["median_ns"] / fi_median if fi_median > 0 else float("inf")
-        print(f"\n[winner] {best['name']}  median={best['median_ns']/1000:.1f}us  "
-              f"is {ratio:.2f}x flashinfer")
+        print(
+            f"\n[winner] {best['name']}  median={best['median_ns']/1000:.1f}us  "
+            f"is {ratio:.2f}x flashinfer"
+        )
 
     out = Path(__file__).resolve().parent.parent / "results" / "logs" / "compile_sweep.json"
     out.parent.mkdir(parents=True, exist_ok=True)

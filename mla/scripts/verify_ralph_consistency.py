@@ -34,6 +34,7 @@ Usage:
     python mla/scripts/verify_ralph_consistency.py
     python mla/scripts/verify_ralph_consistency.py --verbose
 """
+
 from __future__ import annotations
 
 import argparse
@@ -61,7 +62,7 @@ def _load_ralph_decisions(path: Path) -> list[dict]:
         try:
             rows.append(json.loads(s))
         except json.JSONDecodeError as e:
-            raise SystemExit(f"[FAIL] ralph_decisions.jsonl line {i} is not valid JSON: {e}")
+            raise SystemExit(f"[FAIL] ralph_decisions.jsonl line {i} is not valid JSON: {e}") from e
     return rows
 
 
@@ -78,17 +79,22 @@ def _extract_ladder_rows(ladder_text: str) -> list[dict]:
         body = ladder_text[body_start:body_end]
         status_match = re.search(r"\*\*Status:\*\*\s*`([^`]+)`", body)
         status = status_match.group(1).strip() if status_match else None
-        inline_falsified = bool(re.search(
-            r"(FALSIFIED|premise.falsified|partially.falsified|SUPPORTED)",
-            header, re.IGNORECASE,
-        ))
-        rows.append({
-            "id": hid,
-            "header": header,
-            "body": body,
-            "status": status,
-            "inline_falsified": inline_falsified,
-        })
+        inline_falsified = bool(
+            re.search(
+                r"(FALSIFIED|premise.falsified|partially.falsified|SUPPORTED)",
+                header,
+                re.IGNORECASE,
+            )
+        )
+        rows.append(
+            {
+                "id": hid,
+                "header": header,
+                "body": body,
+                "status": status,
+                "inline_falsified": inline_falsified,
+            }
+        )
     return rows
 
 
@@ -107,8 +113,7 @@ def _check_unique_ids(ladder_rows: list[dict]) -> list[str]:
 
 def _check_answered_has_reflect(ladder_rows: list[dict], ralph_rows: list[dict]) -> list[str]:
     reflected_ids = {
-        r["hypothesis"] for r in ralph_rows
-        if r.get("phase") == "reflect" and r.get("hypothesis")
+        r["hypothesis"] for r in ralph_rows if r.get("phase") == "reflect" and r.get("hypothesis")
     }
     errors = []
     for row in ladder_rows:
@@ -200,12 +205,16 @@ def main() -> int:
         reflects = [r for r in ralph_rows if r.get("phase") == "reflect"]
         print(f"[info] reflect rows: {len(reflects)}")
         for r in reflects:
-            print(f"       {str(r.get('hypothesis','?')):<8s} "
-                  f"{str(r.get('verdict','?')):<24s} {r.get('ts','?')}")
+            print(
+                f"       {str(r.get('hypothesis','?')):<8s} "
+                f"{str(r.get('verdict','?')):<24s} {r.get('ts','?')}"
+            )
 
     if not failures:
-        print(f"[OK] ralph consistency: {len(ladder_rows)} ladder rows, "
-              f"{len(ralph_rows)} ralph_decisions rows, all coherent.")
+        print(
+            f"[OK] ralph consistency: {len(ladder_rows)} ladder rows, "
+            f"{len(ralph_rows)} ralph_decisions rows, all coherent."
+        )
         return 0
 
     print(f"[FAIL] {len(failures)} consistency check(s) failed:", file=sys.stderr)

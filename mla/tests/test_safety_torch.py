@@ -4,6 +4,7 @@ become a sandbox escape.
 These run on any host; the torch-bound tests are skipped when torch isn't
 importable locally. The banned-token checks always run.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -14,6 +15,7 @@ from agent.safety import UnsafeSourceError, compile_candidate_torch
 def _torch_available() -> bool:
     try:
         import torch  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -36,19 +38,22 @@ def test_compile_candidate_torch_accepts_clean():
     assert callable(fn)
 
 
-@pytest.mark.parametrize("bad_snippet", [
-    "torch.save(ckv, '/tmp/x.pt')",
-    "torch.load('/tmp/x.pt')",
-    "torch.jit.load('model.pt')",
-    "torch.ops.load_library('libfoo.so')",
-    "torch.utils.cpp_extension.load_inline(...)",
-    "torch.hub.load('user/repo', 'model')",
-    "torch.distributed.all_reduce(x)",
-    "torch.multiprocessing.Queue()",
-    "torch._C._jit_pass",
-    "torch.classes.foo",
-    "torch.fx.wrap",
-])
+@pytest.mark.parametrize(
+    "bad_snippet",
+    [
+        "torch.save(ckv, '/tmp/x.pt')",
+        "torch.load('/tmp/x.pt')",
+        "torch.jit.load('model.pt')",
+        "torch.ops.load_library('libfoo.so')",
+        "torch.utils.cpp_extension.load_inline(...)",
+        "torch.hub.load('user/repo', 'model')",
+        "torch.distributed.all_reduce(x)",
+        "torch.multiprocessing.Queue()",
+        "torch._C._jit_pass",
+        "torch.classes.foo",
+        "torch.fx.wrap",
+    ],
+)
 def test_compile_candidate_torch_rejects_dangerous_torch_apis(bad_snippet):
     # Inject snippet into an otherwise-valid function body.
     src = GOOD_TORCH.replace("q_cat = torch.cat", f"_ = {bad_snippet}\n    q_cat = torch.cat")

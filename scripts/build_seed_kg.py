@@ -37,6 +37,7 @@ Exit codes
 Per `data/seed_kg/README.md`, this seed graph is ILLUSTRATIVE and
 **requires physician review before any deployment.**
 """
+
 from __future__ import annotations
 
 import argparse
@@ -151,7 +152,8 @@ def _sanity_queries(g: Any) -> list[tuple[str, bool, str]]:
         if data.get("kind") != "complaint":
             continue
         out = [
-            t for t in g.successors(node)
+            t
+            for t in g.successors(node)
             if g.edges[node, t].get("edge_type") == "complaint_to_protocol"
         ]
         ok = len(out) == 1
@@ -164,7 +166,8 @@ def _sanity_queries(g: Any) -> list[tuple[str, bool, str]]:
         if data.get("kind") != "complaint":
             continue
         out = [
-            t for t in g.successors(node)
+            t
+            for t in g.successors(node)
             if g.edges[node, t].get("edge_type") == "complaint_to_icd10"
         ]
         ok = len(out) >= 1
@@ -175,7 +178,8 @@ def _sanity_queries(g: Any) -> list[tuple[str, bool, str]]:
     # 3. The cardiac-arrest path lights up: a "no pulse" complaint
     # reaches MPDS-9 #9 and ICD-10 I46.9.
     arrest_complaints = [
-        n for n, d in g.nodes(data=True)
+        n
+        for n, d in g.nodes(data=True)
         if d.get("kind") == "complaint" and d.get("lay_phrase") and "no pulse" in d["lay_phrase"]
     ]
     if arrest_complaints:
@@ -197,14 +201,12 @@ def _sanity_queries(g: Any) -> list[tuple[str, bool, str]]:
     # 4. Severity-tier Echo complaints all reach an arrest / asphyxia
     # protocol (MPDS-9 #9 or #11).
     echo_nodes = [
-        n for n, d in g.nodes(data=True)
+        n
+        for n, d in g.nodes(data=True)
         if d.get("kind") == "complaint" and d.get("severity_tier") == "Echo"
     ]
     for node in echo_nodes:
-        protos = [
-            t for t in g.successors(node)
-            if g.nodes[t].get("kind") == "protocol"
-        ]
+        protos = [t for t in g.successors(node) if g.nodes[t].get("kind") == "protocol"]
         ok = any(p in {"mpds9-09", "mpds9-11", "mpds9-15", "mpds9-02"} for p in protos)
         results.append(
             (f"echo_routes_to_arrest_or_asphyxia[{node}]", ok, f"protocols={protos}"),
@@ -253,11 +255,14 @@ def main(argv: list[str] | None = None) -> int:
     # Surface whether GPU acceleration is wired
     try:
         import nx_cugraph  # noqa: PLC0415,F401
+
         gpu = True
     except ImportError:
         gpu = False
     print(f"[seed-kg]   nx-cugraph available: {gpu}")
-    print(f"[seed-kg]   NX_CUGRAPH_AUTOCONFIG: {__import__('os').environ.get('NX_CUGRAPH_AUTOCONFIG', '<unset>')}")
+    print(
+        f"[seed-kg]   NX_CUGRAPH_AUTOCONFIG: {__import__('os').environ.get('NX_CUGRAPH_AUTOCONFIG', '<unset>')}"
+    )
 
     if not args.validate:
         return 0

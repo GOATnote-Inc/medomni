@@ -21,7 +21,6 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-
 # ─────────────────────────────────────────────────────────────────────
 # Public entry point
 # ─────────────────────────────────────────────────────────────────────
@@ -87,7 +86,9 @@ async def generate(
     audit = await _claim_audit(claims, fhir_bundle, prm_endpoint)
 
     # 5. Hard-block on safety-critical contradictions
-    safety_violations = [c for c, v in audit.items() if v["label"] == "contradict" and _is_safety_critical(c)]
+    safety_violations = [
+        c for c, v in audit.items() if v["label"] == "contradict" and _is_safety_critical(c)
+    ]
     if safety_violations:
         return VerifierVoteResult(
             chosen_response="<abstain/>",
@@ -113,7 +114,9 @@ async def generate(
 # ─────────────────────────────────────────────────────────────────────
 
 
-async def _sample_k_chains(endpoint: str, msg: str, bundle: dict | None, *, k: int, temperature: float) -> list[dict]:
+async def _sample_k_chains(
+    endpoint: str, msg: str, bundle: dict | None, *, k: int, temperature: float
+) -> list[dict]:
     """K parallel completions from V_final via vLLM /chat/completions."""
     # TODO: replace with httpx.AsyncClient calls to base_endpoint.
     # Each chain returned as {"text": str, "step_texts": list[str], "latency_ms": float}.
@@ -142,7 +145,9 @@ def _medscore_decompose(answer_text: str) -> list[str]:
     return [s.strip() for s in sentences if len(s) > 12]
 
 
-async def _claim_audit(claims: list[str], bundle: dict | None, prm_endpoint: str) -> dict[str, dict]:
+async def _claim_audit(
+    claims: list[str], bundle: dict | None, prm_endpoint: str
+) -> dict[str, dict]:
     """Per-claim NLI against retrieved evidence + FHIR bundle.
 
     Returns {claim_text: {label: 'entailed|neutral|contradicted',
@@ -170,6 +175,13 @@ def _is_safety_critical(claim: str) -> bool:
 
 if __name__ == "__main__":
     import sys
+
     print("verifier_vote.py — V_final inference wrapper SCAFFOLD", file=sys.stderr)
-    print("Status: NOT YET WIRED — populate _sample_k_chains, _score_chain_with_prm, _claim_audit", file=sys.stderr)
-    print("Integration: see findings/2026-05-05-process-supervision-verifiability/SPEC.md", file=sys.stderr)
+    print(
+        "Status: NOT YET WIRED — populate _sample_k_chains, _score_chain_with_prm, _claim_audit",
+        file=sys.stderr,
+    )
+    print(
+        "Integration: see findings/2026-05-05-process-supervision-verifiability/SPEC.md",
+        file=sys.stderr,
+    )

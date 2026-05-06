@@ -131,12 +131,18 @@ def main():
                 type_patched += 1
             else:
                 type_errors += 1
-        print(f"[fixup] {rtype:22s} patched={type_patched} skipped={type_skipped} errors={type_errors}", file=sys.stderr)
+        print(
+            f"[fixup] {rtype:22s} patched={type_patched} skipped={type_skipped} errors={type_errors}",
+            file=sys.stderr,
+        )
         total_patched += type_patched
         total_skipped += type_skipped
         total_errors += type_errors
 
-    print(f"[fixup] DONE  total patched={total_patched} skipped={total_skipped} errors={total_errors}", file=sys.stderr)
+    print(
+        f"[fixup] DONE  total patched={total_patched} skipped={total_skipped} errors={total_errors}",
+        file=sys.stderr,
+    )
 
 
 if __name__ == "__main__":

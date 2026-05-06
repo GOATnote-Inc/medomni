@@ -4,6 +4,7 @@ within float-associativity tolerance, on small and larger configs.
 If this test starts failing, the absorbed mutation is no longer a safe swap
 for the naive reference; the manual_mutation loop's speedup claim invalidates.
 """
+
 from __future__ import annotations
 
 import numpy as np

@@ -5,6 +5,7 @@ the validator" lives here. Each candidate carries enough metadata to trace it
 through the loop (population, iteration, reasoning) and to regenerate it
 deterministically for debugging.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -44,8 +45,13 @@ class Candidate:
         fn = compile_candidate(source)
         h = hashlib.sha256(source.encode("utf-8")).hexdigest()[:16]
         return cls(
-            source=source, fn=fn, reasoning=reasoning, source_hash=h,
-            island=island, iteration=iteration, parent_hash=parent_hash,
+            source=source,
+            fn=fn,
+            reasoning=reasoning,
+            source_hash=h,
+            island=island,
+            iteration=iteration,
+            parent_hash=parent_hash,
             raw_llm=raw_llm,
         )
 

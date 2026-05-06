@@ -63,7 +63,7 @@ def _require_local(url: str, label: str) -> None:
 CLINICAL_SYSTEM_PROMPT = (
     "You are a clinical decision-support system assisting a physician–patient "
     "shared-decision-making conversation. Do NOT include disclaimers like "
-    "\"I am not a medical professional\" or \"consult your doctor.\" Do NOT "
+    '"I am not a medical professional" or "consult your doctor." Do NOT '
     "mention being an AI. Be precise, structured, and evidence-aware. "
     "Structure every answer as: (1) Direct answer, (2) Mechanism, "
     "(3) Risk factors, (4) What we know vs do not know, (5) Practical next steps."
@@ -201,17 +201,19 @@ def _load_examples(manifest_path: Path) -> list[dict]:
 
 
 def _example_messages(example: dict) -> list[dict]:
-    msgs = example.get("messages") or [
-        {"role": "user", "content": example.get("prompt", "")}
-    ]
+    msgs = example.get("messages") or [{"role": "user", "content": example.get("prompt", "")}]
     return [{"role": m["role"], "content": m["content"]} for m in msgs]
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", required=True, help="HealthBench Hard YAML manifest")
-    parser.add_argument("--serve-url", required=True, help="local serve base URL (e.g. http://127.0.0.1:8000/v1)")
-    parser.add_argument("--serve-model", required=True, help="model id to send to /chat/completions")
+    parser.add_argument(
+        "--serve-url", required=True, help="local serve base URL (e.g. http://127.0.0.1:8000/v1)"
+    )
+    parser.add_argument(
+        "--serve-model", required=True, help="model id to send to /chat/completions"
+    )
     parser.add_argument("--judge-url", required=True, help="local judge base URL")
     parser.add_argument("--judge-model", required=True, help="judge model id")
     parser.add_argument("--n", type=int, default=30, help="examples per trial")
@@ -243,19 +245,23 @@ def main() -> int:
         help="path to chunked corpus JSONL (used by bm25/dense/hybrid).",
     )
     parser.add_argument(
-        "--embed-url", default="http://127.0.0.1:8001/v1",
+        "--embed-url",
+        default="http://127.0.0.1:8001/v1",
         help="NeMo Retriever embedding NIM base URL.",
     )
     parser.add_argument(
-        "--embed-model", default="nvidia/llama-nemotron-embed-1b-v2",
+        "--embed-model",
+        default="nvidia/llama-nemotron-embed-1b-v2",
         help="embedding model id.",
     )
     parser.add_argument(
-        "--rerank-url", default="http://127.0.0.1:8002/v1",
+        "--rerank-url",
+        default="http://127.0.0.1:8002/v1",
         help="reranker NIM base URL (use empty string '' to disable rerank).",
     )
     parser.add_argument(
-        "--rerank-model", default="nvidia/llama-3.2-nv-rerankqa-1b-v2",
+        "--rerank-model",
+        default="nvidia/llama-3.2-nv-rerankqa-1b-v2",
         help="reranker model id.",
     )
     parser.add_argument(
@@ -420,6 +426,7 @@ def main() -> int:
     n_corpus_chunks = 0
     if args.retrieval in ("bm25", "dense", "hybrid", "primekg-hybrid"):
         from retrieval import HybridRetriever
+
         rerank_url = args.rerank_url.strip() or None
         retriever = HybridRetriever.from_jsonl(
             Path(args.corpus_path).resolve(),
@@ -448,6 +455,7 @@ def main() -> int:
                 seed_nodes_for,
                 serialize_subgraph_for_prompt,
             )
+
             graph = build_graph()
             print(
                 f"[sovereign_bench] graph loaded: "
@@ -487,6 +495,7 @@ def main() -> int:
         else:
             try:
                 from graph_primekg_subgraph import load_primekg  # noqa: WPS433
+
                 primekg = load_primekg(args.primekg_path)
                 print(
                     f"[sovereign_bench] PrimeKG loaded: "
@@ -521,7 +530,10 @@ def main() -> int:
                 return False, f"input_rail:jailbreak:{pat}"
         # Direct-identifier (very rough; demo-only).
         import re as _re
-        if _re.search(r"\bMRN[-:#]?\s*\d{4,}\b", query) or _re.search(r"\bSSN[-:#]?\s*\d{3}\b", query):
+
+        if _re.search(r"\bMRN[-:#]?\s*\d{4,}\b", query) or _re.search(
+            r"\bSSN[-:#]?\s*\d{3}\b", query
+        ):
             return False, "input_rail:pii:direct_identifier"
         return True, ""
 
@@ -532,6 +544,7 @@ def main() -> int:
         # Hallucinated dosing: catch obvious unsupported numerics on
         # zoledronic acid that are NOT the canonical 4 mg q6mo / 5 mg yearly.
         import re as _re
+
         if "zoledronic" in rl or "zometa" in rl:
             for m in _re.findall(r"(\d+(?:\.\d+)?\s*mg)", rl):
                 if m.replace(" ", "") not in {"4mg", "5mg"}:
@@ -585,8 +598,7 @@ def main() -> int:
                 if not ok:
                     rail_log.append(rail_msg)
                     response_text = (
-                        "[blocked by input rail; refusing to process. "
-                        f"reason={rail_msg}]"
+                        "[blocked by input rail; refusing to process. " f"reason={rail_msg}]"
                     )
                     graded = _real_grader(response_text, example, judge_fn=judge_fn)
                     per_example.append(
@@ -618,9 +630,7 @@ def main() -> int:
                         query=query_text,
                         retrieved_chunk_ids=[],
                     )
-                    sub = expand_subgraph(
-                        graph, seeds=seeds, persona=args.graph_persona, hops=2
-                    )
+                    sub = expand_subgraph(graph, seeds=seeds, persona=args.graph_persona, hops=2)
                     graph_block = serialize_subgraph_for_prompt(sub)
 
                 primekg_block = ""
@@ -637,8 +647,7 @@ def main() -> int:
                         pk_sub, max_tokens=args.primekg_max_tokens
                     )
                     primekg_seed_names = [
-                        primekg.graph.nodes[s].get("node_name", str(s))
-                        for s in pk_seeds
+                        primekg.graph.nodes[s].get("node_name", str(s)) for s in pk_seeds
                     ]
                     primekg_sub_size = (
                         pk_sub.number_of_nodes(),
@@ -665,8 +674,7 @@ def main() -> int:
                         )
                     except Exception as e:  # noqa: BLE001
                         print(
-                            f"  WARN trial={trial_idx} ex={ex_idx} "
-                            f"primekg-svc fail: {e}",
+                            f"  WARN trial={trial_idx} ex={ex_idx} " f"primekg-svc fail: {e}",
                             file=sys.stderr,
                         )
                         primekg_block = ""
@@ -697,8 +705,7 @@ def main() -> int:
                 if not ok:
                     rail_log.append(rail_msg)
                     response_text = (
-                        f"[blocked by output rail; reason={rail_msg}]\n\n"
-                        + response_text
+                        f"[blocked by output rail; reason={rail_msg}]\n\n" + response_text
                     )
             except httpx.HTTPError as exc:
                 print(
@@ -719,12 +726,8 @@ def main() -> int:
                     "duration_ms": int((time.time() - t0) * 1000),
                     "rail_log": list(rail_log),
                     "primekg_seeds": primekg_seed_names,
-                    "primekg_sub_n_nodes": (
-                        primekg_sub_size[0] if primekg_sub_size else None
-                    ),
-                    "primekg_sub_n_edges": (
-                        primekg_sub_size[1] if primekg_sub_size else None
-                    ),
+                    "primekg_sub_n_nodes": (primekg_sub_size[0] if primekg_sub_size else None),
+                    "primekg_sub_n_edges": (primekg_sub_size[1] if primekg_sub_size else None),
                 }
             )
             print(
@@ -766,31 +769,21 @@ def main() -> int:
         "graph_persona": args.graph_persona if args.graph_expand else None,
         "primekg_enabled": (primekg is not None or primekg_client is not None),
         "primekg_mode": (
-            "local"
-            if primekg is not None
-            else ("service" if primekg_client is not None else None)
+            "local" if primekg is not None else ("service" if primekg_client is not None else None)
         ),
         "primekg_path": args.primekg_path if primekg is not None else None,
         "primekg_url": args.primekg_url if primekg_client is not None else None,
         "primekg_n_nodes": (
-            primekg.graph.number_of_nodes()
-            if primekg is not None
-            else primekg_meta.get("n_nodes")
+            primekg.graph.number_of_nodes() if primekg is not None else primekg_meta.get("n_nodes")
         ),
         "primekg_n_edges": (
-            primekg.graph.number_of_edges()
-            if primekg is not None
-            else primekg_meta.get("n_edges")
+            primekg.graph.number_of_edges() if primekg is not None else primekg_meta.get("n_edges")
         ),
         "primekg_max_hops": (
-            args.primekg_max_hops
-            if (primekg is not None or primekg_client is not None)
-            else None
+            args.primekg_max_hops if (primekg is not None or primekg_client is not None) else None
         ),
         "primekg_max_nodes": (
-            args.primekg_max_nodes
-            if (primekg is not None or primekg_client is not None)
-            else None
+            args.primekg_max_nodes if (primekg is not None or primekg_client is not None) else None
         ),
         "guardrails_enabled": args.guardrails,
         "n_anchors": n_anchors,

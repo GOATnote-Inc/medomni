@@ -1,4 +1,5 @@
 """Pareto dominance and front tests."""
+
 from __future__ import annotations
 
 from loop.pareto import ParetoPoint, dominates, pareto_front

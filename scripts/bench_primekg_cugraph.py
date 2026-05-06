@@ -23,6 +23,7 @@ Usage (run on B300):
         --primekg-path /home/shadeform/medomni/primekg/primekg.gpickle \\
         --out /home/shadeform/medomni/primekg/bench-primekg-cugraph.json
 """
+
 from __future__ import annotations
 
 import argparse
@@ -46,6 +47,7 @@ def _import_nx(backend: str | None):
     elif backend is None or backend == "cpu":
         os.environ.pop("NETWORKX_AUTOMATIC_BACKENDS", None)
     import networkx as nx  # noqa: WPS433
+
     return nx
 
 
@@ -79,16 +81,21 @@ def run_suite(G_full, *, label: str, sample_seed: int = 42) -> dict:
     (the backend choice happened via env-var before the nx import we
     received in `G_full.__class__.__module__`'s import line)."""
     import networkx as nx  # noqa: WPS433
-    print(f"\n=== suite: {label} ({type(G_full).__name__}, "
-          f"{G_full.number_of_nodes():,} nodes, "
-          f"{G_full.number_of_edges():,} edges) ===")
+
+    print(
+        f"\n=== suite: {label} ({type(G_full).__name__}, "
+        f"{G_full.number_of_nodes():,} nodes, "
+        f"{G_full.number_of_edges():,} edges) ==="
+    )
 
     # Build a 5K-node subgraph deterministically.
     rng = random.Random(sample_seed)
     sub_nodes = rng.sample(list(G_full.nodes()), k=min(5000, G_full.number_of_nodes()))
     G_sub = G_full.subgraph(sub_nodes).copy()
-    print(f"  random 5K subgraph: {G_sub.number_of_nodes():,} nodes, "
-          f"{G_sub.number_of_edges():,} edges (seed={sample_seed})")
+    print(
+        f"  random 5K subgraph: {G_sub.number_of_nodes():,} nodes, "
+        f"{G_sub.number_of_edges():,} edges (seed={sample_seed})"
+    )
 
     results: dict[str, dict] = {}
 
@@ -164,6 +171,7 @@ def _run_in_subprocess(backend: str, primekg_path: str) -> dict:
     up the backend env var at first import (not retroactively)."""
     import subprocess
     import sys as _sys
+
     env = os.environ.copy()
     if backend == "cugraph":
         env["NETWORKX_AUTOMATIC_BACKENDS"] = "cugraph"
@@ -198,10 +206,8 @@ def main() -> int:
     parser.add_argument(
         "--out", default="/home/shadeform/medomni/primekg/bench-primekg-cugraph.json"
     )
-    parser.add_argument("--worker", action="store_true",
-                        help=argparse.SUPPRESS)
-    parser.add_argument("--backend-label", default="cpu",
-                        help=argparse.SUPPRESS)
+    parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--backend-label", default="cpu", help=argparse.SUPPRESS)
     args = parser.parse_args()
 
     if args.worker:
@@ -237,8 +243,10 @@ def main() -> int:
         if not isinstance(c, dict) or not isinstance(g, dict):
             continue
         if "error" in c or "error" in g:
-            print(f"  {algo:32s}  cpu={c.get('error', c.get('median_s'))} "
-                  f"gpu={g.get('error', g.get('median_s'))}")
+            print(
+                f"  {algo:32s}  cpu={c.get('error', c.get('median_s'))} "
+                f"gpu={g.get('error', g.get('median_s'))}"
+            )
             rows.append({"algo": algo, "cpu": c, "cugraph": g, "speedup": None})
             continue
         cpu_s = c.get("median_s")
@@ -246,13 +254,8 @@ def main() -> int:
         if cpu_s is None or gpu_s is None or gpu_s <= 0:
             continue
         speedup = cpu_s / gpu_s
-        rows.append(
-            {"algo": algo, "cpu_s": cpu_s, "cugraph_s": gpu_s, "speedup": speedup}
-        )
-        print(
-            f"  {algo:32s}  cpu={cpu_s:8.3f}s  gpu={gpu_s:8.3f}s  "
-            f"speedup={speedup:7.2f}x"
-        )
+        rows.append({"algo": algo, "cpu_s": cpu_s, "cugraph_s": gpu_s, "speedup": speedup})
+        print(f"  {algo:32s}  cpu={cpu_s:8.3f}s  gpu={gpu_s:8.3f}s  " f"speedup={speedup:7.2f}x")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps({"suites": suites, "speedup_table": rows}, indent=2))

@@ -37,6 +37,7 @@ Usage:
         --primekg-dir /home/shadeform/medomni/primekg \\
         --force         # rebuild even if pickle is fresh
 """
+
 from __future__ import annotations
 
 import argparse
@@ -110,6 +111,7 @@ def main() -> int:
     import cudf  # noqa: WPS433
     import cugraph  # noqa: WPS433
     import networkx as nx  # noqa: WPS433
+
     print(
         f"[primekg]   cudf {cudf.__version__} cugraph {cugraph.__version__} "
         f"networkx {nx.__version__} ({time.time() - t0:.2f}s)"
@@ -132,12 +134,8 @@ def main() -> int:
     )
 
     # ---- Distributions (cudf -> pandas to print) ----
-    node_type_dist = (
-        nodes_df["node_type"].value_counts().to_pandas().to_dict()
-    )
-    edge_type_dist = (
-        kg_df["display_relation"].value_counts().to_pandas().to_dict()
-    )
+    node_type_dist = nodes_df["node_type"].value_counts().to_pandas().to_dict()
+    edge_type_dist = kg_df["display_relation"].value_counts().to_pandas().to_dict()
     print(f"[primekg] node types ({len(node_type_dist)}):")
     for k, v in sorted(node_type_dist.items(), key=lambda kv: -kv[1]):
         print(f"           {k:32s} {v:>10,}")
@@ -177,16 +175,11 @@ def main() -> int:
             node_name=str(row.node_name),
             node_source=str(row.node_source),
         )
-    print(
-        f"[primekg] nx nodes added: {G_nx.number_of_nodes():,} "
-        f"({time.time() - t0:.2f}s)"
-    )
+    print(f"[primekg] nx nodes added: {G_nx.number_of_nodes():,} " f"({time.time() - t0:.2f}s)")
 
     # Add edges with attrs.
     t0 = time.time()
-    kg_pd = kg_df[
-        ["relation", "display_relation", "x_index", "y_index"]
-    ].to_pandas()
+    kg_pd = kg_df[["relation", "display_relation", "x_index", "y_index"]].to_pandas()
     for row in kg_pd.itertuples(index=False):
         G_nx.add_edge(
             int(row.x_index),
@@ -194,10 +187,7 @@ def main() -> int:
             relation=str(row.relation),
             display_relation=str(row.display_relation),
         )
-    print(
-        f"[primekg] nx edges added: {G_nx.number_of_edges():,} "
-        f"({time.time() - t0:.2f}s)"
-    )
+    print(f"[primekg] nx edges added: {G_nx.number_of_edges():,} " f"({time.time() - t0:.2f}s)")
 
     # ---- Build name + node_id → node_index secondary indices ----
     # These are essential for `seed_entities_from_query` — string match on
@@ -249,9 +239,7 @@ def main() -> int:
         "n_edges": G_nx.number_of_edges(),
         "directed": not args.undirected,
         "node_types": node_type_dist,
-        "edge_types_top15": dict(
-            sorted(edge_type_dist.items(), key=lambda kv: -kv[1])[:15]
-        ),
+        "edge_types_top15": dict(sorted(edge_type_dist.items(), key=lambda kv: -kv[1])[:15]),
         "n_edge_types_total": len(edge_type_dist),
         "name_index_size": len(name_to_index),
         "nodeid_index_size": len(nodeid_to_index),

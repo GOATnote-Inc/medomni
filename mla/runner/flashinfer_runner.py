@@ -20,15 +20,17 @@ Multi-GPU: picks the current torch.cuda device (respects CUDA_VISIBLE_DEVICES).
 
 API verified against flashinfer-ai/flashinfer main on 2026-04-22.
 """
+
 from __future__ import annotations
 
 import os
 import statistics
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 try:
     import torch
+
     _HAVE_TORCH = True
 except ImportError:
     torch = None  # type: ignore
@@ -37,6 +39,7 @@ except ImportError:
 try:
     import flashinfer  # noqa: F401
     import flashinfer.mla as _fi_mla
+
     _HAVE_FLASHINFER = True
 except ImportError:
     _fi_mla = None  # type: ignore
@@ -45,8 +48,8 @@ except ImportError:
 
 # ---- DeepSeek MLA dims (fixed by FlashInfer CUTLASS backend) ----
 DEEPSEEK_NUM_HEADS = 128
-DEEPSEEK_KV_LORA_RANK = 512    # head_dim_ckv
-DEEPSEEK_QK_ROPE_DIM = 64      # head_dim_kpe
+DEEPSEEK_KV_LORA_RANK = 512  # head_dim_ckv
+DEEPSEEK_QK_ROPE_DIM = 64  # head_dim_kpe
 DEEPSEEK_HEAD_DIM_TOTAL = DEEPSEEK_KV_LORA_RANK + DEEPSEEK_QK_ROPE_DIM  # 576
 
 
@@ -69,6 +72,7 @@ def require_gpu_environment() -> None:
 
 # ---- Benchmark result — binary-compatible with runner.numpy_runner.BenchmarkResult ----
 
+
 @dataclass
 class BenchmarkResult:
     mean_ns: float
@@ -89,6 +93,7 @@ class BenchmarkResult:
 
 
 # ---- Helpers: paged layout construction ----
+
 
 def _build_paged_layout(
     batch_size: int,
@@ -114,14 +119,20 @@ def _build_paged_layout(
     qo_indptr = torch.arange(batch_size + 1, dtype=torch.int32, device=device)
     # kv_indptr: prefix sums of per-seq pages -> [0, P, 2P, ..., B*P]
     kv_indptr = torch.arange(
-        0, (batch_size + 1) * pages_per_seq, pages_per_seq,
-        dtype=torch.int32, device=device,
+        0,
+        (batch_size + 1) * pages_per_seq,
+        pages_per_seq,
+        dtype=torch.int32,
+        device=device,
     )
     # kv_indices: flat list of page indices, contiguous
     kv_indices = torch.arange(total_pages, dtype=torch.int32, device=device)
     # kv_len_arr: actual kv length for each request (B,)
     kv_len_arr = torch.full(
-        (batch_size,), kv_len_per_seq, dtype=torch.int32, device=device,
+        (batch_size,),
+        kv_len_per_seq,
+        dtype=torch.int32,
+        device=device,
     )
     # page_table: (B, pages_per_seq) for CUTLASS path
     page_table = kv_indices.view(batch_size, pages_per_seq).contiguous()
@@ -138,11 +149,12 @@ def _build_paged_layout(
 
 # ---- Torch reference (absorbed form; runs on GPU for fair compare) ----
 
+
 def torch_mla_decode_absorbed(
-    q_nope,       # (B, H, 512)  — already W_UK-merged (absorbed)
-    q_pe,         # (B, H, 64)
-    ckv,          # (B, T, 512)
-    kpe,          # (B, T, 64)
+    q_nope,  # (B, H, 512)  — already W_UK-merged (absorbed)
+    q_pe,  # (B, H, 64)
+    ckv,  # (B, T, 512)
+    kpe,  # (B, T, 64)
     sm_scale: float,
 ):
     """Reference MLA decode in absorbed form. Matches FlashInfer's output
@@ -156,8 +168,7 @@ def torch_mla_decode_absorbed(
     ckv_f = ckv.float()
     kpe_f = kpe.float()
     scores = (
-        torch.einsum("bhd,btd->bht", q_nope_f, ckv_f)
-        + torch.einsum("bhd,btd->bht", q_pe_f, kpe_f)
+        torch.einsum("bhd,btd->bht", q_nope_f, ckv_f) + torch.einsum("bhd,btd->bht", q_pe_f, kpe_f)
     ) * float(sm_scale)
     scores = scores - scores.amax(dim=-1, keepdim=True)
     w = torch.softmax(scores, dim=-1)
@@ -166,6 +177,7 @@ def torch_mla_decode_absorbed(
 
 
 # ---- Harness ----
+
 
 @dataclass
 class FlashInferMLAConfig:
@@ -176,10 +188,10 @@ class FlashInferMLAConfig:
     head_dim_ckv: int = DEEPSEEK_KV_LORA_RANK
     head_dim_kpe: int = DEEPSEEK_QK_ROPE_DIM
     causal: bool = False
-    sm_scale: Optional[float] = None  # None -> 1/sqrt(head_dim_ckv + head_dim_kpe)
-    q_dtype: str = "bfloat16"    # "bfloat16" | "float16"
+    sm_scale: float | None = None  # None -> 1/sqrt(head_dim_ckv + head_dim_kpe)
+    q_dtype: str = "bfloat16"  # "bfloat16" | "float16"
     kv_dtype: str = "bfloat16"
-    backend: str = "auto"        # "auto" | "fa2" | "fa3" | "cutlass"
+    backend: str = "auto"  # "auto" | "fa2" | "fa3" | "cutlass"
     workspace_mb: int = 128
     use_cuda_graph: bool = False
 
@@ -188,6 +200,7 @@ class FlashInferMLAConfig:
         if self.sm_scale is not None:
             return float(self.sm_scale)
         import math
+
         return 1.0 / math.sqrt(self.head_dim_ckv + self.head_dim_kpe)
 
 
@@ -212,10 +225,12 @@ class FlashInferMLAHarness:
     repeatedly. Designed for the evolve loop: the same harness can be reused
     across candidates since all candidates share the FlashInfer call site."""
 
-    def __init__(self, cfg: FlashInferMLAConfig, *, device: Optional[str] = None, seed: int = 0):
+    def __init__(self, cfg: FlashInferMLAConfig, *, device: str | None = None, seed: int = 0):
         require_gpu_environment()
         self.cfg = cfg
-        self.device = torch.device(device) if device else torch.device(f"cuda:{torch.cuda.current_device()}")
+        self.device = (
+            torch.device(device) if device else torch.device(f"cuda:{torch.cuda.current_device()}")
+        )
         torch.cuda.set_device(self.device)
         self._gen = torch.Generator(device=self.device).manual_seed(seed)
 
@@ -225,34 +240,54 @@ class FlashInferMLAHarness:
         # Allocate workspace (128 MB by default per flashinfer doc).
         self.workspace = torch.empty(
             cfg.workspace_mb * 1024 * 1024,
-            dtype=torch.uint8, device=self.device,
+            dtype=torch.uint8,
+            device=self.device,
         )
 
         # Paged layout
         layout = _build_paged_layout(
-            cfg.batch_size, cfg.kv_len, cfg.page_size, self.device,
+            cfg.batch_size,
+            cfg.kv_len,
+            cfg.page_size,
+            self.device,
             dtype_ckv=self.kv_dtype,
         )
         self.layout = layout
 
         # Allocate paged caches
         self.ckv_cache = torch.randn(
-            layout["total_pages"], cfg.page_size, cfg.head_dim_ckv,
-            dtype=torch.float32, generator=self._gen, device=self.device,
+            layout["total_pages"],
+            cfg.page_size,
+            cfg.head_dim_ckv,
+            dtype=torch.float32,
+            generator=self._gen,
+            device=self.device,
         ).to(self.kv_dtype)
         self.kpe_cache = torch.randn(
-            layout["total_pages"], cfg.page_size, cfg.head_dim_kpe,
-            dtype=torch.float32, generator=self._gen, device=self.device,
+            layout["total_pages"],
+            cfg.page_size,
+            cfg.head_dim_kpe,
+            dtype=torch.float32,
+            generator=self._gen,
+            device=self.device,
         ).to(self.kv_dtype)
 
         # Query tensors (absorbed form)
         self.q_nope = torch.randn(
-            cfg.batch_size, cfg.num_heads, cfg.head_dim_ckv,
-            dtype=torch.float32, generator=self._gen, device=self.device,
+            cfg.batch_size,
+            cfg.num_heads,
+            cfg.head_dim_ckv,
+            dtype=torch.float32,
+            generator=self._gen,
+            device=self.device,
         ).to(self.q_dtype)
         self.q_pe = torch.randn(
-            cfg.batch_size, cfg.num_heads, cfg.head_dim_kpe,
-            dtype=torch.float32, generator=self._gen, device=self.device,
+            cfg.batch_size,
+            cfg.num_heads,
+            cfg.head_dim_kpe,
+            dtype=torch.float32,
+            generator=self._gen,
+            device=self.device,
         ).to(self.q_dtype)
 
         # Wrapper — when use_cuda_graph=True, FlashInfer requires the
@@ -297,16 +332,17 @@ class FlashInferMLAHarness:
     def gather_cache_dense(self) -> tuple:
         """Materialize the paged cache into a dense (B, T, D) layout for the
         torch reference. Used by correctness check; not hot-path."""
-        B = self.cfg.batch_size
         T = self.cfg.kv_len
         # page_table: (B, pages_per_seq); cache: (total_pages, page_size, D)
         pt = self.layout["page_table"]  # (B, P)
+
         def _gather(cache):
             # gather pages per seq, then slice to kv_len
             # out shape: (B, P*page_size, D) -> slice first T
             gathered = cache[pt]  # (B, P, page_size, D)
             B_, P, PS, D = gathered.shape
             return gathered.reshape(B_, P * PS, D)[:, :T, :].contiguous()
+
         ckv_dense = _gather(self.ckv_cache)
         kpe_dense = _gather(self.kpe_cache)
         return ckv_dense, kpe_dense
@@ -369,15 +405,19 @@ class FlashInferMLAHarness:
         cfg = self.cfg
         if cfg.backend == "cutlass":
             return self.wrapper.run(
-                q_nope=self.q_nope, q_pe=self.q_pe,
-                ckv_cache=self.ckv_cache, kpe_cache=self.kpe_cache,
+                q_nope=self.q_nope,
+                q_pe=self.q_pe,
+                ckv_cache=self.ckv_cache,
+                kpe_cache=self.kpe_cache,
                 kv_len=self.layout["kv_len_arr"],
                 page_table=self.layout["page_table"],
                 out=out_buf,
             )
         return self.wrapper.run(
-            q_nope=self.q_nope, q_pe=self.q_pe,
-            ckv_cache=self.ckv_cache, kpe_cache=self.kpe_cache,
+            q_nope=self.q_nope,
+            q_pe=self.q_pe,
+            ckv_cache=self.ckv_cache,
+            kpe_cache=self.kpe_cache,
             out=out_buf,
         )
 
@@ -392,7 +432,10 @@ class FlashInferMLAHarness:
         """Torch absorbed-form reference. float32 on GPU."""
         ckv_dense, kpe_dense = self.gather_cache_dense()
         return torch_mla_decode_absorbed(
-            self.q_nope, self.q_pe, ckv_dense, kpe_dense,
+            self.q_nope,
+            self.q_pe,
+            ckv_dense,
+            kpe_dense,
             sm_scale=self.cfg.effective_sm_scale,
         )
 
@@ -407,13 +450,17 @@ class FlashInferMLAHarness:
         rel_err = max_err / (out_ref.abs().max().item() + 1e-8)
         passed = max_err <= atol + rtol * out_ref.abs().max().item()
         return {
-            "passed": bool(passed), "max_abs_error": float(max_err),
-            "mean_abs_error": float(mean_err), "relative_error": float(rel_err),
-            "out_shape": tuple(out_fi.shape), "out_dtype": str(out_fi.dtype),
+            "passed": bool(passed),
+            "max_abs_error": float(max_err),
+            "mean_abs_error": float(mean_err),
+            "relative_error": float(rel_err),
+            "out_shape": tuple(out_fi.shape),
+            "out_dtype": str(out_fi.dtype),
         }
 
 
 # ---- Benchmark (CUDA-event based) ----
+
 
 def benchmark_flashinfer_mla(
     harness: FlashInferMLAHarness,
@@ -446,8 +493,13 @@ def benchmark_flashinfer_mla(
     std = statistics.stdev(samples) if len(samples) > 1 else 0.0
     tps = (harness.cfg.batch_size / (median / 1e9)) if median > 0 else 0.0
     return BenchmarkResult(
-        mean_ns=mean, median_ns=median, p90_ns=float(p90), std_ns=std,
-        iters=iters, tokens_per_sec=tps, raw_ns=samples,
+        mean_ns=mean,
+        median_ns=median,
+        p90_ns=float(p90),
+        std_ns=std,
+        iters=iters,
+        tokens_per_sec=tps,
+        raw_ns=samples,
     )
 
 
@@ -459,22 +511,31 @@ def run_flashinfer_mla_decode(cfg: FlashInferMLAConfig, *, seed: int = 0) -> dic
     bench = benchmark_flashinfer_mla(harness, warmup=5, iters=50)
     return {
         "config": {
-            "batch_size": cfg.batch_size, "kv_len": cfg.kv_len,
-            "page_size": cfg.page_size, "num_heads": cfg.num_heads,
-            "head_dim_ckv": cfg.head_dim_ckv, "head_dim_kpe": cfg.head_dim_kpe,
-            "q_dtype": cfg.q_dtype, "kv_dtype": cfg.kv_dtype,
-            "backend": cfg.backend, "sm_scale": cfg.effective_sm_scale,
+            "batch_size": cfg.batch_size,
+            "kv_len": cfg.kv_len,
+            "page_size": cfg.page_size,
+            "num_heads": cfg.num_heads,
+            "head_dim_ckv": cfg.head_dim_ckv,
+            "head_dim_kpe": cfg.head_dim_kpe,
+            "q_dtype": cfg.q_dtype,
+            "kv_dtype": cfg.kv_dtype,
+            "backend": cfg.backend,
+            "sm_scale": cfg.effective_sm_scale,
         },
         "verify": verify,
         "bench": {
-            "mean_ns": bench.mean_ns, "median_ns": bench.median_ns,
-            "p90_ns": bench.p90_ns, "std_ns": bench.std_ns,
-            "iters": bench.iters, "tokens_per_sec": bench.tokens_per_sec,
+            "mean_ns": bench.mean_ns,
+            "median_ns": bench.median_ns,
+            "p90_ns": bench.p90_ns,
+            "std_ns": bench.std_ns,
+            "iters": bench.iters,
+            "tokens_per_sec": bench.tokens_per_sec,
         },
     }
 
 
 # ---- Environment report ----
+
 
 def environment_report() -> dict:
     """Collect an environment snapshot — useful at the top of every verify run."""

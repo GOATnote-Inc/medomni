@@ -53,26 +53,30 @@ REPO = Path(__file__).resolve().parent.parent
 # in every emitted manifest, "missing" included, which is itself audit-evidence.
 # -----------------------------------------------------------------------------
 
-CONTAINERS = OrderedDict([
-    # name, pod-host
-    ("vllm-omni-b300", "B300"),
-    ("vllm-embed", "B300"),
-    ("vllm-rerank", "B300"),
-    ("vllm-judge", "B300"),
-    ("trtllm-judge", "RunPod prism"),
-    ("trtllm-rerank", "RunPod prism"),
-])
+CONTAINERS = OrderedDict(
+    [
+        # name, pod-host
+        ("vllm-omni-b300", "B300"),
+        ("vllm-embed", "B300"),
+        ("vllm-rerank", "B300"),
+        ("vllm-judge", "B300"),
+        ("trtllm-judge", "RunPod prism"),
+        ("trtllm-rerank", "RunPod prism"),
+    ]
+)
 
-MODELS = OrderedDict([
-    # canonical id, role
-    ("nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4", "inference"),
-    ("nvidia/llama-nemotron-embed-1b-v2",                   "embedding"),
-    ("nvidia/llama-3.2-nv-rerankqa-1b-v2",                  "rerank"),
-    ("Qwen/Qwen2.5-7B-Instruct",                            "judge"),
-    ("nvidia/NemoGuard-JailbreakDetect",                    "guard_jailbreak"),
-    ("nvidia/llama-3.1-nemoguard-8b-content-safety",        "guard_content"),
-    ("nvidia/Nemotron-Content-Safety-Reasoning-4B",         "guard_reasoning"),
-])
+MODELS = OrderedDict(
+    [
+        # canonical id, role
+        ("nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4", "inference"),
+        ("nvidia/llama-nemotron-embed-1b-v2", "embedding"),
+        ("nvidia/llama-3.2-nv-rerankqa-1b-v2", "rerank"),
+        ("Qwen/Qwen2.5-7B-Instruct", "judge"),
+        ("nvidia/NemoGuard-JailbreakDetect", "guard_jailbreak"),
+        ("nvidia/llama-3.1-nemoguard-8b-content-safety", "guard_content"),
+        ("nvidia/Nemotron-Content-Safety-Reasoning-4B", "guard_reasoning"),
+    ]
+)
 
 CONFIG_FILES = [
     "scripts/sovereign_bench.py",
@@ -115,14 +119,15 @@ DEMO_FIXTURE = "corpus/clinical-demo/CLN-DEMO-TAMOXIFEN-MIRENA"
 
 # host -> (ssh-alias, optional ssh-args)
 POD_SSH = {
-    "B300":          ("unnecessary-peach-catfish", []),
-    "RunPod prism":  ("runpod-prism",              ["-F", "configs/ssh_runpod.conf", "-tt"]),
+    "B300": ("unnecessary-peach-catfish", []),
+    "RunPod prism": ("runpod-prism", ["-F", "configs/ssh_runpod.conf", "-tt"]),
 }
 
 
 # -----------------------------------------------------------------------------
 # Probe helpers (best-effort; never fail the whole emitter)
 # -----------------------------------------------------------------------------
+
 
 def _sha256_of_path(path: Path) -> str | None:
     if not path.exists() or not path.is_file():
@@ -145,7 +150,8 @@ def _git(cwd: Path, *args: str) -> str | None:
     try:
         return subprocess.check_output(
             ["git", "-C", str(cwd), *args],
-            stderr=subprocess.DEVNULL, text=True,
+            stderr=subprocess.DEVNULL,
+            text=True,
         ).strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
@@ -159,11 +165,13 @@ def _git_dirty_count(cwd: Path) -> int:
 
 
 def _ssh_capture(host: str, cmd: str, ssh_args: list[str], timeout: int = 8) -> str | None:
-    args = ["ssh", "-o", f"ConnectTimeout={timeout}", "-o", "BatchMode=yes",
-            *ssh_args, host, cmd]
+    args = ["ssh", "-o", f"ConnectTimeout={timeout}", "-o", "BatchMode=yes", *ssh_args, host, cmd]
     try:
         out = subprocess.check_output(
-            args, stderr=subprocess.DEVNULL, text=True, timeout=timeout + 4,
+            args,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=timeout + 4,
         )
         return out.strip()
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
@@ -266,30 +274,32 @@ def _parse_serve_flags(script_path: Path) -> dict:
 # Layer 5 — pull seeds + sampling from the artifact JSON
 # -----------------------------------------------------------------------------
 
+
 def _extract_sampling(artifact: dict) -> dict:
     return {
         "clinical_system_prompt": artifact.get("clinical_system_prompt"),
-        "max_tokens":              artifact.get("max_tokens"),
-        "n_per_trial":             artifact.get("n_per_trial"),
-        "retrieval_mode":          artifact.get("retrieval_mode"),
-        "retrieval_top_n":         artifact.get("retrieval_top_n"),
-        "seed":                    artifact.get("seed"),
-        "temperature":             artifact.get("temperature"),
+        "max_tokens": artifact.get("max_tokens"),
+        "n_per_trial": artifact.get("n_per_trial"),
+        "retrieval_mode": artifact.get("retrieval_mode"),
+        "retrieval_top_n": artifact.get("retrieval_top_n"),
+        "seed": artifact.get("seed"),
+        "temperature": artifact.get("temperature"),
     }
 
 
 def _extract_models_used(artifact: dict) -> dict:
     return {
-        "embed":  {"id": artifact.get("embed_model"),  "url": artifact.get("embed_url")},
-        "judge":  {"id": artifact.get("judge_model"),  "url": artifact.get("judge_url")},
+        "embed": {"id": artifact.get("embed_model"), "url": artifact.get("embed_url")},
+        "judge": {"id": artifact.get("judge_model"), "url": artifact.get("judge_url")},
         "rerank": {"id": artifact.get("rerank_model"), "url": artifact.get("rerank_url")},
-        "serve":  {"id": artifact.get("serve_model"),  "url": artifact.get("serve_url")},
+        "serve": {"id": artifact.get("serve_model"), "url": artifact.get("serve_url")},
     }
 
 
 # -----------------------------------------------------------------------------
 # Deterministic YAML dump
 # -----------------------------------------------------------------------------
+
 
 def _sort_recursive(obj):
     """Recursively re-order dict keys alphabetically. Lists preserved as-is
@@ -320,7 +330,8 @@ def _yaml_dump(data, out_path: Path, header: str) -> None:
         with out_path.open("w") as f:
             f.write(header)
             yaml.dump(
-                sorted_data, f,
+                sorted_data,
+                f,
                 Dumper=_SortedDumper,
                 default_flow_style=False,
                 sort_keys=True,
@@ -342,19 +353,26 @@ def _yaml_dump(data, out_path: Path, header: str) -> None:
 # Main
 # -----------------------------------------------------------------------------
 
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--artifact", required=True,
-                        help="path to the bench artifact JSON (e.g. heldout.json)")
-    parser.add_argument("--out", required=True,
-                        help="path to write MANIFEST.yaml")
-    parser.add_argument("--probe-pods", action="store_true",
-                        help="ssh into pods to capture container image digests "
-                             "(non-deterministic; only use when generating a "
-                             "specific run's record, not for byte-identical re-runs)")
-    parser.add_argument("--probe-hf", action="store_true",
-                        help="query HF Hub to resolve model revisions; "
-                             "without this flag, only the local HF cache is consulted")
+    parser.add_argument(
+        "--artifact", required=True, help="path to the bench artifact JSON (e.g. heldout.json)"
+    )
+    parser.add_argument("--out", required=True, help="path to write MANIFEST.yaml")
+    parser.add_argument(
+        "--probe-pods",
+        action="store_true",
+        help="ssh into pods to capture container image digests "
+        "(non-deterministic; only use when generating a "
+        "specific run's record, not for byte-identical re-runs)",
+    )
+    parser.add_argument(
+        "--probe-hf",
+        action="store_true",
+        help="query HF Hub to resolve model revisions; "
+        "without this flag, only the local HF cache is consulted",
+    )
     args = parser.parse_args()
 
     artifact_path = Path(args.artifact).resolve()
@@ -373,12 +391,12 @@ def main() -> int:
     for container, host in CONTAINERS.items():
         if args.probe_pods:
             layer_1_containers[container] = {
-                "pod":    host,
+                "pod": host,
                 "digest": _docker_image_digest(host, container),
             }
         else:
             layer_1_containers[container] = {
-                "pod":    host,
+                "pod": host,
                 "digest": "not_probed (re-emit with --probe-pods to capture)",
             }
 
@@ -388,10 +406,10 @@ def main() -> int:
         local = _hf_revision_local(model_id)
         remote = _hf_revision_remote(model_id) if args.probe_hf else None
         layer_2_weights[model_id] = {
-            "role":         role,
-            "local_cache":  local,
-            "hf_revision":  remote,
-            "resolved":     remote or local or "unresolved",
+            "role": role,
+            "local_cache": local,
+            "hf_revision": remote,
+            "resolved": remote or local or "unresolved",
         }
 
     # ---- Layer 3: corpus SHAs --------------------------------------------
@@ -403,11 +421,13 @@ def main() -> int:
     layer_3_heldout: dict = OrderedDict()
     for fix in sorted(HELDOUT_FIXTURES):
         fix_dir = REPO / fix
-        layer_3_heldout[fix] = OrderedDict([
-            ("case_sha",        _sha256_of_path(fix_dir / "case.json")),
-            ("ideal_sha",       _sha256_of_path(fix_dir / "ideal-answer.md")),
-            ("rubric_sha",      _sha256_of_path(fix_dir / "rubric.json")),
-        ])
+        layer_3_heldout[fix] = OrderedDict(
+            [
+                ("case_sha", _sha256_of_path(fix_dir / "case.json")),
+                ("ideal_sha", _sha256_of_path(fix_dir / "ideal-answer.md")),
+                ("rubric_sha", _sha256_of_path(fix_dir / "rubric.json")),
+            ]
+        )
 
     # OpenEM 370 if present
     openem_dir = REPO / "data" / "openem"
@@ -440,63 +460,89 @@ def main() -> int:
     layer_7_fixtures["chemoprevention_heldout"] = chemoprevention
     # tamoxifen demo (1)
     demo_dir = REPO / DEMO_FIXTURE
-    layer_7_fixtures["tamoxifen_demo"] = OrderedDict([
-        (DEMO_FIXTURE, OrderedDict([
-            ("anchors_sha",     _sha256_of_path(demo_dir / "anchors.json")),
-            ("case_sha",        _sha256_of_path(demo_dir / "case.json")),
-            ("ideal_sha",       _sha256_of_path(demo_dir / "ideal-answer.md")),
-            ("rubric_sha",      _sha256_of_path(demo_dir / "rubric.json")),
-            ("rubric_v2_sha",   _sha256_of_path(demo_dir / "rubric-v2.json")),
-        ])),
-    ])
+    layer_7_fixtures["tamoxifen_demo"] = OrderedDict(
+        [
+            (
+                DEMO_FIXTURE,
+                OrderedDict(
+                    [
+                        ("anchors_sha", _sha256_of_path(demo_dir / "anchors.json")),
+                        ("case_sha", _sha256_of_path(demo_dir / "case.json")),
+                        ("ideal_sha", _sha256_of_path(demo_dir / "ideal-answer.md")),
+                        ("rubric_sha", _sha256_of_path(demo_dir / "rubric.json")),
+                        ("rubric_v2_sha", _sha256_of_path(demo_dir / "rubric-v2.json")),
+                    ]
+                ),
+            ),
+        ]
+    )
 
     # ---- Layer 8: judge model digest -------------------------------------
     judge_id = artifact.get("judge_model") or "Qwen/Qwen2.5-7B-Instruct"
     judge_local = _hf_revision_local(judge_id)
     judge_remote = _hf_revision_remote(judge_id) if args.probe_hf else None
-    layer_8_judge: dict = OrderedDict([
-        ("id",            judge_id),
-        ("url",           artifact.get("judge_url")),
-        ("local_cache",   judge_local),
-        ("hf_revision",   judge_remote),
-        ("resolved",      judge_remote or judge_local or "unresolved"),
-    ])
+    layer_8_judge: dict = OrderedDict(
+        [
+            ("id", judge_id),
+            ("url", artifact.get("judge_url")),
+            ("local_cache", judge_local),
+            ("hf_revision", judge_remote),
+            ("resolved", judge_remote or judge_local or "unresolved"),
+        ]
+    )
 
     # ---- Layer 9: git -----------------------------------------------------
-    layer_9_git: dict = OrderedDict([
-        ("repo_path",     str(REPO.relative_to(REPO.parent))),
-        ("git_sha",       _git(REPO, "rev-parse", "HEAD")),
-        ("dirty_count",   _git_dirty_count(REPO)),
-    ])
+    layer_9_git: dict = OrderedDict(
+        [
+            ("repo_path", str(REPO.relative_to(REPO.parent))),
+            ("git_sha", _git(REPO, "rev-parse", "HEAD")),
+            ("dirty_count", _git_dirty_count(REPO)),
+        ]
+    )
 
     # -----------------------------------------------------------------------
     # Compose
     # -----------------------------------------------------------------------
-    manifest = OrderedDict([
-        ("schema_version",    "medomni-manifest-v1"),
-        ("artifact", OrderedDict([
-            ("path",          str(artifact_path.relative_to(REPO))
-                              if artifact_path.is_relative_to(REPO)
-                              else str(artifact_path)),
-            ("sha256",        artifact_sha),
-            ("generated_at",  artifact_generated_at),
-            ("run_id",        artifact_run_id),
-        ])),
-        ("models_used_in_run", _extract_models_used(artifact)),
-        ("layer_1_containers",     layer_1_containers),
-        ("layer_2_weights",        layer_2_weights),
-        ("layer_3_corpus", OrderedDict([
-            ("fixed_files",        layer_3_corpus),
-            ("heldout_fixtures",   layer_3_heldout),
-            ("openem_370",         layer_3_openem),
-        ])),
-        ("layer_4_configs",        layer_4_configs),
-        ("layer_5_sampling",       layer_5_sampling),
-        ("layer_6_serve_flags",    layer_6_serve_flags),
-        ("layer_7_fixtures",       layer_7_fixtures),
-        ("layer_8_judge",          layer_8_judge),
-        ("layer_9_git",            layer_9_git),
-    ])
+    manifest = OrderedDict(
+        [
+            ("schema_version", "medomni-manifest-v1"),
+            (
+                "artifact",
+                OrderedDict(
+                    [
+                        (
+                            "path",
+                            str(artifact_path.relative_to(REPO))
+                            if artifact_path.is_relative_to(REPO)
+                            else str(artifact_path),
+                        ),
+                        ("sha256", artifact_sha),
+                        ("generated_at", artifact_generated_at),
+                        ("run_id", artifact_run_id),
+                    ]
+                ),
+            ),
+            ("models_used_in_run", _extract_models_used(artifact)),
+            ("layer_1_containers", layer_1_containers),
+            ("layer_2_weights", layer_2_weights),
+            (
+                "layer_3_corpus",
+                OrderedDict(
+                    [
+                        ("fixed_files", layer_3_corpus),
+                        ("heldout_fixtures", layer_3_heldout),
+                        ("openem_370", layer_3_openem),
+                    ]
+                ),
+            ),
+            ("layer_4_configs", layer_4_configs),
+            ("layer_5_sampling", layer_5_sampling),
+            ("layer_6_serve_flags", layer_6_serve_flags),
+            ("layer_7_fixtures", layer_7_fixtures),
+            ("layer_8_judge", layer_8_judge),
+            ("layer_9_git", layer_9_git),
+        ]
+    )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     header = (

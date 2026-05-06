@@ -10,6 +10,7 @@ Run explicitly:
 These tests are the load-bearing correctness check for the FlashInfer
 runner. If they fail, the evolve loop cannot trust GPU benchmark numbers.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -38,7 +39,10 @@ def test_environment_has_gpu():
 def test_harness_constructs(backend):
     _skip_without_gpu()
     cfg = fir.FlashInferMLAConfig(
-        batch_size=1, kv_len=256, page_size=64, backend=backend,
+        batch_size=1,
+        kv_len=256,
+        page_size=64,
+        backend=backend,
     )
     h = fir.FlashInferMLAHarness(cfg, seed=0)
     assert h.workspace.is_cuda
@@ -50,7 +54,10 @@ def test_harness_constructs(backend):
 def test_single_run_produces_correct_shape(backend):
     _skip_without_gpu()
     cfg = fir.FlashInferMLAConfig(
-        batch_size=1, kv_len=256, page_size=64, backend=backend,
+        batch_size=1,
+        kv_len=256,
+        page_size=64,
+        backend=backend,
     )
     h = fir.FlashInferMLAHarness(cfg, seed=0)
     out = h.run()
@@ -61,7 +68,10 @@ def test_single_run_produces_correct_shape(backend):
 def test_matches_torch_reference():
     _skip_without_gpu()
     cfg = fir.FlashInferMLAConfig(
-        batch_size=1, kv_len=256, page_size=64, backend="auto",
+        batch_size=1,
+        kv_len=256,
+        page_size=64,
+        backend="auto",
     )
     h = fir.FlashInferMLAHarness(cfg, seed=0)
     v = h.verify_matches_reference()
@@ -74,14 +84,15 @@ def test_matches_torch_reference():
 def test_benchmark_produces_sensible_numbers():
     _skip_without_gpu()
     cfg = fir.FlashInferMLAConfig(
-        batch_size=1, kv_len=1024, page_size=64, backend="auto",
+        batch_size=1,
+        kv_len=1024,
+        page_size=64,
+        backend="auto",
     )
     h = fir.FlashInferMLAHarness(cfg, seed=0)
     b = fir.benchmark_flashinfer_mla(h, warmup=5, iters=30)
     # H100: DeepSeek decode should land in the microsecond range.
-    assert 1e3 < b.median_ns < 1e7, (
-        f"benchmark out of plausible range: median={b.median_ns} ns"
-    )
+    assert 1e3 < b.median_ns < 1e7, f"benchmark out of plausible range: median={b.median_ns} ns"
     # Throughput positive and reasonable.
     assert b.tokens_per_sec > 100
 
@@ -89,7 +100,10 @@ def test_benchmark_produces_sensible_numbers():
 def test_run_flashinfer_mla_decode_end_to_end():
     _skip_without_gpu()
     cfg = fir.FlashInferMLAConfig(
-        batch_size=1, kv_len=512, page_size=64, backend="auto",
+        batch_size=1,
+        kv_len=512,
+        page_size=64,
+        backend="auto",
     )
     result = fir.run_flashinfer_mla_decode(cfg, seed=0)
     assert result["verify"]["passed"]

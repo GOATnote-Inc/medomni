@@ -73,8 +73,7 @@ def assert_upstream_pinned() -> None:
         ref_path = UPSTREAM_DIR / ".git" / head.split(" ", 1)[1]
         if not ref_path.exists():
             raise UpstreamPinError(
-                f"simple-evals HEAD ref {head} does not resolve (missing "
-                f"{ref_path})"
+                f"simple-evals HEAD ref {head} does not resolve (missing " f"{ref_path})"
             )
         head = ref_path.read_text().strip()
     if head != UPSTREAM_PIN_SHA:
@@ -92,6 +91,7 @@ def assert_upstream_pinned() -> None:
 # Each block cites the upstream line numbers at the pin.
 # Upstream license: MIT (Copyright 2024 OpenAI). See NOTICE.
 # ------------------------------------------------------------------
+
 
 # Upstream: healthbench_eval.py:111-133 (class RubricItem).
 @dataclass
@@ -135,9 +135,7 @@ def calculate_score(
         return None
     achieved_points = sum(
         rubric_item.points
-        for rubric_item, grading_response in zip(
-            rubric_items, grading_response_list, strict=True
-        )
+        for rubric_item, grading_response in zip(rubric_items, grading_response_list, strict=True)
         if grading_response["criteria_met"]
     )
     return achieved_points / total_possible_points
