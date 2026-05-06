@@ -1,0 +1,71 @@
+---
+# B6 — NVFP4 + LoRA hot-load on B300 (V2.5 deploy gate)
+#
+# Pre-registered before any B6 run. Git commit timestamp = pre-reg proof.
+
+name: b6-nvfp4-lora-hotload
+hypothesis: |
+  V2.5 LoRA (94d1f8d1...) hot-loads onto the NVFP4 quantized
+  Nemotron-3-Nano-Omni base on catfish via vLLM's lora_request API
+  without re-quantization, with first-token latency on a
+  freshly-loaded adapter <=2x first-token latency on a cold-start
+  no-LoRA request. Adapter unload->reload roundtrip <500ms.
+
+hardware:
+  pod: unnecessary-peach-catfish (B300, NVFP4)
+  serve: vllm with --enable-lora --max-loras=4 --max-lora-rank=64
+
+success_criteria:
+  primary:
+    - cold load V2.5 adapter from disk to GPU: <=10s
+    - warm hot-swap latency (already-cached): <=500ms
+    - first-token latency post-load: <=2x first-token-no-LoRA at same prompt
+    - quality match B3 (NVFP4 vs BF16 within 1pp on MedQA-USMLE) — gates this
+  secondary:
+    - 4 concurrent LoRA adapters (V2.5, V0-null, dummy, dummy) co-resident
+      with no quality regression on round-robin
+    - adapter served from disk path, not re-fetched from HF Hub at load time
+
+exclusion_rules:
+  - skip if vllm < 0.6.x (LoRA hot-load API stability)
+  - skip if NemoChat template incompatibility with vllm chat template
+    found in iter-X (logged separately) is unfixed; fall back to BF16
+  - reject any adapter that produces nan/inf in first 10 requests
+
+sample_size:
+  load_iterations: 50
+  hot_swap_iterations: 100
+  first_token_paired: 200       # 100 LoRA-on, 100 no-LoRA at same prompt
+  rationale: |
+    Bootstrap CI on first-token p95: n=100 gives ~5ms half-width on a
+    100ms baseline (sigma~30ms).
+
+decode_params:
+  temperature: 0.0
+  top_p: 1.0
+  max_new_tokens: 64
+  thinking_enabled: false
+
+manifest_fields_required:
+  - weights_sha256              # V2.5 adapter
+  - base_weights_sha256_nvfp4
+  - vllm_version
+  - cuda_version
+  - driver_version
+  - hardware                    # full catfish manifest from E2
+  - benchmark_script_git_sha
+  - load_latency_p50_ms
+  - load_latency_p95_ms
+  - hot_swap_latency_p50_ms
+  - hot_swap_latency_p95_ms
+  - first_token_latency_p50_ms_lora
+  - first_token_latency_p95_ms_lora
+  - first_token_latency_p50_ms_baseline
+  - first_token_latency_p95_ms_baseline
+  - vram_used_with_lora_max_mib
+  - vram_used_no_lora_max_mib
+
+stats_protocol: findings/2026-05-06-evidence-window/STATS-PROTOCOL.md
+notes: |
+  Quality gate (last primary criterion) is dependent on B3 passing
+  first; B6 only gates the deploy mechanism, not adapter quality.

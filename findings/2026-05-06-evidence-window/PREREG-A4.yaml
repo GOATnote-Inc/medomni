@@ -1,0 +1,105 @@
+---
+# A4 — Extended evals on V2.5 LoRA (post ship-rule)
+#
+# Pre-registered before any A4 run. Companion of:
+#   findings/2026-05-05-v2.5-reasoning-sft/PREREG.yaml (V2.5 training)
+#   findings/2026-05-05-v2.5-eval/CARD.md            (V2.5 ship-rule eval, in flight)
+#
+# Authored 2026-05-06 in the E-track evidence-window agent. Git commit
+# timestamp on this file IS the cryptographic proof of pre-registration:
+# any A4 result tied to a wall-clock AFTER this commit is bound by the
+# success_criteria below; results from before this commit do not exist.
+
+name: a4-v2.5-extended-evals
+hypothesis: |
+  Beyond the four ship-rule benchmarks (MedQA-USMLE, MedXpertQA-Text,
+  HealthBench-Hard, PubMedQA-L), the V2.5 reasoning-SFT LoRA holds its
+  delta vs V0 on three orthogonal medical evals — MedMCQA, MMLU-Med,
+  CareQA — without regression on a general-knowledge sanity check
+  (MMLU-STEM). This is a generalization probe: if V2.5 only wins where
+  it was trained-adjacent (USMLE-style and reasoning-text), the delta
+  is narrow; if it wins broadly, the reasoning-trace SFT is buying
+  generic medical-reasoning ability rather than benchmark-shape
+  overfitting.
+
+hardware:
+  pod: evil-cyan-lobster
+  gpu: NVIDIA H200 (Hopper, 144 GB HBM)
+  driver: see findings/2026-05-06-evidence-window/manifest-lobster.json
+  serve_endpoint: http://127.0.0.1:8000/v1 (vllm-BF16 + LoRA hot-load)
+  judge_endpoint: http://127.0.0.1:8003/v1 (qwen2.5-7b-bf16; sovereign judge)
+
+success_criteria:
+  pass_conditions_all_required:
+    - MedMCQA delta point estimate >= +3pp vs V0
+    - MMLU-Med delta point estimate >= +3pp vs V0
+    - CareQA delta lower-CI-bound > 0
+    - MMLU-STEM delta >= -1pp lower CI bound (no general-knowledge regression)
+  on_pass: log to V2.5-extended CARD; eligible for whitepaper Table 2
+  on_fail: document narrow-delta finding; do NOT auto-disqualify ship-rule pass
+
+exclusion_rules:
+  - any benchmark with >5% verbatim recall in memorization probe (E5) is
+    REPORTED but not used as evidence-of-generalization
+  - any benchmark with >5% n-gram overlap to training corpora (E4) gets
+    a contamination footnote and is REPORTED but cannot be the lone
+    pass criterion
+  - judge_incomplete rate >5% per benchmark triggers manual adjudication
+    of recused items before scoring
+
+sample_size:
+  per_benchmark_n: 500    # held-out test items
+  trials: 3
+  seeds: [42, 123, 7919]
+  rationale: |
+    Power calc: detect d=0.3 effect at alpha=0.05 two-tailed with 80%
+    power needs n>=176 per arm; n=500 gives headroom for paired-bootstrap
+    CI tightening across 3 trials.
+
+decode_params:
+  temperature: 0.0
+  top_p: 1.0
+  max_new_tokens: 2048
+  thinking_enabled: false       # Omni chat_template_kwargs.enable_thinking=False
+  batch_size: 1                 # determinism (see DETERMINISM-AUDIT.md)
+  seed: 42                      # vLLM seed; Hopper non-deterministic kernels
+                                # documented as a CAVEAT, not a fail
+
+manifest_fields_required:
+  - weights_sha256                # adapter sha256 == 94d1f8d1eb23fad2e4d7ad6e5c5123963f1ef8795cad44aa2ca4b3221ed59b3c
+  - base_weights_sha256           # base Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16
+  - eval_script_git_sha           # sovereign_bench.py at commit
+  - prompt_template_sha256
+  - system_prompt_sha256          # CLINICAL_SYSTEM_PROMPT verbatim
+  - grader_model_id               # qwen2.5-7b-instruct
+  - grader_prompt_sha256
+  - decode_params                 # full block
+  - seed_list                     # [42, 123, 7919]
+  - item_manifest_sha256          # one per benchmark
+  - dataset_revision              # HF dataset commit hash per benchmark
+  - hardware                      # gpu, driver, cuda, vllm, nemo versions
+  - runtime_seconds
+  - total_tokens_in
+  - total_tokens_out
+  - cost_usd                      # H200 per-hour rate * walltime
+
+benchmarks:
+  - name: MedMCQA
+    hf_id: openlifescienceai/medmcqa
+    split: validation         # MedMCQA test labels are blind-held; use validation
+    item_manifest_sha256: TBD
+  - name: MMLU-Med
+    hf_id: cais/mmlu
+    subjects: [clinical_knowledge, medical_genetics, anatomy, professional_medicine, college_medicine, college_biology]
+    item_manifest_sha256: TBD
+  - name: CareQA
+    hf_id: HPAI-BSC/CareQA
+    split: test
+    item_manifest_sha256: TBD
+  - name: MMLU-STEM
+    hf_id: cais/mmlu
+    subjects: [physics, chemistry, biology, computer_science, mathematics]
+    item_manifest_sha256: TBD
+    role: regression check (no medical-vertical training should hurt STEM general-knowledge)
+
+stats_protocol: findings/2026-05-06-evidence-window/STATS-PROTOCOL.md

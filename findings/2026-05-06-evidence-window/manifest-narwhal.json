@@ -1,0 +1,64 @@
+{
+  "probe_timestamp_local": "Wed May  6 21:03:22 2026",
+  "gpu": {
+    "product_name": "NVIDIA H200",
+    "architecture": "Hopper",
+    "uuid": "GPU-dc0810ea-458e-c7c4-19b6-1cbce9266ed0",
+    "vbios_version": "96.00.A5.00.03",
+    "fb_memory_total": "143771 MiB"
+  },
+  "driver_version": "580.126.09",
+  "cuda_version": "13.0",
+  "nvidia_smi_csv_rows": [
+    {
+      "index": "0",
+      "name": "NVIDIA H200",
+      "driver_version": "580.126.09",
+      "vbios_version": "96.00.A5.00.03",
+      "pcie_link_width": "16",
+      "pstate": "P0"
+    }
+  ],
+  "uname": "Linux brev-pdlpt96nl 6.11.0-1016-nvidia #16-Ubuntu SMP PREEMPT_DYNAMIC Sun Sep 21 17:06:33 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux",
+  "lsb_release": "Distributor ID:\tUbuntu\nDescription:\tUbuntu 24.04.4 LTS\nRelease:\t24.04\nCodename:\tnoble",
+  "docker_containers": [
+    "d6e99d24b5b1 prism42/parakeet:local prism42-parakeet",
+    "cc34e4b6b843 redis:7-alpine redis",
+    "242a4aa14e41 vllm/vllm-openai:latest vllm-nemotron"
+  ],
+  "dpkg_cuda_nccl_nvidia": [
+    "ii  cuda-cccl-13-0                              13.0.85-1                                        amd64        CUDA CCCL",
+    "ii  cuda-command-line-tools-13-0                13.0.2-1                                         amd64        CUDA command-line tools",
+    "ii  cuda-compiler-13-0                          13.0.2-1                                         amd64        CUDA compiler",
+    "ii  cuda-crt-13-0                               13.0.88-1                                        amd64        CUDA crt",
+    "ii  cuda-cudart-13-0                            13.0.96-1                                        amd64        CUDA Runtime native Libraries",
+    "ii  cuda-cudart-dev-13-0                        13.0.96-1                                        amd64        CUDA Runtime native dev links, headers",
+    "ii  cuda-culibos-dev-13-0                       13.0.85-1                                        amd64        CUDA DEV culibos is a Math Libraries fork of the cuos library",
+    "ii  cuda-cuobjdump-13-0                         13.0.85-1                                        amd64        CUDA cuobjdump",
+    "ii  cuda-cupti-13-0                             13.0.85-1                                        amd64        CUDA profiling tools runtime libs.",
+    "ii  cuda-cupti-dev-13-0                         13.0.85-1                                        amd64        CUDA profiling tools interface.",
+    "ii  cuda-cuxxfilt-13-0                          13.0.85-1                                        amd64        CUDA cuxxfilt",
+    "ii  cuda-documentation-13-0                     13.0.85-1                                        amd64        CUDA documentation",
+    "ii  cuda-driver-dev-13-0                        13.0.96-1                                        amd64        CUDA Driver native dev stub library",
+    "ii  cuda-gdb-13-0                               13.0.85-1                                        amd64        CUDA-GDB",
+    "ii  cuda-keyring                                1.1-1                                            all          GPG keyring for the CUDA repository",
+    "ii  cuda-libraries-13-0                         13.0.2-1                                         amd64        CUDA Libraries 13.0 meta-package",
+    "ii  cuda-libraries-dev-13-0                     13.0.2-1                                         amd64        CUDA Libraries 13.0 development meta-package",
+    "ii  cuda-nsight-13-0                            13.0.85-1                                        amd64        CUDA nsight",
+    "ii  cuda-nsight-compute-13-0                    13.0.2-1                                         amd64        NVIDIA Nsight Compute",
+    "ii  cuda-nsight-systems-13-0                    13.0.2-1                                         amd64        NVIDIA Nsight Systems",
+    "ii  cuda-nvcc-13-0                              13.0.88-1                                        amd64        CUDA nvcc",
+    "ii  cuda-nvdisasm-13-0                          13.0.85-1                                        amd64        CUDA disassembler",
+    "ii  cuda-nvml-dev-13-0                          13.0.87-1                                        amd64        NVML native dev links, headers",
+    "ii  cuda-nvprune-13-0                           13.0.85-1                                        amd64        CUDA nvprune",
+    "ii  cuda-nvrtc-13-0                             13.0.88-1                                        amd64        NVRTC native runtime libraries",
+    "ii  cuda-nvrtc-dev-13-0                         13.0.88-1                                        amd64        NVRTC native dev links, headers",
+    "ii  cuda-nvtx-13-0                              13.0.85-1                                        amd64        NVIDIA Tools Extension",
+    "ii  cuda-opencl-13-0                            13.0.85-1                                        amd64        CUDA OpenCL native Libraries",
+    "ii  cuda-profiler-api-13-0                      13.0.85-1                                        amd64        CUDA Profiler API",
+    "ii  cuda-sandbox-dev-13-0                       13.0.85-1                                        amd64        nvsandboxutils native dev links, headers"
+  ],
+  "pip_freeze_sanitized": [],
+  "n_pip_lines_redacted": 0,
+  "_sanitization_note": "lines matching /KEY|TOKEN|SECRET|PASSWORD/i removed from pip_freeze"
+}

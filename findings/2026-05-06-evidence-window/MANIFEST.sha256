@@ -1,0 +1,26 @@
+# E-track sha256 census — V2.5 evidence window
+# Generated 2026-05-06 by E-track agent.
+# Verifies the V2.5 LoRA adapter reported in CARD.md matches the on-disk lobster artifact.
+# Format: <hash>  <relative-path-on-host>
+#
+# === LOBSTER (/workspace/v2.5-prod/) — H200 training output ===
+a54cfc16a069103b821914e4bce2890fa393b1e2ae1e8cd57190e2d9bbfe928d  /workspace/v2.5-prod/adapter_config.json
+94d1f8d1eb23fad2e4d7ad6e5c5123963f1ef8795cad44aa2ca4b3221ed59b3c  /workspace/v2.5-prod/adapter_model.safetensors
+41428e0c65e312c359df2495ef5284769a9520b15a693deda4c34a1538208faa  /workspace/v2.5-prod/chat_template.jinja
+69c72d7184635f51b225714dd0241cbdd1250393162f0427144bd5a53b417e18  /workspace/v2.5-prod/manifest.json
+5f93e69c420619d4cb6aedf038522ad96fd3d3adc26a37aacfeb5c875380cc44  /workspace/v2.5-prod/README.md
+483a6c48d1c6c8379127b443955e05ee394a42174f86b994c78f606a000a4ae3  /workspace/v2.5-prod/tokenizer_config.json
+d0432ad8b1c2984a2e2dca82e1933e3fd5628df6e95c51fba4c3ee9950dce299  /workspace/v2.5-prod/tokenizer.json
+c4bae8c2d1da4171675a687977e1ecbed8ccd99500bab50fce3437462acb065a  /workspace/v2.5-prod/train_summary.json
+cd239bc523338b20fc03db5281157aa1e26097789baed70a7c7e91821f3a9c54  /workspace/v2.5-prod/train_trace.jsonl
+24b31ac8c05331c2c0cefa7a4dfb8e44d51d6a8a45d32e496109c2268bfff60c  /workspace/v2.5-prod/train.log
+27005e0a0300a1419df525499f0a3b4f9025112649bbad3d41d7150ff02f2c29  /workspace/v2.5-prod/trainer_state.json
+49dc343cff1f32ceb3c1b21033c7a955040c72d8206b9cc52fa989bfc8d65dcb  /workspace/v2.5-prod/training_args.bin
+
+# === LAPTOP (findings/2026-05-05-v2.5-eval/) — eval CARD scaffold ===
+29faf6685b2f9e2dcd5cb5455241f2e2d7162f56b445fd13e4307320f477dc6d  findings/2026-05-05-v2.5-eval/CARD.md
+
+# === REPRODUCIBILITY VERIFICATION ===
+# Cross-check: adapter_model.safetensors sha256 must equal
+#   94d1f8d1eb23fad2e4d7ad6e5c5123963f1ef8795cad44aa2ca4b3221ed59b3c
+# (per findings/2026-05-05-v2.5-eval/CARD.md iter-429 row)
