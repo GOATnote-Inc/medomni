@@ -1,0 +1,316 @@
+[
+    {
+        "Id": "fec83a5e44cf07aedb8a6ea9de1ba7b4a557bfcf09554c95b176e18d94755d47",
+        "Created": "2026-05-05T11:03:24.742694639Z",
+        "Path": "vllm",
+        "Args": [
+            "serve",
+            "--model",
+            "nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4",
+            "--served-model-name",
+            "nemotron",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "8000",
+            "--trust-remote-code",
+            "--tensor-parallel-size",
+            "1",
+            "--max-model-len",
+            "131072",
+            "--max-num-seqs",
+            "32",
+            "--max-num-batched-tokens",
+            "32768",
+            "--gpu-memory-utilization",
+            "0.72",
+            "--kv-cache-dtype",
+            "fp8",
+            "--no-async-scheduling",
+            "--limit-mm-per-prompt",
+            "{\"video\": 1, \"image\": 4, \"audio\": 1}",
+            "--media-io-kwargs",
+            "{\"video\": {\"fps\": 2, \"num_frames\": 256}}",
+            "--video-pruning-rate",
+            "0.5",
+            "--allowed-local-media-path",
+            "/tmp/medomni",
+            "--reasoning-parser",
+            "nemotron_v3",
+            "--enable-auto-tool-choice",
+            "--tool-call-parser",
+            "qwen3_coder"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 545490,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-05-05T11:03:24.860297389Z",
+            "FinishedAt": "0001-01-01T00:00:00Z"
+        },
+        "Image": "sha256:c62e3937687d68b819940b4809a3e6358b606f87e6255f0a34aae89c042d5474",
+        "ResolvConfPath": "/var/lib/docker/containers/fec83a5e44cf07aedb8a6ea9de1ba7b4a557bfcf09554c95b176e18d94755d47/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/fec83a5e44cf07aedb8a6ea9de1ba7b4a557bfcf09554c95b176e18d94755d47/hostname",
+        "HostsPath": "/var/lib/docker/containers/fec83a5e44cf07aedb8a6ea9de1ba7b4a557bfcf09554c95b176e18d94755d47/hosts",
+        "LogPath": "/var/lib/docker/containers/fec83a5e44cf07aedb8a6ea9de1ba7b4a557bfcf09554c95b176e18d94755d47/fec83a5e44cf07aedb8a6ea9de1ba7b4a557bfcf09554c95b176e18d94755d47-json.log",
+        "Name": "/vllm-omni-b300",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "/tmp/medomni:/tmp/medomni",
+                "/home/shadeform/.cache/huggingface:/root/.cache/huggingface"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "host",
+            "PortBindings": {},
+            "RestartPolicy": {
+                "Name": "unless-stopped",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": null,
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": null,
+            "GroupAdd": null,
+            "IpcMode": "host",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": [
+                "label=disable"
+            ],
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 34359738368,
+            "Runtime": "nvidia",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": [],
+            "BlkioDeviceReadBps": [],
+            "BlkioDeviceWriteBps": [],
+            "BlkioDeviceReadIOps": [],
+            "BlkioDeviceWriteIOps": [],
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": [],
+            "DeviceCgroupRules": null,
+            "DeviceRequests": [
+                {
+                    "Driver": "",
+                    "Count": -1,
+                    "DeviceIDs": null,
+                    "Capabilities": [
+                        [
+                            "gpu"
+                        ]
+                    ],
+                    "Options": {}
+                }
+            ],
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": [],
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "/tmp/medomni",
+                "Destination": "/tmp/medomni",
+                "Mode": "",
+                "RW": true,
+                "Propagation": "rprivate"
+            },
+            {
+                "Type": "bind",
+                "Source": "/home/shadeform/.cache/huggingface",
+                "Destination": "/root/.cache/huggingface",
+                "Mode": "",
+                "RW": true,
+                "Propagation": "rprivate"
+            }
+        ],
+        "Config": {
+            "Hostname": "brev-i5fw4w5ci",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "NVARCH=x86_64",
+                "NVIDIA_REQUIRE_CUDA=cuda>=13.0 brand=unknown,driver>=535,driver<536 brand=grid,driver>=535,driver<536 brand=tesla,driver>=535,driver<536 brand=nvidia,driver>=535,driver<536 brand=quadro,driver>=535,driver<536 brand=quadrortx,driver>=535,driver<536 brand=nvidiartx,driver>=535,driver<536 brand=vapps,driver>=535,driver<536 brand=vpc,driver>=535,driver<536 brand=vcs,driver>=535,driver<536 brand=vws,driver>=535,driver<536 brand=cloudgaming,driver>=535,driver<536 brand=unknown,driver>=550,driver<551 brand=grid,driver>=550,driver<551 brand=tesla,driver>=550,driver<551 brand=nvidia,driver>=550,driver<551 brand=quadro,driver>=550,driver<551 brand=quadrortx,driver>=550,driver<551 brand=nvidiartx,driver>=550,driver<551 brand=vapps,driver>=550,driver<551 brand=vpc,driver>=550,driver<551 brand=vcs,driver>=550,driver<551 brand=vws,driver>=550,driver<551 brand=cloudgaming,driver>=550,driver<551 brand=unknown,driver>=565,driver<566 brand=grid,driver>=565,driver<566 brand=tesla,driver>=565,driver<566 brand=nvidia,driver>=565,driver<566 brand=quadro,driver>=565,driver<566 brand=quadrortx,driver>=565,driver<566 brand=nvidiartx,driver>=565,driver<566 brand=vapps,driver>=565,driver<566 brand=vpc,driver>=565,driver<566 brand=vcs,driver>=565,driver<566 brand=vws,driver>=565,driver<566 brand=cloudgaming,driver>=565,driver<566 brand=unknown,driver>=570,driver<571 brand=grid,driver>=570,driver<571 brand=tesla,driver>=570,driver<571 brand=nvidia,driver>=570,driver<571 brand=quadro,driver>=570,driver<571 brand=quadrortx,driver>=570,driver<571 brand=nvidiartx,driver>=570,driver<571 brand=vapps,driver>=570,driver<571 brand=vpc,driver>=570,driver<571 brand=vcs,driver>=570,driver<571 brand=vws,driver>=570,driver<571 brand=cloudgaming,driver>=570,driver<571 brand=unknown,driver>=575,driver<576 brand=grid,driver>=575,driver<576 brand=tesla,driver>=575,driver<576 brand=nvidia,driver>=575,driver<576 brand=quadro,driver>=575,driver<576 brand=quadrortx,driver>=575,driver<576 brand=nvidiartx,driver>=575,driver<576 brand=vapps,driver>=575,driver<576 brand=vpc,driver>=575,driver<576 brand=vcs,driver>=575,driver<576 brand=vws,driver>=575,driver<576 brand=cloudgaming,driver>=575,driver<576",
+                "NV_CUDA_CUDART_VERSION=13.0.96-1",
+                "CUDA_VERSION=13.0.2",
+                "LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/usr/local/cuda/lib64:/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/local/cuda/lib64",
+                "NVIDIA_VISIBLE_DEVICES=all",
+                "NVIDIA_DRIVER_CAPABILITIES=compute,utility",
+                "DEBIAN_FRONTEND=noninteractive",
+                "UV_HTTP_TIMEOUT=500",
+                "UV_INDEX_STRATEGY=unsafe-best-match",
+                "UV_LINK_MODE=copy",
+                "VLLM_ENABLE_CUDA_COMPATIBILITY=0",
+                "TORCH_CUDA_ARCH_LIST=7.5 8.0 8.6 8.9 9.0 10.0 12.0+PTX",
+                "VLLM_USAGE_SOURCE=production-docker-image"
+            ],
+            "Cmd": [
+                "--model",
+                "nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4",
+                "--served-model-name",
+                "nemotron",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8000",
+                "--trust-remote-code",
+                "--tensor-parallel-size",
+                "1",
+                "--max-model-len",
+                "131072",
+                "--max-num-seqs",
+                "32",
+                "--max-num-batched-tokens",
+                "32768",
+                "--gpu-memory-utilization",
+                "0.72",
+                "--kv-cache-dtype",
+                "fp8",
+                "--no-async-scheduling",
+                "--limit-mm-per-prompt",
+                "{\"video\": 1, \"image\": 4, \"audio\": 1}",
+                "--media-io-kwargs",
+                "{\"video\": {\"fps\": 2, \"num_frames\": 256}}",
+                "--video-pruning-rate",
+                "0.5",
+                "--allowed-local-media-path",
+                "/tmp/medomni",
+                "--reasoning-parser",
+                "nemotron_v3",
+                "--enable-auto-tool-choice",
+                "--tool-call-parser",
+                "qwen3_coder"
+            ],
+            "Image": "medomni/omni:v0.20.0-audio",
+            "Volumes": null,
+            "WorkingDir": "/vllm-workspace",
+            "Entrypoint": [
+                "vllm",
+                "serve"
+            ],
+            "Labels": {
+                "maintainer": "NVIDIA CORPORATION <cudatools@nvidia.com>",
+                "org.opencontainers.image.ref.name": "ubuntu",
+                "org.opencontainers.image.version": "22.04"
+            }
+        },
+        "NetworkSettings": {
+            "SandboxID": "84ea8d0e436fa3d158982013fd264fc225ad14322fba11efc717948d5aaa847d",
+            "SandboxKey": "/var/run/docker/netns/default",
+            "Ports": {},
+            "Networks": {
+                "host": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "c6a57d7dcd21e95175733c902ad850f5d44458acb8bcdb2779dd0f42f1f4be5f",
+                    "EndpointID": "f9f6cf8dd2b11ac4826f69ce69fc68750700d17f9dcac7d09211256fad28bfff",
+                    "Gateway": "",
+                    "IPAddress": "",
+                    "MacAddress": "",
+                    "IPPrefixLen": 0,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": null
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:ce23a19a0b93e7ac092e1da4f0b61ebc352eefcbb498f29f0eee074129de5ea2",
+            "size": 5265,
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    }
+]
