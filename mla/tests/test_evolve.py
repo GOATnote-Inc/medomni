@@ -1,10 +1,11 @@
 """End-to-end evolve loop with StubClient. Proves:
-    - baseline is scored
-    - candidates are generated, validated, benchmarked, scored
-    - top-per-island is retained
-    - migration happens at configured cadence
-    - best overall matches the best on any island
+- baseline is scored
+- candidates are generated, validated, benchmarked, scored
+- top-per-island is retained
+- migration happens at configured cadence
+- best overall matches the best on any island
 """
+
 from __future__ import annotations
 
 import json
@@ -53,7 +54,7 @@ def test_evolve_rejects_negative_control():
     cfg = EvolveConfig(
         mla=MLAConfig(batch=1, heads=4, kv_len=32, d_c=16, d_r=8, qk_nope=16, v_head=16),
         iterations=3,
-        per_island=4,     # try to include the bad stub candidate
+        per_island=4,  # try to include the bad stub candidate
         keep_per_island=2,
         migrate_every=10,
         tolerance=1e-3,

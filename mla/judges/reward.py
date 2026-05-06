@@ -46,9 +46,7 @@ def make_reward_model_judge(
     scalar; we threshold against `threshold`.
     """
     if not base_url.startswith(("http://127.0.0.1", "http://localhost")):
-        raise ValueError(
-            f"sovereign reward judge must be 127.0.0.1/localhost, got {base_url!r}"
-        )
+        raise ValueError(f"sovereign reward judge must be 127.0.0.1/localhost, got {base_url!r}")
 
     def _append_audit(record: dict) -> None:
         if audit_log_path is None:
@@ -61,16 +59,13 @@ def make_reward_model_judge(
 
     def _judge(conversation: str, item: RubricItem) -> dict:
         prompt = (
-            f"{conversation}\n\n"
-            f"Rubric criterion (judge whether it is met): {item.criterion}"
+            f"{conversation}\n\n" f"Rubric criterion (judge whether it is met): {item.criterion}"
         )
         last_error: str | None = None
         for attempt in range(max_retries):
             started = time.time()
             try:
-                resp = client.post(
-                    "/score", json={"prompt": prompt, "response": ""}
-                )
+                resp = client.post("/score", json={"prompt": prompt, "response": ""})
             except httpx.HTTPError as exc:
                 last_error = f"transport: {exc}"
                 if attempt + 1 < max_retries:
@@ -87,9 +82,7 @@ def make_reward_model_judge(
                         "error": f"auth-halt: {status}",
                     }
                 )
-                raise JudgeAuthError(
-                    f"sovereign reward judge at {base_url} returned {status}"
-                )
+                raise JudgeAuthError(f"sovereign reward judge at {base_url} returned {status}")
             if status >= 500 or status == 429:
                 last_error = f"http-{status}"
                 if attempt + 1 < max_retries:

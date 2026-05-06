@@ -27,15 +27,11 @@ class TestParseJudgeJson:
         assert out == {"criteria_met": True, "explanation": "yes"}
 
     def test_fenced_json(self) -> None:
-        out = _parse_judge_json(
-            '```json\n{"criteria_met": false, "explanation": "no"}\n```'
-        )
+        out = _parse_judge_json('```json\n{"criteria_met": false, "explanation": "no"}\n```')
         assert out == {"criteria_met": False, "explanation": "no"}
 
     def test_with_preamble(self) -> None:
-        out = _parse_judge_json(
-            'Sure, here:\n{"criteria_met": true, "explanation": "matches"}'
-        )
+        out = _parse_judge_json('Sure, here:\n{"criteria_met": true, "explanation": "matches"}')
         assert out == {"criteria_met": True, "explanation": "matches"}
 
     def test_missing_field_returns_none(self) -> None:
@@ -127,11 +123,7 @@ class TestMakeTritonJudge:
             return httpx.Response(
                 200,
                 request=req,
-                json={
-                    "choices": [
-                        {"message": {"content": "I don't know how to JSON."}}
-                    ]
-                },
+                json={"choices": [{"message": {"content": "I don't know how to JSON."}}]},
             )
 
         with patch("httpx.Client.post", side_effect=garbage):

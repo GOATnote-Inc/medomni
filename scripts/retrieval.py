@@ -175,6 +175,7 @@ class HybridRetriever:
             try:
                 # Lazy import; sibling module.
                 from retrieval_cuvs import CuvsDenseIndex
+
                 self._cuvs_index = CuvsDenseIndex(embeddings=embeddings)
                 self.dense_backend = f"cuvs:{self._cuvs_index.index_kind}"
             except ImportError as e:
@@ -199,7 +200,7 @@ class HybridRetriever:
     @staticmethod
     def _cosine(a: list[float], b: list[float]) -> float:
         # numpy-free cosine; corpora are small and we already pay HTTP overhead.
-        dot = sum(x * y for x, y in zip(a, b))
+        dot = sum(x * y for x, y in zip(a, b, strict=True))
         na = sum(x * x for x in a) ** 0.5
         nb = sum(y * y for y in b) ** 0.5
         if na == 0.0 or nb == 0.0:
@@ -222,9 +223,7 @@ class HybridRetriever:
         return scores[:k]
 
     @staticmethod
-    def _rrf_fuse(
-        rankings: list[list[tuple[int, float]]], k: int, top_n: int
-    ) -> list[int]:
+    def _rrf_fuse(rankings: list[list[tuple[int, float]]], k: int, top_n: int) -> list[int]:
         """Standard reciprocal rank fusion. Each ranking is a list of
         (chunk_idx, score) sorted descending. Returns top_n chunk indices."""
         rrf_scores: dict[int, float] = {}
@@ -257,9 +256,7 @@ class HybridRetriever:
         ordered = [candidate_idxs[item["index"]] for item in scored]
         return ordered[:top_m]
 
-    def retrieve(
-        self, query: str, *, top_n: int = 8, mode: str = "hybrid"
-    ) -> list[dict]:
+    def retrieve(self, query: str, *, top_n: int = 8, mode: str = "hybrid") -> list[dict]:
         """Run retrieval. mode ∈ {bm25, dense, hybrid, primekg-hybrid}.
 
         Note: `primekg-hybrid` runs the same chunk-level retrieval as

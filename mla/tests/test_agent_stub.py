@@ -1,5 +1,6 @@
 """Agent pipeline with StubClient — proves the full path from mutation request
 to validated, scored candidate works without an API call."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -41,7 +42,9 @@ def test_stub_candidate_passes_validator():
     cfg = MLAConfig(1, 4, 32, 16, 8, 16, 16)
     inputs = make_inputs(cfg, seed=0)
     result = validate(
-        passes[0].fn, mla_decode_naive, inputs,
+        passes[0].fn,
+        mla_decode_naive,
+        inputs,
         tolerance=1e-3,
     )
     assert result.passed, result
@@ -58,7 +61,9 @@ def test_stub_negative_control_rejected_by_validator():
     cfg = MLAConfig(1, 4, 32, 16, 8, 16, 16)
     inputs = make_inputs(cfg, seed=0)
     result = validate(
-        bad.fn, mla_decode_naive, inputs,
+        bad.fn,
+        mla_decode_naive,
+        inputs,
         tolerance=1e-3,
     )
     assert not result.passed, "negative-control mutation should fail validator"
@@ -72,7 +77,10 @@ def test_generate_filters_duplicates():
     client.reset()
     # Ask again with stub reset — first item is duplicate.
     passes_second, failures_second = generate_candidates(
-        client, mla_decode_absorbed, n=2, seen_hashes=seen,
+        client,
+        mla_decode_absorbed,
+        n=2,
+        seen_hashes=seen,
     )
     # stub[0] is filtered as dup; stub[1] is accepted.
     assert len(passes_second) == 1
@@ -82,9 +90,12 @@ def test_generate_filters_duplicates():
 def test_mutation_failure_contains_reason():
     """Force a bad LLM response to check failure reporting."""
     from agent.llm_client import MutationResponse
-    bad_client = StubClient(mutations=[
-        MutationResponse(reasoning="broken", source="def mla_decode_candidate(:", raw=""),
-    ])
+
+    bad_client = StubClient(
+        mutations=[
+            MutationResponse(reasoning="broken", source="def mla_decode_candidate(:", raw=""),
+        ]
+    )
     passes, failures = generate_candidates(bad_client, mla_decode_absorbed, n=1)
     assert passes == []
     assert len(failures) == 1

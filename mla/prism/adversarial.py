@@ -9,6 +9,7 @@ The module exposes `build_adversarial_battery(shape_hint)` that returns a list
 of input dicts sized to the user's kernel signature. A caller wires each dict
 through validator.validate(..., adversarial_inputs=[...]).
 """
+
 from __future__ import annotations
 
 from typing import Any

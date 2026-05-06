@@ -83,9 +83,7 @@ def _load_manifest(path: Path) -> dict:
             if key not in ex:
                 raise ValueError(f"{path}: examples[{i}] missing required key '{key}'")
         if ex["answer_yn"] not in VALID_ANSWERS:
-            raise ValueError(
-                f"{path}: examples[{i}].answer_yn must be one of {VALID_ANSWERS}"
-            )
+            raise ValueError(f"{path}: examples[{i}].answer_yn must be one of {VALID_ANSWERS}")
     return data
 
 
@@ -105,10 +103,7 @@ def _write_out(out_path: Path, payload: dict) -> None:
 
 def _now_iso() -> str:
     return (
-        _dt.datetime.now(_dt.timezone.utc)
-        .replace(tzinfo=None)
-        .isoformat(timespec="seconds")
-        + "Z"
+        _dt.datetime.now(_dt.timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
     )
 
 
@@ -151,8 +146,10 @@ def do_dry_run(args: argparse.Namespace, run_id: str) -> int:
 
     print("(dry-run) pubmedqa_runner.py plan:")
     print("  benchmark        : pubmedqa")
-    print("  role             : RAG-validator anchor "
-          "(R1/R2 ship only when lift >= 10pp over no-retrieval baseline)")
+    print(
+        "  role             : RAG-validator anchor "
+        "(R1/R2 ship only when lift >= 10pp over no-retrieval baseline)"
+    )
     print(f"  manifest         : {manifest_path}")
     print(f"  out              : {out_path}")
     print(f"  seed             : {args.seed}")

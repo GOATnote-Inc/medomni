@@ -26,6 +26,7 @@ Public API:
 
 Tokens here are coarse — char_count / 4. Good enough for budget gating.
 """
+
 from __future__ import annotations
 
 import os
@@ -184,9 +185,7 @@ class PrimeKG:
     # Seed selection
     # ------------------------------------------------------------------
 
-    def seed_entities_from_query(
-        self, query: str, *, max_seeds: int = 12
-    ) -> list[int]:
+    def seed_entities_from_query(self, query: str, *, max_seeds: int = 12) -> list[int]:
         """Four-layer matcher: alias rewrite, exact name, normalized
         fragment, lemmatized substring. Returns up to `max_seeds`
         node_index seeds."""
@@ -329,24 +328,17 @@ class PrimeKG:
                     break
                 node = frontier.popleft()
                 if hasattr(G, "successors"):
-                    iter_nbrs = list(G.successors(node)) + list(
-                        G.predecessors(node)
-                    )
+                    iter_nbrs = list(G.successors(node)) + list(G.predecessors(node))
                 else:
                     iter_nbrs = list(G.neighbors(node))
                 for nbr in iter_nbrs:
                     if nbr in visited:
                         continue
                     nbr_type = G.nodes[nbr].get("node_type")
-                    if (
-                        node_type_whitelist
-                        and nbr_type not in node_type_whitelist
-                    ):
+                    if node_type_whitelist and nbr_type not in node_type_whitelist:
                         continue
                     if edge_filter is not None:
-                        ed = G.get_edge_data(node, nbr) or G.get_edge_data(
-                            nbr, node, default={}
-                        )
+                        ed = G.get_edge_data(node, nbr) or G.get_edge_data(nbr, node, default={})
                         if (
                             ed.get("display_relation") not in edge_filter
                             and ed.get("relation") not in edge_filter
@@ -373,6 +365,7 @@ class PrimeKG:
             return {}
         try:
             import networkx as nx  # noqa: WPS433
+
             # Connected-components on undirected graphs is fast + clear.
             # If the subgraph backend is cugraph, this dispatches to
             # cugraph's CC. We use CC instead of Louvain here because
@@ -420,9 +413,7 @@ class PrimeKG:
         # Group nodes by node_type for readability.
         by_type: dict[str, list[tuple[int, dict]]] = {}
         for n, attrs in subgraph.nodes(data=True):
-            by_type.setdefault(attrs.get("node_type", "?"), []).append(
-                (n, attrs)
-            )
+            by_type.setdefault(attrs.get("node_type", "?"), []).append((n, attrs))
         lines.append("Nodes:")
         for ntype in sorted(by_type.keys()):
             for n, attrs in by_type[ntype]:
@@ -430,9 +421,7 @@ class PrimeKG:
                 nid = attrs.get("node_id", "")
                 src = attrs.get("node_source", "")
                 src_tag = f" [{src}]" if src and src != "nan" else ""
-                lines.append(
-                    f"  [{ntype}] {name} (id={src_tag} PrimeKG:{nid})"
-                )
+                lines.append(f"  [{ntype}] {name} (id={src_tag} PrimeKG:{nid})")
 
         lines.append("")
         lines.append("Edges:")
@@ -456,10 +445,7 @@ class PrimeKG:
             cutoff = block.rfind("\n", 0, max_chars)
             if cutoff < 0:
                 cutoff = max_chars
-            block = (
-                block[:cutoff]
-                + "\n  ... (subgraph truncated to fit context budget)"
-            )
+            block = block[:cutoff] + "\n  ... (subgraph truncated to fit context budget)"
         return block
 
 
@@ -486,6 +472,7 @@ def main() -> int:
     """Smoke run for the helper. Builds a slice for each held-out fixture
     query and prints the rendered block."""
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--primekg-path",
@@ -506,12 +493,8 @@ def main() -> int:
     ]
     for q in queries:
         seeds = pkg.seed_entities_from_query(q)
-        sub = pkg.subgraph_slice(
-            seeds, max_hops=args.max_hops, max_nodes=args.max_nodes
-        )
-        names = [
-            pkg.graph.nodes[s].get("node_name", str(s)) for s in seeds
-        ]
+        sub = pkg.subgraph_slice(seeds, max_hops=args.max_hops, max_nodes=args.max_nodes)
+        names = [pkg.graph.nodes[s].get("node_name", str(s)) for s in seeds]
         print(
             f"\n--- query: {q[:70]}\n    seeds={names} "
             f"subgraph: {sub.number_of_nodes()}n / {sub.number_of_edges()}e"

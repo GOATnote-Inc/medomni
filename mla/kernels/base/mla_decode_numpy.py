@@ -26,6 +26,7 @@ Cross-refs:
     cross-pollination/tcu-gpu-tpu-trainium-playbook.md §4.1-4.2 (absorption
         is the reason MLA moves less HBM than MHA decode)
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -38,10 +39,10 @@ class MLAConfig:
     batch: int
     heads: int
     kv_len: int
-    d_c: int          # latent compressed dim
-    d_r: int          # rope dim
-    qk_nope: int      # nope head dim (qk_nope_head_dim)
-    v_head: int       # value head dim
+    d_c: int  # latent compressed dim
+    d_r: int  # rope dim
+    qk_nope: int  # nope head dim (qk_nope_head_dim)
+    v_head: int  # value head dim
     softmax_scale: float = 0.0  # 0.0 => 1/sqrt(qk_nope + d_r)
 
     @property
@@ -72,9 +73,12 @@ def make_inputs(cfg: MLAConfig, *, seed: int = 0, dtype=np.float32) -> dict[str,
     W_UK = f((cfg.heads, cfg.qk_nope, cfg.d_c))
     W_UV = f((cfg.heads, cfg.d_c, cfg.v_head))
     return {
-        "q_nope": q_nope, "q_rope": q_rope,
-        "c_KV": c_KV, "k_R": k_R,
-        "W_UK": W_UK, "W_UV": W_UV,
+        "q_nope": q_nope,
+        "q_rope": q_rope,
+        "c_KV": c_KV,
+        "k_R": k_R,
+        "W_UK": W_UK,
+        "W_UV": W_UV,
         "softmax_scale": cfg.effective_scale,
     }
 
@@ -102,17 +106,17 @@ def mla_decode_naive(
     H = q_nope.shape[1]
     # k_R is shared across heads — broadcast explicitly.
     K_rope = np.broadcast_to(k_R[:, None, :, :], (B, H, T, d_r))
-    K_full = np.concatenate([K_nope, K_rope], axis=-1)           # (B, H, T, qk_head)
-    Q_full = np.concatenate([q_nope, q_rope], axis=-1)           # (B, H, qk_head)
+    K_full = np.concatenate([K_nope, K_rope], axis=-1)  # (B, H, T, qk_head)
+    Q_full = np.concatenate([q_nope, q_rope], axis=-1)  # (B, H, qk_head)
 
     scores = np.einsum("bhd,bhtd->bht", Q_full, K_full) * softmax_scale
     scores -= scores.max(axis=-1, keepdims=True)
     exp = np.exp(scores)
-    w = exp / exp.sum(axis=-1, keepdims=True)                    # (B, H, T)
+    w = exp / exp.sum(axis=-1, keepdims=True)  # (B, H, T)
 
     # V[b, h, t, v] = sum_d c_KV[b, t, d] * W_UV[h, d, v]
     V = np.einsum("btd,hdv->bhtv", c_KV, W_UV)
-    out = np.einsum("bht,bhtv->bhv", w, V)                       # (B, H, v_h)
+    out = np.einsum("bht,bhtv->bhv", w, V)  # (B, H, v_h)
     return out
 
 
@@ -134,52 +138,61 @@ def mla_decode_absorbed(
     Numerically equivalent to mla_decode_naive modulo float associativity.
     """
     # q_merged[b, h, d] = sum_n q_nope[b, h, n] * W_UK[h, n, d]
-    q_merged = np.einsum("bhn,hnd->bhd", q_nope, W_UK)          # (B, H, d_c)
+    q_merged = np.einsum("bhn,hnd->bhd", q_nope, W_UK)  # (B, H, d_c)
 
-    scores_nope = np.einsum("bhd,btd->bht", q_merged, c_KV)    # (B, H, T)
+    scores_nope = np.einsum("bhd,btd->bht", q_merged, c_KV)  # (B, H, T)
     # k_R shared across heads — einsum with broadcast over H.
-    scores_rope = np.einsum("bhd,btd->bht", q_rope, k_R)       # (B, H, T)
+    scores_rope = np.einsum("bhd,btd->bht", q_rope, k_R)  # (B, H, T)
     scores = (scores_nope + scores_rope) * softmax_scale
 
     scores -= scores.max(axis=-1, keepdims=True)
     exp = np.exp(scores)
-    w = exp / exp.sum(axis=-1, keepdims=True)                   # (B, H, T)
+    w = exp / exp.sum(axis=-1, keepdims=True)  # (B, H, T)
 
     # ctx in compressed space — one reduction instead of per-t in v_h space.
-    ctx = np.einsum("bht,btd->bhd", w, c_KV)                    # (B, H, d_c)
-    out = np.einsum("bhd,hdv->bhv", ctx, W_UV)                  # (B, H, v_h)
+    ctx = np.einsum("bht,btd->bhd", w, c_KV)  # (B, H, d_c)
+    out = np.einsum("bhd,hdv->bhv", ctx, W_UV)  # (B, H, v_h)
     return out
 
 
 # ---- FLOP / byte accounting for roofline analysis ----
 
+
 def flops(cfg: MLAConfig, kernel: str = "absorbed") -> int:
     """Approximate FLOPs per decode step. Used for Carnot-efficiency scoring
     (see mental-models/einstein-first-principles.md §6)."""
     B, H, T, d_c, d_r, qn, vh = (
-        cfg.batch, cfg.heads, cfg.kv_len, cfg.d_c, cfg.d_r, cfg.qk_nope, cfg.v_head
+        cfg.batch,
+        cfg.heads,
+        cfg.kv_len,
+        cfg.d_c,
+        cfg.d_r,
+        cfg.qk_nope,
+        cfg.v_head,
     )
     if kernel == "naive":
         # K_nope: B*H*T*qn*d_c MACs ; V: B*H*T*d_c*vh MACs
         # scores QK: B*H*T*(qn+d_r) MACs
         # ctx: B*H*T*vh MACs
         return 2 * (
-            B * H * T * qn * d_c     # K_nope
-            + B * H * T * d_c * vh   # V
+            B * H * T * qn * d_c  # K_nope
+            + B * H * T * d_c * vh  # V
             + B * H * T * (qn + d_r)  # scores
-            + B * H * T * vh         # ctx
+            + B * H * T * vh  # ctx
         )
     # absorbed
     return 2 * (
-        B * H * qn * d_c            # q_merged
-        + B * H * T * d_c            # scores_nope
-        + B * H * T * d_r            # scores_rope
-        + B * H * T * d_c            # ctx reduction
-        + B * H * d_c * vh           # final W_UV
+        B * H * qn * d_c  # q_merged
+        + B * H * T * d_c  # scores_nope
+        + B * H * T * d_r  # scores_rope
+        + B * H * T * d_c  # ctx reduction
+        + B * H * d_c * vh  # final W_UV
     )
 
 
-def bytes_moved_from_cache(cfg: MLAConfig, kernel: str = "absorbed", *, dtype_bytes: int = 4) -> int:
+def bytes_moved_from_cache(
+    cfg: MLAConfig, kernel: str = "absorbed", *, dtype_bytes: int = 4
+) -> int:
     """HBM bytes read from KV cache per decode step. The key driver of MLA's
     decode-throughput advantage over MHA: absorbed MLA only reads c_KV and
     k_R, never the reconstructed full K/V."""

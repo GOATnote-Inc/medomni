@@ -9,6 +9,7 @@ On a real host with PRISM_USE_ANTHROPIC=1 the same script calls Claude.
 Usage:
     .venv/bin/python loop/evolve_demo.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -24,6 +25,7 @@ from loop.evolve import EvolveConfig, evolve  # noqa: E402
 
 def main() -> int:
     import os
+
     cfg = EvolveConfig(
         mla=MLAConfig(batch=2, heads=8, kv_len=256, d_c=64, d_r=16, qk_nope=32, v_head=32),
         iterations=3,
@@ -58,11 +60,15 @@ def main() -> int:
                 extra += f"  critique_accept={len(cr) - rejs}  reject={rejs}"
             if pr:
                 extra += f"  pareto_kept={len(pr)}"
-            print(f"    island={isl['name']:<8s}  top={isl['top_score']:,.1f}  "
-                  f"proposed={isl['proposed']:<2d}  compile_fail={cf}  val_fail={vf}{extra}")
+            print(
+                f"    island={isl['name']:<8s}  top={isl['top_score']:,.1f}  "
+                f"proposed={isl['proposed']:<2d}  compile_fail={cf}  val_fail={vf}{extra}"
+            )
         if it["migrations"]:
             for m in it["migrations"]:
-                print(f"    migrate {m['from']}->{m['to']}  hash={m['hash']}  score={m['score']:,.1f}")
+                print(
+                    f"    migrate {m['from']}->{m['to']}  hash={m['hash']}  score={m['score']:,.1f}"
+                )
 
     best = summary["best"]
     print("\n[best]")

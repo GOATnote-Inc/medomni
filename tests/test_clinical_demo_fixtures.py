@@ -93,18 +93,16 @@ def test_rubric_weights_sum_to_one(case_id: str) -> None:
 @pytest.mark.parametrize("kind", ["baseline", "modified"])
 def test_markdown_has_synthetic_frontmatter(case_id: str, kind: str) -> None:
     text = (CORPUS_DIR / case_id / f"{kind}.md").read_text()
-    assert text.startswith("---\n"), (
-        f"{case_id}/{kind}.md: missing YAML frontmatter opener"
-    )
+    assert text.startswith("---\n"), f"{case_id}/{kind}.md: missing YAML frontmatter opener"
     second = text.find("\n---\n", 4)
     assert second > 0, f"{case_id}/{kind}.md: missing frontmatter closer"
     frontmatter = text[4:second]
-    assert SYNTHETIC_MARKER in frontmatter, (
-        f"{case_id}/{kind}.md: missing '{SYNTHETIC_MARKER}' in frontmatter"
-    )
-    assert PHYSICIAN_REVIEW_MARKER in frontmatter, (
-        f"{case_id}/{kind}.md: missing '{PHYSICIAN_REVIEW_MARKER}' in frontmatter"
-    )
+    assert (
+        SYNTHETIC_MARKER in frontmatter
+    ), f"{case_id}/{kind}.md: missing '{SYNTHETIC_MARKER}' in frontmatter"
+    assert (
+        PHYSICIAN_REVIEW_MARKER in frontmatter
+    ), f"{case_id}/{kind}.md: missing '{PHYSICIAN_REVIEW_MARKER}' in frontmatter"
 
 
 # --------------------------------------------------------------------------- #
@@ -115,9 +113,7 @@ def test_markdown_has_synthetic_frontmatter(case_id: str, kind: str) -> None:
 @pytest.mark.parametrize("case_id", CASES)
 def test_grading_physician_review_is_null(case_id: str) -> None:
     grading = _load_json(CORPUS_DIR / case_id / "grading.json")
-    assert "physician_review" in grading, (
-        f"{case_id}: grading.json missing physician_review field"
-    )
+    assert "physician_review" in grading, f"{case_id}: grading.json missing physician_review field"
     assert grading["physician_review"] is None, (
         f"{case_id}: physician_review must be null until countersigned; "
         f"got {grading['physician_review']!r}"
@@ -131,12 +127,8 @@ def test_grading_totals_match_weighted_scores(case_id: str) -> None:
     weights = grading["weights"]
     scores = grading["scores"]
 
-    wt_baseline = sum(
-        float(scores["baseline"][cid]) * float(weights[cid]) for cid in weights
-    )
-    wt_modified = sum(
-        float(scores["modified"][cid]) * float(weights[cid]) for cid in weights
-    )
+    wt_baseline = sum(float(scores["baseline"][cid]) * float(weights[cid]) for cid in weights)
+    wt_modified = sum(float(scores["modified"][cid]) * float(weights[cid]) for cid in weights)
     delta = wt_modified - wt_baseline
 
     claimed_baseline = float(grading["weighted_total"]["baseline"])
@@ -144,20 +136,15 @@ def test_grading_totals_match_weighted_scores(case_id: str) -> None:
     claimed_delta = float(grading["delta"])
 
     assert abs(claimed_baseline - wt_baseline) < 1e-6, (
-        f"{case_id}: baseline weighted_total {claimed_baseline} != "
-        f"recomputed {wt_baseline}"
+        f"{case_id}: baseline weighted_total {claimed_baseline} != " f"recomputed {wt_baseline}"
     )
     assert abs(claimed_modified - wt_modified) < 1e-6, (
-        f"{case_id}: modified weighted_total {claimed_modified} != "
-        f"recomputed {wt_modified}"
+        f"{case_id}: modified weighted_total {claimed_modified} != " f"recomputed {wt_modified}"
     )
-    assert abs(claimed_delta - delta) < 1e-6, (
-        f"{case_id}: delta {claimed_delta} != recomputed {delta}"
-    )
-    assert delta > 0, (
-        f"{case_id}: modified should beat baseline (positive delta); "
-        f"got {delta}"
-    )
+    assert (
+        abs(claimed_delta - delta) < 1e-6
+    ), f"{case_id}: delta {claimed_delta} != recomputed {delta}"
+    assert delta > 0, f"{case_id}: modified should beat baseline (positive delta); " f"got {delta}"
 
 
 # --------------------------------------------------------------------------- #
@@ -170,8 +157,7 @@ def test_rubric_references_point_at_sibling_rubric() -> None:
         case = _load_json(CORPUS_DIR / case_id / "case.json")
         ref = case["rubric_ref"]
         assert ref == f"corpus/clinical-demo/{case_id}/rubric.json", (
-            f"{case_id}: rubric_ref should point at sibling rubric.json; "
-            f"got {ref!r}"
+            f"{case_id}: rubric_ref should point at sibling rubric.json; " f"got {ref!r}"
         )
 
 

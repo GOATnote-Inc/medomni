@@ -3,6 +3,7 @@
 If the safety layer lets a bad construct through, the whole evolutionary
 loop is a remote code execution vector.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -30,18 +31,21 @@ def test_compile_accepts_clean_source():
     assert callable(fn)
 
 
-@pytest.mark.parametrize("bad", [
-    "import os\n" + GOOD,
-    "from os import system\n" + GOOD,
-    GOOD + "\nos.system('echo hi')",
-    GOOD + "\neval('1+1')",
-    GOOD + "\nexec('x = 1')",
-    GOOD + "\nopen('/etc/passwd')",
-    GOOD + "\n__import__('os')",
-    GOOD + "\nsubprocess.run(['ls'])",
-    GOOD + "\nglobals()['x'] = 1",
-    GOOD + "\ngetattr(np, 'zeros')(10)",
-])
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "import os\n" + GOOD,
+        "from os import system\n" + GOOD,
+        GOOD + "\nos.system('echo hi')",
+        GOOD + "\neval('1+1')",
+        GOOD + "\nexec('x = 1')",
+        GOOD + "\nopen('/etc/passwd')",
+        GOOD + "\n__import__('os')",
+        GOOD + "\nsubprocess.run(['ls'])",
+        GOOD + "\nglobals()['x'] = 1",
+        GOOD + "\ngetattr(np, 'zeros')(10)",
+    ],
+)
 def test_compile_rejects_banned_constructs(bad):
     with pytest.raises(UnsafeSourceError):
         compile_candidate(bad)

@@ -275,11 +275,7 @@ def _summarize(timings: list[RequestTiming]) -> str:
         # measured from first tool-input-available. If neither tool ran (e.g.
         # knowledge-only prompt), skip — not a Pattern B observation.
         if t.t_first_tool_call_emitted is not None:
-            ends = [
-                e
-                for e in (t.t_primekg_result, t.t_patient_context_result)
-                if e is not None
-            ]
+            ends = [e for e in (t.t_primekg_result, t.t_patient_context_result) if e is not None]
             if ends:
                 phases["parallel_tool_wait"].append(
                     (max(ends) - t.t_first_tool_call_emitted) * 1000.0
@@ -295,10 +291,14 @@ def _summarize(timings: list[RequestTiming]) -> str:
             phases["end_to_end"].append(v)
 
     lines: list[str] = []
-    lines.append(f"# bench_dual_lookup — n={total}, ok={len(successes)}, failed={failures} ({failure_rate:.1f}%)")
+    lines.append(
+        f"# bench_dual_lookup — n={total}, ok={len(successes)}, failed={failures} ({failure_rate:.1f}%)"
+    )
     if fail_classes:
         lines.append("")
-        lines.append("Failure classes: " + ", ".join(f"{k}={v}" for k, v in sorted(fail_classes.items())))
+        lines.append(
+            "Failure classes: " + ", ".join(f"{k}={v}" for k, v in sorted(fail_classes.items()))
+        )
     lines.append("")
     lines.append("| phase | n | p50 (ms) | p95 (ms) | p99 (ms) |")
     lines.append("| --- | --- | --- | --- | --- |")
@@ -345,9 +345,7 @@ async def _main_async(
         async def _bound(idx: int) -> RequestTiming:
             async with sem:
                 prompt_idx = idx % len(PROMPTS)
-                return await _run_one(
-                    client, base_url, patient_id, PROMPTS[prompt_idx], prompt_idx
-                )
+                return await _run_one(client, base_url, patient_id, PROMPTS[prompt_idx], prompt_idx)
 
         tasks = [asyncio.create_task(_bound(i)) for i in range(n_requests)]
         timings = await asyncio.gather(*tasks)

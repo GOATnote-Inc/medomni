@@ -19,6 +19,7 @@ requiring torch on the test host; numpy-only, runs in ~1 s on CPU.
 Runnable on any platform:
     .venv/bin/python -m pytest mla/tests/test_numerical_stability.py -v
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -155,6 +156,7 @@ def test_bf16_accum_drift_does_NOT_grow_linearly_with_T():
 
 
 # ---- H5.2 tests ----
+
 
 def _bf16_sequential_accumulator_sum(arr: np.ndarray) -> float:
     """True bf16 accumulator: add each element sequentially, truncate to

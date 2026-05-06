@@ -145,16 +145,12 @@ def _synthetic_example(prompt_id: str, content: str, rubric_points: int = 1) -> 
     return {
         "prompt_id": prompt_id,
         "prompt": _msg(content),
-        "rubrics": [
-            {"criterion": "c", "points": rubric_points, "tags": ["axis:accuracy"]}
-        ],
+        "rubrics": [{"criterion": "c", "points": rubric_points, "tags": ["axis:accuracy"]}],
     }
 
 
 def test_stratify_same_seed_same_pick() -> None:
-    pool = [
-        _synthetic_example(f"peds-{i:02d}", "A 5-year-old with fever") for i in range(10)
-    ] + [
+    pool = [_synthetic_example(f"peds-{i:02d}", "A 5-year-old with fever") for i in range(10)] + [
         _synthetic_example(f"gen-{i:02d}", "Pharmacokinetics question") for i in range(10)
     ]
     counts = {"pediatrics": 2, "general": 2}
@@ -164,10 +160,7 @@ def test_stratify_same_seed_same_pick() -> None:
 
 
 def test_stratify_different_seed_different_pick() -> None:
-    pool = [
-        _synthetic_example(f"gen-{i:02d}", "General medicine question")
-        for i in range(20)
-    ]
+    pool = [_synthetic_example(f"gen-{i:02d}", "General medicine question") for i in range(20)]
     counts = {"general": 5}
     a = [ex["prompt_id"] for _, ex in stratify(pool, counts, seed=1)]
     b = [ex["prompt_id"] for _, ex in stratify(pool, counts, seed=99)]
@@ -211,8 +204,11 @@ def test_manifest_satisfies_spec() -> None:
         assert isinstance(ex["healthbench_hard_example_id"], str)
         assert ex["class"] in STRATA_COUNTS
         assert ex["target_axis"] in {
-            "accuracy", "completeness", "context_awareness",
-            "instruction_following", "communication",
+            "accuracy",
+            "completeness",
+            "context_awareness",
+            "instruction_following",
+            "communication",
         }
         assert "[PENDING-REVIEW]" in ex["expected_failure_mode"]
         assert isinstance(ex["messages"], list) and ex["messages"]

@@ -9,6 +9,7 @@ These run on a Mac laptop (no CUDA). They verify:
 The CUDA-dependent tests live in test_flashinfer_runner_cuda.py (marked
 pytest.mark.cuda; skipped on non-CUDA hosts).
 """
+
 from __future__ import annotations
 
 import pytest
@@ -33,6 +34,7 @@ def test_constants_match_deepseek_dimensions():
 
 def test_config_default_sm_scale_matches_formula():
     import math
+
     cfg = fir.FlashInferMLAConfig()
     assert cfg.sm_scale is None
     expected = 1.0 / math.sqrt(576)
@@ -64,6 +66,7 @@ def test_require_gpu_environment_raises_without_cuda():
 
 def test_environment_report_is_serializable():
     import json
+
     report = fir.environment_report()
     assert "have_torch" in report
     assert "have_flashinfer" in report
@@ -75,11 +78,11 @@ def test_benchmark_result_has_matching_fields():
     """BenchmarkResult fields must match numpy_runner.BenchmarkResult so
     downstream code can consume either type identically."""
     from runner.numpy_runner import BenchmarkResult as NpResult
+
     np_fields = set(NpResult.__dataclass_fields__.keys())
     fi_fields = set(fir.BenchmarkResult.__dataclass_fields__.keys())
     assert np_fields == fi_fields, (
-        f"BenchmarkResult fields drifted: "
-        f"numpy={np_fields}  flashinfer={fi_fields}"
+        f"BenchmarkResult fields drifted: " f"numpy={np_fields}  flashinfer={fi_fields}"
     )
 
 

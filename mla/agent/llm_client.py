@@ -15,6 +15,7 @@ References:
     memory/claude_opus_4_7_migration.md (thinking OFF by default, rejects
         temperature/top_p/top_k/budget_tokens)
 """
+
 from __future__ import annotations
 
 import os
@@ -62,7 +63,7 @@ _STUB_MUTATIONS: list[MutationResponse] = [
             "risk: low — numerically identical to baseline, one fewer kernel launch."
         ),
         source=textwrap.dedent(
-            '''
+            """
             def mla_decode_candidate(q_nope, q_rope, c_KV, k_R, W_UK, W_UV, softmax_scale):
                 q_merged = np.einsum("bhn,hnd->bhd", q_nope, W_UK)
                 q_cat = np.concatenate([q_merged, q_rope], axis=-1)
@@ -73,7 +74,7 @@ _STUB_MUTATIONS: list[MutationResponse] = [
                 w = exp / exp.sum(axis=-1, keepdims=True)
                 ctx = np.einsum("bht,btd->bhd", w, c_KV)
                 return np.einsum("bhd,hdv->bhv", ctx, W_UV)
-            '''
+            """
         ).strip(),
     ),
     MutationResponse(
@@ -83,7 +84,7 @@ _STUB_MUTATIONS: list[MutationResponse] = [
             "risk: low — numpy allocates same total, but fewer intermediate names."
         ),
         source=textwrap.dedent(
-            '''
+            """
             def mla_decode_candidate(q_nope, q_rope, c_KV, k_R, W_UK, W_UV, softmax_scale):
                 q_merged = np.einsum("bhn,hnd->bhd", q_nope, W_UK)
                 scores = np.einsum("bhd,btd->bht", q_merged, c_KV)
@@ -94,7 +95,7 @@ _STUB_MUTATIONS: list[MutationResponse] = [
                 scores /= scores.sum(axis=-1, keepdims=True)
                 ctx = np.einsum("bht,btd->bhd", scores, c_KV)
                 return np.einsum("bhd,hdv->bhv", ctx, W_UV)
-            '''
+            """
         ).strip(),
     ),
     MutationResponse(
@@ -104,7 +105,7 @@ _STUB_MUTATIONS: list[MutationResponse] = [
             "risk: low — numerically equivalent."
         ),
         source=textwrap.dedent(
-            '''
+            """
             def mla_decode_candidate(q_nope, q_rope, c_KV, k_R, W_UK, W_UV, softmax_scale):
                 q_merged = np.einsum("bhn,hnd->bhd", q_nope, W_UK) * softmax_scale
                 q_rope_scaled = q_rope * softmax_scale
@@ -115,7 +116,7 @@ _STUB_MUTATIONS: list[MutationResponse] = [
                 w = exp / exp.sum(axis=-1, keepdims=True)
                 ctx = np.einsum("bht,btd->bhd", w, c_KV)
                 return np.einsum("bhd,hdv->bhv", ctx, W_UV)
-            '''
+            """
         ).strip(),
     ),
     # Negative control — produces wrong values; validator must reject.
@@ -126,7 +127,7 @@ _STUB_MUTATIONS: list[MutationResponse] = [
             "risk: high — this is a buggy candidate; validator must catch."
         ),
         source=textwrap.dedent(
-            '''
+            """
             def mla_decode_candidate(q_nope, q_rope, c_KV, k_R, W_UK, W_UV, softmax_scale):
                 q_merged = np.einsum("bhn,hnd->bhd", q_nope, W_UK)
                 scores = np.einsum("bhd,btd->bht", q_merged, c_KV) * softmax_scale
@@ -135,7 +136,7 @@ _STUB_MUTATIONS: list[MutationResponse] = [
                 w = exp / exp.sum(axis=-1, keepdims=True)
                 ctx = np.einsum("bht,btd->bhd", w, c_KV)
                 return np.einsum("bhd,hdv->bhv", ctx, W_UV)
-            '''
+            """
         ).strip(),
     ),
 ]
@@ -247,14 +248,14 @@ class AnthropicClient:
 
     def _render(self, req: MutationRequest) -> str:
         return (
-            self._prompt_tpl
-            .replace("{{CURRENT_BEST_SOURCE}}", req.current_best_source)
+            self._prompt_tpl.replace("{{CURRENT_BEST_SOURCE}}", req.current_best_source)
             .replace("{{POPULATION_SUMMARY}}", req.population_summary)
             .replace("{{MUTATION_OBJECTIVE}}", req.mutation_objective)
         )
 
     def mutate(self, req: MutationRequest) -> MutationResponse:
         import anthropic  # lazy
+
         client = anthropic.Anthropic()
         prompt = self._render(req)
         resp = client.messages.create(
@@ -270,11 +271,11 @@ class AnthropicClient:
     def mutate_torch(self, req: MutationRequest) -> MutationResponse:
         """Torch-flavored mutation. Uses prompts/mutation_torch.txt."""
         import anthropic  # lazy
+
         client = anthropic.Anthropic()
         tpl = _PROMPT_PATH_TORCH.read_text()
-        prompt = (
-            tpl.replace("{{CURRENT_BEST_SOURCE}}", req.current_best_source)
-               .replace("{{MUTATION_OBJECTIVE}}", req.mutation_objective)
+        prompt = tpl.replace("{{CURRENT_BEST_SOURCE}}", req.current_best_source).replace(
+            "{{MUTATION_OBJECTIVE}}", req.mutation_objective
         )
         resp = client.messages.create(
             model=self.model,
@@ -288,6 +289,7 @@ class AnthropicClient:
 
     def critique(self, req: CritiqueRequest) -> CritiqueResponse:
         import anthropic  # lazy
+
         client = anthropic.Anthropic()
         prompt = render_critique_prompt(req)
         resp = client.messages.create(

@@ -4,6 +4,7 @@ Each test proves a detector catches the specific shortcut class described in
 arXiv:2509.14279 §3. If a test passes a known cheating kernel, the validator's
 anti-gaming tier is broken.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -40,6 +41,7 @@ def _rand_inputs(seqlen=32, dhead=16, batch=1, heads=4, seed=0):
 
 # ---- Check 1: Output Range ----
 
+
 def test_output_range_rejects_near_zero_output():
     near_zero = np.random.randn(2, 4, 8, 16).astype(np.float32) * 1e-4
     r = check_output_range(near_zero)
@@ -55,6 +57,7 @@ def test_output_range_passes_normal_output():
 
 # ---- Check 2: Standard Deviation ----
 
+
 def test_output_std_rejects_constant():
     const = np.full((2, 4, 8, 16), 3.14, dtype=np.float32)
     r = check_output_std(const)
@@ -68,6 +71,7 @@ def test_output_std_passes_normal():
 
 
 # ---- Check 3: Per-Axis Variation ----
+
 
 def test_per_axis_rejects_broadcast_collapse():
     # All heads identical -> std along head axis is zero.
@@ -86,13 +90,16 @@ def test_per_axis_passes_normal():
 
 # ---- Check 4: Init Robustness ----
 
+
 def test_init_robustness_catches_seed_hardcode():
     # This candidate only returns correct values for seed=0 default Q.
     gold_Q = np.random.default_rng(0).standard_normal((1, 4, 32, 16)).astype(np.float32)
+
     def seed_cheat(Q, K, V):
         if np.allclose(Q, gold_Q):
             return reference_attention(Q, K, V)
         return np.zeros_like(reference_attention(Q, K, V))
+
     r = check_init_robustness(
         seed_cheat,
         reference_attention,
@@ -114,11 +121,13 @@ def test_init_robustness_passes_correct_kernel():
 
 # ---- Check 5: Shape Generalization ----
 
+
 def test_shape_generalization_catches_hardcoded_shape():
     def shape_cheat(Q, K, V):
         if Q.shape[-2] == 32:
             return reference_attention(Q, K, V)
         return np.zeros_like(reference_attention(Q, K, V))
+
     r = check_shape_generalization(
         shape_cheat,
         reference_attention,
@@ -138,9 +147,11 @@ def test_shape_generalization_passes_correct_kernel():
 
 # ---- Check 6: No Trivial Delegation ----
 
+
 def test_delegation_catches_reference_call():
     def delegating(Q, K, V):
         return reference_attention(Q, K, V)
+
     r = check_no_trivial_delegation(delegating)
     assert not r.passed
     assert "reference_attention" in r.reason or "reference(" in r.reason
@@ -153,15 +164,18 @@ def test_delegation_passes_original():
         w = np.exp(w - w.max(-1, keepdims=True))
         w /= w.sum(-1, keepdims=True)
         return np.einsum("bhij,bhjd->bhid", w, V)
+
     r = check_no_trivial_delegation(original)
     assert r.passed
 
 
 # ---- Validator integration: anti_gaming flag ----
 
+
 def test_validator_anti_gaming_catches_constant_output():
     def constant_zeros(Q, K, V):
         return np.zeros_like(reference_attention(Q, K, V))
+
     result = validate(
         constant_zeros,
         lambda Q, K, V: np.zeros_like(Q),  # ref also zeros so Tier 1 passes
