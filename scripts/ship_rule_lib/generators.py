@@ -165,9 +165,15 @@ def load_medqa_usmle(cache_dir: Path, split: str = "test") -> list[dict]:
 
 
 def load_pubmedqa_l(cache_dir: Path) -> list[dict]:
-    """Load PubMedQA-L (labeled) test set from local cache."""
+    """Load PubMedQA-L (labeled) test set from local cache.
+
+    Restricts to `pqa_labeled` split parquets only — the unlabeled and
+    artificial splits are >250k rows of unlabeled / synthetic data and
+    must NOT enter the eval set.
+    """
     items: list[dict] = []
-    parquets = list(cache_dir.rglob("*PubMedQA*/**/*.parquet"))
+    all_parquets = list(cache_dir.rglob("*PubMedQA*/**/*.parquet"))
+    parquets = [p for p in all_parquets if "pqa_labeled" in str(p)]
     if not parquets:
         try:
             from datasets import load_dataset  # type: ignore
@@ -250,21 +256,80 @@ def load_medxpertqa_text(repo_dir: Path) -> list[dict]:
 
 
 def load_healthbench_hard(pin_path: Path) -> list[dict]:
-    """Load the medomni HealthBench-Hard pin (shape: examples: [...])."""
+    """Load the medomni HealthBench-Hard items.
+
+    Two acceptable shapes:
+    1. medomni pin YAML (shape: examples: [...])
+    2. Tonic/Health-Bench-Eval-OSS-2025-07 JSONL split (shape per row:
+       {prompt: [messages], rubrics: [...], prompt_id: str})
+
+    For (2) the loader treats `pin_path` as either:
+       - a path to the JSONL file directly, or
+       - the medomni pin YAML; if `examples` empty, the loader looks at the
+         pin's `upstream.cache_path` field and resolves a JSONL there.
+    """
     import yaml  # type: ignore
+
+    # Direct JSONL path (suffix check + content sniff for HF blob symlinks)
+    if pin_path.suffix == ".jsonl":
+        return _load_healthbench_jsonl(pin_path)
+    head = pin_path.read_text(errors="ignore")[:64].lstrip()
+    if head.startswith("{"):
+        return _load_healthbench_jsonl(pin_path)
 
     data = yaml.safe_load(pin_path.read_text()) or {}
     examples = data.get("examples", []) or []
+    if examples:
+        out: list[dict] = []
+        for i, ex in enumerate(examples):
+            out.append(
+                {
+                    "item_id": str(ex.get("id", f"hb-{i:05d}")),
+                    "messages": ex.get("messages")
+                    or [{"role": "user", "content": ex.get("prompt", "")}],
+                    "rubrics": ex.get("rubrics") or [],
+                }
+            )
+        return out
+
+    # Fall back to upstream JSONL pointed to by the pin metadata.
+    upstream = data.get("upstream") or {}
+    cache = upstream.get("cache_path") or upstream.get("local_jsonl")
+    if cache:
+        return _load_healthbench_jsonl(Path(cache))
+    raise RuntimeError(
+        f"HealthBench pin {pin_path} has no `examples:` and no `upstream.cache_path:`. "
+        "Pass the Tonic/Health-Bench-Eval-OSS hard*.jsonl path directly via "
+        "--healthbench-pin <path>.jsonl"
+    )
+
+
+def _load_healthbench_jsonl(path: Path) -> list[dict]:
+    """Tonic/Health-Bench-Eval-OSS-2025-07 hard*.jsonl reader."""
     out: list[dict] = []
-    for i, ex in enumerate(examples):
-        out.append(
-            {
-                "item_id": str(ex.get("id", f"hb-{i:05d}")),
-                "messages": ex.get("messages")
-                or [{"role": "user", "content": ex.get("prompt", "")}],
-                "rubrics": ex.get("rubrics") or [],
-            }
-        )
+    with path.open() as fh:
+        for i, line in enumerate(fh):
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            prompt = row.get("prompt")
+            if isinstance(prompt, list):
+                messages = [
+                    {"role": m.get("role", "user"), "content": m.get("content", "")}
+                    for m in prompt
+                ]
+            elif isinstance(prompt, str):
+                messages = [{"role": "user", "content": prompt}]
+            else:
+                messages = []
+            out.append(
+                {
+                    "item_id": str(row.get("prompt_id", f"hb-{i:05d}")),
+                    "messages": messages,
+                    "rubrics": row.get("rubrics") or [],
+                }
+            )
     return out
 
 

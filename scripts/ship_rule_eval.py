@@ -295,36 +295,43 @@ def cmd_stats(args: argparse.Namespace) -> int:
     raw_results: dict[str, stats.PairedResult] = {}
 
     for bench in BENCHMARKS:
-        v0_records: list[dict] = []
-        v25_records: list[dict] = []
+        # Pair within each seed (same item, same vllm sampling seed),
+        # then concatenate across seeds. This avoids item_id collision when
+        # naive align_paired sees the same item under 3 seeds and dict-overwrites.
+        v0_scores: list[float] = []
+        v25_scores: list[float] = []
+        n_v0_total = 0
+        n_v25_total = 0
+        n_dropped_total = 0
         for seed in SEEDS:
             v0_p = graded_root / f"{bench}__v0__seed{seed}.jsonl"
             v25_p = graded_root / f"{bench}__v25__seed{seed}.jsonl"
-            if v0_p.exists():
-                v0_records.extend(_load_graded_jsonl(v0_p))
-            if v25_p.exists():
-                v25_records.extend(_load_graded_jsonl(v25_p))
+            v0r_list = _load_graded_jsonl(v0_p) if v0_p.exists() else []
+            v25r_list = _load_graded_jsonl(v25_p) if v25_p.exists() else []
+            n_v0_total += len(v0r_list)
+            n_v25_total += len(v25r_list)
+            if not v0r_list or not v25r_list:
+                continue
+            v0_aligned, v25_aligned, dropped = stats.align_paired(
+                v0r_list, v25r_list, key="item_id"
+            )
+            n_dropped_total += len(dropped)
+            for v0r, v25r in zip(v0_aligned, v25_aligned, strict=True):
+                s0 = _per_item_score(v0r)
+                s1 = _per_item_score(v25r)
+                if s0 is None or s1 is None:
+                    continue
+                v0_scores.append(s0)
+                v25_scores.append(s1)
+        dropped = []  # placeholder; per-seed dropped are summed in n_dropped_total
 
-        if not v0_records or not v25_records:
+        if n_v0_total == 0 or n_v25_total == 0:
             per_bench[bench] = {
                 "status": "missing_data",
-                "n_v0": len(v0_records),
-                "n_v25": len(v25_records),
+                "n_v0": n_v0_total,
+                "n_v25": n_v25_total,
             }
             continue
-
-        v0_aligned, v25_aligned, dropped = stats.align_paired(
-            v0_records, v25_records, key="item_id"
-        )
-        v0_scores: list[float] = []
-        v25_scores: list[float] = []
-        for v0r, v25r in zip(v0_aligned, v25_aligned, strict=True):
-            s0 = _per_item_score(v0r)
-            s1 = _per_item_score(v25r)
-            if s0 is None or s1 is None:
-                continue
-            v0_scores.append(s0)
-            v25_scores.append(s1)
 
         if len(v0_scores) < 2:
             per_bench[bench] = {
@@ -345,7 +352,7 @@ def cmd_stats(args: argparse.Namespace) -> int:
         per_bench[bench] = {
             "status": "ok",
             "n_paired": result.n_pairs,
-            "n_dropped_unpaired": len(dropped),
+            "n_dropped_unpaired": n_dropped_total,
             "v0_mean": result.v0_mean,
             "v25_mean": result.v25_mean,
             "delta": result.delta,
