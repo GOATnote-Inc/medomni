@@ -1,0 +1,142 @@
+name: adversarial-probe
+
+# Track #4 of the Cherny-pattern initiative. Hourly red team that fires 20
+# hard clinical cases at the LIVE /api/agent endpoint, scores on substring
+# rubric, and opens a GitHub issue when the pass rate dips below threshold.
+#
+# Why hourly: the live agent is at the wrong end of a chain of
+# moving parts (Vercel deploys, B300 vllm, prompt edits, skills router).
+# A regression there is harder to spot than a unit-test break — only a
+# scheduled adversarial probe will catch silent prompt-shape drift.
+#
+# Why issue-on-fail (vs PR-blocking gate): the probe runs hourly against
+# production and must NEVER block a deploy on its own (substring rubric
+# has false positives by design). The signal is the trend across runs;
+# an issue is the right escalation surface.
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+    inputs:
+      threshold:
+        description: "Pass-rate threshold (0.0-1.0)"
+        required: false
+        default: "0.70"
+      endpoint:
+        description: "Endpoint to probe"
+        required: false
+        default: "https://medomni.vercel.app/api/agent"
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: adversarial-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install probe deps
+        run: pip install requests==2.32.3
+
+      - name: Run adversarial probe
+        id: probe
+        env:
+          THRESHOLD: ${{ github.event.inputs.threshold || '0.70' }}
+          ENDPOINT: ${{ github.event.inputs.endpoint || 'https://medomni.vercel.app/api/agent' }}
+        # `continue-on-error: true` so we still get the artifact upload step
+        # and the issue-creation step on regression. The job's overall
+        # success is decided by the final `gate` step below.
+        continue-on-error: true
+        run: |
+          set +e
+          python scripts/adversarial_probe.py \
+            --endpoint "$ENDPOINT" \
+            --threshold "$THRESHOLD"
+          echo "probe_rc=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Locate latest CARD
+        id: card
+        if: always()
+        run: |
+          # Pick the newest probe directory regardless of timestamp; cron
+          # writes a new one every hour.
+          card_dir=$(find findings -maxdepth 1 -type d -name '2026-05-05-adversarial-probe-*' | sort | tail -1)
+          if [ -n "$card_dir" ] && [ -f "$card_dir/CARD.md" ]; then
+            echo "card_dir=$card_dir" >> "$GITHUB_OUTPUT"
+            echo "card_path=$card_dir/CARD.md" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload CARD artifact
+        if: always() && steps.card.outputs.card_dir != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: adversarial-probe-card-${{ github.run_id }}
+          path: ${{ steps.card.outputs.card_dir }}
+          retention-days: 30
+
+      - name: Open issue on regression
+        if: steps.probe.outputs.probe_rc != '0' && steps.card.outputs.card_path != ''
+        uses: actions/github-script@v7
+        env:
+          CARD_PATH: ${{ steps.card.outputs.card_path }}
+          PROBE_RC: ${{ steps.probe.outputs.probe_rc }}
+        with:
+          script: |
+            const fs = require('fs');
+            const cardPath = process.env.CARD_PATH;
+            let body = '';
+            try {
+              body = fs.readFileSync(cardPath, 'utf8');
+            } catch (e) {
+              body = `Could not read CARD at ${cardPath}: ${e.message}`;
+            }
+            // GH issue body cap is 65k chars; truncate generously.
+            const MAX = 60000;
+            if (body.length > MAX) {
+              body = body.slice(0, MAX) + `\n\n[... CARD truncated; full artifact attached to run ${context.runId}]`;
+            }
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+            const title = `[adversarial-probe] regression detected — ${stamp}`;
+            const fullBody = [
+              `**Run:** ${runUrl}`,
+              `**Probe exit code:** ${process.env.PROBE_RC}`,
+              ``,
+              `Track #4 of the Cherny-pattern initiative. The hourly adversarial probe`,
+              `against the live \`/api/agent\` endpoint dropped below the configured`,
+              `pass-rate threshold. CARD attached below; full per-case JSON in the`,
+              `\`adversarial-probe-card-${context.runId}\` workflow artifact.`,
+              ``,
+              `---`,
+              ``,
+              body,
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body: fullBody,
+              labels: ['adversarial-probe', 'regression'],
+            });
+
+      - name: Gate — fail job on regression
+        if: always()
+        run: |
+          rc='${{ steps.probe.outputs.probe_rc }}'
+          if [ "$rc" != "0" ]; then
+            echo "Adversarial probe regressed (rc=$rc); failing the job."
+            exit 1
+          fi
+          echo "Adversarial probe passed."

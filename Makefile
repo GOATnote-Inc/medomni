@@ -204,3 +204,20 @@ sync-skills: ## Mirror canonical skill markdown from mvp/medomni-inference/ → 
 	@cp mvp/medomni-inference/skills/calc.md web/lib/agent/skills/
 	@cp mvp/medomni-inference/skills/handoff.md web/lib/agent/skills/
 	@echo "Synced skill markdown into web/lib/agent/skills/. The /api/agent route reads these at server cold start when ?profile=v_final is set."
+
+# ---------------------------------------------------------------------------
+# Adversarial probe (Track #4 of Cherny-pattern initiative)
+# ---------------------------------------------------------------------------
+.PHONY: adversarial-probe
+adversarial-probe: ## Fire 20 hard clinical cases at the live /api/agent and write a CARD
+	@command -v $(PY) >/dev/null 2>&1 && PYBIN="$(PY)" || PYBIN="python3"; \
+	  $$PYBIN -c "import requests" 2>/dev/null || pip install --quiet requests; \
+	  ENDPOINT="$${ENDPOINT:-https://medomni.vercel.app/api/agent}"; \
+	  THRESHOLD="$${THRESHOLD:-0.70}"; \
+	  $$PYBIN scripts/adversarial_probe.py --endpoint "$$ENDPOINT" --threshold "$$THRESHOLD"
+
+.PHONY: adversarial-probe-dry
+adversarial-probe-dry: ## Adversarial-probe dry run (no HTTP) — verifies CARD writer end-to-end
+	@command -v $(PY) >/dev/null 2>&1 && PYBIN="$(PY)" || PYBIN="python3"; \
+	  $$PYBIN scripts/adversarial_probe.py --dry-run --findings-dir /tmp/probe-dry-run; \
+	  echo "Dry-run CARD: /tmp/probe-dry-run/"
