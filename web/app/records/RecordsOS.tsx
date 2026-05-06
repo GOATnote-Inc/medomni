@@ -1017,11 +1017,13 @@ export function RecordsOS() {
     >
       {/* ── LEFT RAIL ───────────────────────────────────────────────── */}
       <aside
+        data-records-os-rail="left"
         style={{
           borderRight: "1px solid #1f1f1f",
           display: "flex",
           flexDirection: "column",
           background: "#000",
+          minWidth: 0,
         }}
       >
         <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #1f1f1f" }}>
@@ -1149,6 +1151,7 @@ export function RecordsOS() {
       <main style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
         {/* Top bar */}
         <div
+          data-records-os-topbar
           style={{
             height: 56,
             borderBottom: "1px solid #1f1f1f",
@@ -1184,9 +1187,10 @@ export function RecordsOS() {
         </div>
 
         {/* Content scroll area */}
-        <div style={{ padding: "24px 28px", flex: 1, minHeight: 0 }}>
+        <div data-records-os-main-content style={{ padding: "24px 28px", flex: 1, minHeight: 0 }}>
           {/* Hero row */}
           <div
+            data-records-os-hero
             style={{
               display: "grid",
               gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 1fr)",
@@ -1207,14 +1211,22 @@ export function RecordsOS() {
                   gap: 16,
                 }}
               >
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <div
+                    data-records-os-patient-name
                     style={{
                       fontFamily: "var(--font-display)",
                       fontSize: 36,
                       fontWeight: 700,
                       letterSpacing: "-0.025em",
                       lineHeight: 1.05,
+                      // text-balance keeps multi-word names on visually-balanced
+                      // lines instead of letting one syllable orphan onto a
+                      // narrow column. min-width:0 on the parent + this here
+                      // also stops the artificial single-letter wrap.
+                      textWrap: "balance",
+                      wordBreak: "normal",
+                      overflowWrap: "normal",
                     }}
                   >
                     {patient.name}
@@ -1282,22 +1294,25 @@ export function RecordsOS() {
             </div>
 
             {/* Signal of the day */}
-            <div style={{ ...cardBase, position: "relative", overflow: "hidden" }}>
+            <div style={{ ...cardBase, position: "relative", overflow: "hidden", minWidth: 0 }}>
               <Eyebrow style={{ marginBottom: 12 }}>SIGNAL · TODAY</Eyebrow>
               <div
+                data-records-os-signal-headline
                 style={{
                   fontFamily: "var(--font-display)",
                   fontSize: 22,
                   fontWeight: 600,
                   lineHeight: 1.25,
                   letterSpacing: "-0.015em",
+                  textWrap: "balance",
                 }}
               >
                 Your LDL dropped <span style={{ color: "var(--accent)" }}>50 points</span> in 24 months. The statin is working.
               </div>
-              <div style={{ marginTop: 16, display: "flex", alignItems: "flex-end", gap: 16 }}>
-                <div>
+              <div style={{ marginTop: 16, display: "flex", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
+                <div style={{ minWidth: 0 }}>
                   <div
+                    data-records-os-signal-figure
                     style={{
                       fontFamily: "var(--font-display)",
                       fontSize: 48,
@@ -1349,7 +1364,7 @@ export function RecordsOS() {
               <Eyebrow>VITALS · LAST 12 READINGS</Eyebrow>
               <Mono>FROM APPLE WATCH · OURA · CLINIC</Mono>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))" }}>
+            <div data-records-os-vitals style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))" }}>
               {Object.entries(vitals).map(([key, v], i) => {
                 // Build trend hint: last 7 readings with relative time labels.
                 const last7 = [...v.spark]
@@ -1444,6 +1459,7 @@ export function RecordsOS() {
 
           {/* Labs + Meds + Conditions row */}
           <div
+            data-records-os-row="labs-meds"
             style={{
               display: "grid",
               gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)",
@@ -1701,7 +1717,7 @@ export function RecordsOS() {
           </div>
 
           {/* Bottom row: timeline preview + sharing */}
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)", gap: 16 }}>
+          <div data-records-os-row="timeline-shares" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)", gap: 16 }}>
             <div style={cardBase}>
               <div
                 style={{
@@ -1825,11 +1841,13 @@ export function RecordsOS() {
 
       {/* ── RIGHT RAIL — AI command bar + activity ─────────────────── */}
       <aside
+        data-records-os-rail="right"
         style={{
           borderLeft: "1px solid #1f1f1f",
           display: "flex",
           flexDirection: "column",
           background: "#000",
+          minWidth: 0,
         }}
       >
         {/* Ask your record (AI) */}
