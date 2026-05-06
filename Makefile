@@ -195,3 +195,12 @@ ci-medomni-dry: ## Show what ci-medomni would do; no pod calls
 	@echo
 	@echo "Required env: NEMOTRON_SERVE_URL, NEMOTRON_JUDGE_URL"
 	@echo "Optional env: NEMOTRON_SERVE_MODEL, NEMOTRON_JUDGE_MODEL"
+
+.PHONY: sync-skills
+sync-skills: ## Mirror canonical skill markdown from mvp/medomni-inference/ → web/lib/agent/skills/
+	@mkdir -p web/lib/agent/skills
+	@cp mvp/medomni-inference/system_prompt_v1.md web/lib/agent/skills/
+	@cp mvp/medomni-inference/skills/differential.md web/lib/agent/skills/
+	@cp mvp/medomni-inference/skills/calc.md web/lib/agent/skills/
+	@cp mvp/medomni-inference/skills/handoff.md web/lib/agent/skills/
+	@echo "Synced skill markdown into web/lib/agent/skills/. The /api/agent route reads these at server cold start when ?profile=v_final is set."
