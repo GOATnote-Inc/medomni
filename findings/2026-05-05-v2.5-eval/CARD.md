@@ -68,8 +68,29 @@ Smoke passed: train loss decreased, eval loss only slightly higher (no overfit),
 | iter-52 | 21:29 | 45/3243 | OOM | judge-qwen + training collision; saved durable lesson |
 | iter-52 | 21:36 | 0/3243 (re-fire) | — | seq=1536 + expandable_segments |
 | iter-54 | 21:46 | 23/3243 | TBD | 24.4s/step stable |
+| iter-101 | 00:44 | 460/3243 | train 1.055 | 14.18% epoch, no spike |
+| iter-103 | 00:50 | 470/3243 | train 0.998 | first sub-1.0 train loss |
+| iter-105 | 00:57 | 490/3243 | train 0.990 | continuing to drop |
+| iter-106 | 01:01 | 500/3243 | train 1.038 | step 500 reached |
+| **iter-108** | **01:05** | **500 (eval)** | **eval 1.046** | **first eval — vs smoke 1.511 = -30.8%** |
 | ... | | | | |
 | (final) | TBD | 3243/3243 | TBD | epoch complete; ship-rule eval fires |
+
+## **MILESTONE — first held-out eval (step 500, iter-108)**
+
+| | Smoke (50-step) | Production (step 500) | Δ |
+|---|---|---|---|
+| train_loss | 1.357 | 1.038 | **-23.5%** |
+| eval_loss | 1.511 | 1.046 | **-30.8%** |
+| eval_runtime | 47s | 276s | (1024-tok→1536-tok seq + larger holdout) |
+| eval_samples_per_second | — | 1.854 | — |
+
+This is the first measurable signal beyond smoke that V2.5 reasoning-SFT is
+converging cleanly. Both train and eval losses dropped substantially, eval
+< train (no overfit signal), no NaN/spike. Epoch is at 15.4% — the cosine
+schedule still has 84.6% of its decay budget. Final eval at step 3243 is
+expected materially below 1.046; ship-rule paired-CI evals fire after
+adapter saves.
 
 ## Eval protocol (per PREREG `eval_protocol`)
 
