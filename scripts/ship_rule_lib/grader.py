@@ -86,6 +86,32 @@ _LETTER_RE = re.compile(r"\b([A-J])\b", re.IGNORECASE)
 _YN_RE = re.compile(r"\b(yes|no|maybe)\b", re.IGNORECASE)
 
 
+# Reasoning-SFT thinking-trace separators. vllm v0.20 with NemotronH does NOT
+# split reasoning into a separate `reasoning_content` field; the </think> tag
+# (Qwen-style) appears inline at the end of the thinking chain. Strip
+# everything up to and including the final </think> so the grader scores the
+# post-thinking answer only — exactly the medomni canonical pattern from
+# tasks #63/#65/#66 (also see task brief 2026-05-06 thinking=True re-fire).
+_THINK_CLOSE_RE = re.compile(r"</think\s*>", re.IGNORECASE)
+_THINK_OPEN_RE = re.compile(r"<think\s*>", re.IGNORECASE)
+
+
+def strip_thinking(text: str) -> str:
+    """Return only the answer portion (everything after the final </think>).
+
+    If no </think> tag is present, returns the text unchanged. If multiple
+    </think> tags are present (rare; can happen on retried decodes), the
+    SLICE after the LAST one is returned. Stripping is conservative: the
+    raw text is preserved verbatim in the gen JSONL `response` field.
+    """
+    if not text:
+        return text
+    matches = list(_THINK_CLOSE_RE.finditer(text))
+    if not matches:
+        return text
+    return text[matches[-1].end():].strip()
+
+
 def grade_mcq_local(*, response: str, expected: str | None) -> dict:
     """Letter exact-match. Searches for last A-J letter in response."""
     if expected is None:
@@ -234,20 +260,25 @@ def grade_jsonl(
                 continue
             rec = json.loads(line)
             arm = rec.get("arm", "v0")
+            raw_response = rec.get("response", "")
+            answer_response = strip_thinking(raw_response)
             if benchmark in ("medqa", "medxpertqa-text"):
                 graded = grade_mcq_local(
-                    response=rec.get("response", ""),
+                    response=answer_response,
                     expected=rec.get("expected_answer"),
                 )
             elif benchmark == "pubmedqa":
                 graded = grade_yn_local(
-                    response=rec.get("response", ""),
+                    response=answer_response,
                     expected=rec.get("expected_answer"),
                 )
             elif benchmark == "healthbench-hard":
                 if primary_fn is None:
                     raise RuntimeError("HealthBench grader not initialized")
-                graded = grade_healthbench_record(record=rec, grader_fn=primary_fn)
+                # Pass a stripped record into rubric grading so the gpt-4.1
+                # judge scores the final answer, not the verbose reasoning.
+                stripped_rec = {**rec, "response": answer_response}
+                graded = grade_healthbench_record(record=stripped_rec, grader_fn=primary_fn)
             else:
                 raise ValueError(f"unknown benchmark in grade_jsonl: {benchmark}")
 
