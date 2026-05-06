@@ -56,8 +56,11 @@ repos:
             CLAUDE\.md|
             \.pre-commit-config\.yaml|
             scripts/hooks/.*|
-            findings/research/.*|
+            findings/.*|
             docs/.*\.md|
+            \.github/workflows/agent-pr-review\.yml|
+            \.github/workflows/clinical-skill-review\.yml|
+            scripts/clinical_skill_review\.py|
             mla/agent/llm_client\.py|
             mla/scripts/claude_torch_mutate\.py|
             mla/README\.md|
