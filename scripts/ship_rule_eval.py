@@ -202,6 +202,15 @@ def cmd_gen(args: argparse.Namespace) -> int:
         f"trial={args.trial} n_items={len(items)} out={out}"
     )
 
+    decode_params = generators.make_decode_params(
+        enable_thinking=args.enable_thinking,
+        max_tokens=args.max_new_tokens,
+    )
+    print(
+        f"[gen] decode_params: enable_thinking={args.enable_thinking} "
+        f"max_tokens={args.max_new_tokens}"
+    )
+
     n = 0
     for _rec in generators.gen_for_items(
         items=items,
@@ -213,6 +222,7 @@ def cmd_gen(args: argparse.Namespace) -> int:
         trial=args.trial,
         timeout_s=args.timeout_s,
         out_jsonl=out,
+        decode_params=decode_params,
     ):
         n += 1
         if n % 10 == 0:
@@ -746,6 +756,23 @@ def build_parser() -> argparse.ArgumentParser:
     s_gen.add_argument("--timeout-s", type=float, default=180.0)
     s_gen.add_argument("--limit", type=int, default=None)
     s_gen.add_argument("--smoke", action="store_true", help="1-item run for pre-flight")
+    # Reasoning-channel controls. Defaults match generators.DECODE_PARAMS
+    # (enable_thinking=True, max_tokens=8192), the canonical reasoning-SFT
+    # configuration. The thinking=False legacy run is reproducible by
+    # passing --no-enable-thinking --max-new-tokens 2048.
+    s_gen.add_argument(
+        "--enable-thinking",
+        dest="enable_thinking",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Pass enable_thinking=<this> in chat_template_kwargs (default: True).",
+    )
+    s_gen.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=8192,
+        help="Decode max_tokens budget (default: 8192 to fit thinking traces).",
+    )
     s_gen.set_defaults(func=cmd_gen)
 
     # grade (laptop)

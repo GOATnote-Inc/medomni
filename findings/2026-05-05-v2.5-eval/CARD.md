@@ -5,6 +5,22 @@
 **Pre-registration:** `findings/2026-05-05-v2.5-reasoning-sft/PREREG.yaml`.
 **Training run:** `/workspace/v2.5-prod` on evil-cyan-lobster (H200).
 
+## 2026-05-06 thinking=True re-fire (methodology fix)
+
+The first ship-rule eval run (artifact id `a676fa16791dcee2a`,
+`gen-laptop/`) was performed with `enable_thinking=False` and 1/4 PASS,
+which is methodologically deniable on a reasoning-SFT model whose entire
+training (MedReason 32K + medical-o1-reasoning-SFT 25K) optimized the
+thinking channel — evaluating that channel disabled measures the wrong
+thing. The 2026-05-06 re-fire turns it back on (canonical pattern from
+medomni tasks #63/#65/#66). Driver default flipped to
+`enable_thinking=True, max_tokens=8192` in `generators.DECODE_PARAMS`;
+overrides exposed as `--enable-thinking / --no-enable-thinking` and
+`--max-new-tokens` on `ship_rule_eval.py gen`. New artifacts land in
+`findings/2026-05-05-v2.5-eval-thinking/` (sibling dir, no overwrite of
+the thinking=False prior). The combined two-arm A5 ablation table will be
+appended to this CARD and `SHIP-RULE-RESULTS.md` once Phase E completes.
+
 ## Run identifiers (TBD on completion)
 
 | Field | Value |

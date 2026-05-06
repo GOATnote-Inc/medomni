@@ -23,12 +23,26 @@ from pathlib import Path
 import httpx
 
 # Decode params per PREREG eval_protocol.
+# Default is thinking=True with 8192-token budget so the reasoning-SFT model
+# can use the channel its training optimized. Override at gen call site
+# (gen_for_items takes `decode_params`) or via the --enable-thinking /
+# --max-new-tokens CLI flags on `ship_rule_eval.py gen`.
 DECODE_PARAMS = {
     "temperature": 0.0,
     "top_p": 1.0,
-    "max_tokens": 2048,
-    "chat_template_kwargs": {"enable_thinking": False},
+    "max_tokens": 8192,
+    "chat_template_kwargs": {"enable_thinking": True},
 }
+
+
+def make_decode_params(*, enable_thinking: bool, max_tokens: int) -> dict:
+    """Build a decode-params dict honoring the thinking + budget overrides."""
+    return {
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "max_tokens": int(max_tokens),
+        "chat_template_kwargs": {"enable_thinking": bool(enable_thinking)},
+    }
 
 
 def decode_params_hash(params: dict | None = None) -> str:
