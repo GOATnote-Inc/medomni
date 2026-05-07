@@ -97,12 +97,12 @@ def test_markdown_has_synthetic_frontmatter(case_id: str, kind: str) -> None:
     second = text.find("\n---\n", 4)
     assert second > 0, f"{case_id}/{kind}.md: missing frontmatter closer"
     frontmatter = text[4:second]
-    assert SYNTHETIC_MARKER in frontmatter, (
-        f"{case_id}/{kind}.md: missing '{SYNTHETIC_MARKER}' in frontmatter"
-    )
-    assert PHYSICIAN_REVIEW_MARKER in frontmatter, (
-        f"{case_id}/{kind}.md: missing '{PHYSICIAN_REVIEW_MARKER}' in frontmatter"
-    )
+    assert (
+        SYNTHETIC_MARKER in frontmatter
+    ), f"{case_id}/{kind}.md: missing '{SYNTHETIC_MARKER}' in frontmatter"
+    assert (
+        PHYSICIAN_REVIEW_MARKER in frontmatter
+    ), f"{case_id}/{kind}.md: missing '{PHYSICIAN_REVIEW_MARKER}' in frontmatter"
 
 
 # --------------------------------------------------------------------------- #
@@ -135,15 +135,15 @@ def test_grading_totals_match_weighted_scores(case_id: str) -> None:
     claimed_modified = float(grading["weighted_total"]["modified"])
     claimed_delta = float(grading["delta"])
 
-    assert abs(claimed_baseline - wt_baseline) < 1e-6, (
-        f"{case_id}: baseline weighted_total {claimed_baseline} != recomputed {wt_baseline}"
-    )
-    assert abs(claimed_modified - wt_modified) < 1e-6, (
-        f"{case_id}: modified weighted_total {claimed_modified} != recomputed {wt_modified}"
-    )
-    assert abs(claimed_delta - delta) < 1e-6, (
-        f"{case_id}: delta {claimed_delta} != recomputed {delta}"
-    )
+    assert (
+        abs(claimed_baseline - wt_baseline) < 1e-6
+    ), f"{case_id}: baseline weighted_total {claimed_baseline} != recomputed {wt_baseline}"
+    assert (
+        abs(claimed_modified - wt_modified) < 1e-6
+    ), f"{case_id}: modified weighted_total {claimed_modified} != recomputed {wt_modified}"
+    assert (
+        abs(claimed_delta - delta) < 1e-6
+    ), f"{case_id}: delta {claimed_delta} != recomputed {delta}"
     assert delta > 0, f"{case_id}: modified should beat baseline (positive delta); got {delta}"
 
 
@@ -156,9 +156,9 @@ def test_rubric_references_point_at_sibling_rubric() -> None:
     for case_id in CASES:
         case = _load_json(CORPUS_DIR / case_id / "case.json")
         ref = case["rubric_ref"]
-        assert ref == f"corpus/clinical-demo/{case_id}/rubric.json", (
-            f"{case_id}: rubric_ref should point at sibling rubric.json; got {ref!r}"
-        )
+        assert (
+            ref == f"corpus/clinical-demo/{case_id}/rubric.json"
+        ), f"{case_id}: rubric_ref should point at sibling rubric.json; got {ref!r}"
 
 
 def test_case_and_rubric_ids_agree() -> None:

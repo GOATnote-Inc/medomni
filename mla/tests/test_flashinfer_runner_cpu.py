@@ -81,9 +81,9 @@ def test_benchmark_result_has_matching_fields():
 
     np_fields = set(NpResult.__dataclass_fields__.keys())
     fi_fields = set(fir.BenchmarkResult.__dataclass_fields__.keys())
-    assert np_fields == fi_fields, (
-        f"BenchmarkResult fields drifted: numpy={np_fields}  flashinfer={fi_fields}"
-    )
+    assert (
+        np_fields == fi_fields
+    ), f"BenchmarkResult fields drifted: numpy={np_fields}  flashinfer={fi_fields}"
 
 
 def test_harness_raises_on_cpu_host():
