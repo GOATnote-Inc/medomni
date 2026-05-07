@@ -427,3 +427,5 @@ PRs open:
 - prism42-nemotron-med#37 — README refresh
 
 Next: iter-1 will check PR review/CI status, scan for fresh agent worktrees, smoke the live URL.
+
+**H100 cutover COMPLETE 2026-05-07 ~08:00 UTC.** medomni demo at https://www.thegoatnote.com/4UWHAt now served by exact-kind-orca H100 PCIe 80GB. Pipeline: Vercel→Cloudflare ad-hoc tunnel (yang-clinton-goals-ultimately.trycloudflare.com)→H100:8000 nemotron-serve. vllm flags match catfish parity: --reasoning-parser nemotron_v3, --enable-auto-tool-choice, --tool-call-parser qwen3_coder, multimodal limits, fp8 KV cache, 64K ctx, max-num-seqs 4, gpu-mem-util 0.90 (72/8.5 GB used). Vercel deploy medomni-ik3d6l3cy-goatnote.vercel.app Production Ready. /api/agent streaming SSE with reasoning-delta + text-delta verified. Catfish UNTOUCHED (still serving prism42 LiveKit per CLAUDE.md §1.4). Awaiting USER OK on (D) catfish prism42-tunnel-token rotation, (E) lobster+narwhal teardown, (E2) catfish teardown decision with §1.4 acknowledgment.
