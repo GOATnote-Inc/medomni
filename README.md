@@ -335,6 +335,14 @@ shipping the postmortem alongside the fix.
 - **v1.0 — pre-launch SOTA gate**: HealthBench Hard ≥ 0.55, MedAgentBench ≥ 0.70, MedQA-USMLE ≥ 0.85.
   If we miss the gate, we don't ship — accuracy degradation = revenue collapse.
 
+**Image-aware MedOmni (training imminent — next 24h)** — V_image-aware extends the Nemotron-Omni
+reasoning surface with native radiology comprehension via continued pretraining on the
+[GOATnote-Inc/medimage-corpus](https://github.com/GOATnote-Inc/medimage-corpus) registry: 134
+open-source medical imaging datasets across CT, X-ray, MRI, ultrasound, and image-text paired
+(VLM) collections, with download dispatchers and format converters wired for H200 ingest.
+Manifests cover ~7.4 PB cataloged and ~700 TB pullable in the open + registration tiers; the
+demo's `Imaging` rail (X-ray · MRI · panoramic) is the first surface that benefits.
+
 Detailed phasing and acceptance criteria: [`SPEC.md`](findings/research/2026-04-29-medomni-v1-northstar/SPEC.md) §8.
 
 ---
