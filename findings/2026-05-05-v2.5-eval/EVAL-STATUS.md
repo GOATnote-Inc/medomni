@@ -77,3 +77,131 @@ Fix: `scripts/rename_safetensors_keys.py` rewrote all 14 shards in place (re-enc
 - `findings/2026-05-05-v2.5-eval/LEAKAGE-AUDIT.md` (0/800 test prompts)
 - `findings/2026-05-05-v2.5-eval/REPRO.sh` (deterministic re-run script)
 - `findings/2026-05-05-v2.5-eval/stats.json` (full bootstrap output)
+
+
+## Re-fire Phase A (2026-05-06 — thinking=True)
+
+User-authorized methodology re-fire. Prior FAIL ran with `enable_thinking=False`
+on a reasoning-SFT model whose entire training optimized the thinking channel,
+making the verdict deniable. This re-fire turns thinking back on and treats
+the side-by-side as the A5 ablation.
+
+**Patch landed (PR #122 head 6c14c26):**
+- `scripts/ship_rule_lib/generators.py`: DECODE_PARAMS default flipped to
+  `enable_thinking=True, max_tokens=8192`. New helper `make_decode_params`.
+- `scripts/ship_rule_eval.py`: `gen` subcommand learns `--enable-thinking /
+  --no-enable-thinking` and `--max-new-tokens` (BooleanOptionalAction).
+- CARD.md updated with re-fire pointer + sibling-dir note.
+
+**Verifications:**
+- `python3 -c "import ast; ..."` parsed both files clean.
+- `ship_rule_eval.py smoke` → ALL CHECKS PASSED.
+- `ship_rule_eval.py gen --help` shows the two new flags with correct defaults.
+- `gh pr view 122` → PR Ready, head=6c14c26, CI re-queued (lint/unit/secrets-scan/
+  manifest-determinism/safety-engineer-review).
+
+New artifacts will land in `findings/2026-05-05-v2.5-eval-thinking/` (sibling
+dir, no overwrite of the thinking=False prior run). Combined two-arm A5 table
+will be appended to `SHIP-RULE-RESULTS.md` once Phase E completes.
+
+
+## Re-fire Phase B (2026-05-06 ~16:25 PT — endpoints + smoke)
+
+**Strategy pivot:** sequential V0 then V2.5 (single-endpoint at a time)
+instead of parallel V0:8003 + V2.5:8002. Single H200 has 143 GB; two
+30B-BF16 models @ 0.85 each = oversubscribed. Sequential gives full
+0.85 budget per arm, so KV cache is comfortable for 16K ctx + 8K thinking.
+
+**Stopped:** `judge-qwen` (cmd captured to lobster:/tmp/judge-launch-cmd.json),
+prior `v25-serve` (used --max-model-len=4096 — insufficient for thinking).
+
+**V0-serve up at lobster :8003:**
+- Image: `vllm/vllm-openai:v0.20.0`, ENTRYPOINT `["vllm","serve"]`
+- Model: `nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16`
+- Flags: `--max-model-len 16384 --gpu-memory-utilization 0.85
+  --max-num-seqs 8 --dtype bfloat16 --trust-remote-code --served-model-name v0`
+- Ready in 115s.
+
+**V0 thinking=True smoke (3 prompts, 8192 max_tokens, T=0):**
+- Q1 (acute MI cause): 137 completion tokens, coherent atherosclerosis answer.
+- Q2 (ACE-i vs labetalol pregnancy): 85 completion tokens, correct ACE-i,
+  contains explicit `</think>` tag — confirms model uses Qwen-style thinking
+  delimiter inline in `content` (NOT `reasoning_content` separately).
+- Q3 (meningitis ddx): 3201 completion tokens, full systematic ddx.
+- All three coherent. No truncation. Multi-step reasoning visible.
+
+**Grader patch (companion to driver):** added `strip_thinking()` to
+`ship_rule_lib/grader.py` — slices everything up to and including the LAST
+`</think>` tag before MCQ regex / yn regex / gpt-4.1 rubric grading. Raw
+response preserved verbatim in gen JSONL. Verified against 3 unit cases
+(post-tag, no-tag, multi-tag). Will commit alongside Phase E results.
+
+**Driver dirs for re-fire:**
+- Pod: `/workspace/v2.5-eval-thinking/gen/{bench}/{arm}_{seed}.jsonl`
+- Laptop pull: `findings/2026-05-05-v2.5-eval-thinking/gen/`
+- Output suffix not needed; new sibling eval-dir is the carrier.
+
+Next: fire V0 gen (12 runs) on lobster.
+
+
+## Re-fire Phase D + E milestone (2026-05-06 ~21:55 PT — thinking=True FINAL)
+
+**Run 2 (thinking=True) ship-rule verdict: 0/4 PASS → OVERALL FAIL.**
+
+Worse than Run 1 (thinking=False, 1/4). Thinking re-fire eliminated the only PASS
+(HB-hard delta flipped from +1.48pp → -1.31pp).
+
+**Per-benchmark, paired-bootstrap (n=600 paired = 200 items × 3 seeds):**
+
+| Benchmark | V0 | V2.5 | Δ | 95% CI | Rule | PASS? |
+|---|---:|---:|---:|:---:|---|:---:|
+| MedQA-USMLE | 83.50% | 84.67% | +1.17pp | [-1.00, +3.50] | delta_lower_ci > 0 | FAIL |
+| PubMedQA-L | 67.33% | 64.83% | -2.50pp | [-5.00, -0.17] | delta_lower_ci ≥ -1pp | FAIL |
+| MedXpertQA-Text | 33.00% | 31.67% | -1.33pp | [-4.83, +2.17] | delta_lower_ci ≥ +5pp | FAIL |
+| HealthBench-Hard | 12.52% | 11.21% | -1.31pp | [-3.71, +1.13] | delta > 0 | FAIL |
+
+**A5 ablation (thinking=False vs thinking=True), point-estimate Δ V2.5 − V0:**
+
+| Benchmark | thinking=False (Run 1) | thinking=True (Run 2) |
+|---|---:|---:|
+| MedQA-USMLE | -1.17pp | +1.17pp |
+| PubMedQA-L | -0.67pp | -2.50pp |
+| MedXpertQA-Text | -1.33pp | -1.33pp |
+| HealthBench-Hard | +1.48pp | -1.31pp |
+
+Thinking helps MedQA modestly (+2.3pp swing), regresses PubMedQA further
+(-1.8pp), no effect on MedXpert, and **flips HB-hard from PASS → FAIL** (-2.8pp swing).
+
+**Wall-clock and cost:**
+- Phase D rsync + dedupe: 5 min (HB v0 files dedup'd from 400→200 by item_id)
+- Phase D'-prime (gpt-4.1 preflight): pass, key length 164
+- Local-grader (medqa+pubmedqa+medxpertqa-text, 18 files): ~1 min
+- HB-hard gpt-4.1 grade (6 files in parallel): ~83 min wall-clock (20:47-22:10 PT effective)
+- gpt-4.1 calls: ~14,400 rubric grades (1200 items × ~12 rubrics avg)
+- Cost estimate: $20-30 USD (not metered explicitly by driver)
+
+**Issues encountered:**
+- The user's instructions specified `--in/--out` per-file invocation; the driver
+  takes `--eval-dir` for stats/leakage/manifest/report. Adjusted accordingly.
+- Driver lacks --resume; all 6 HB-hard graders were single-shot. None crashed.
+- 5/6 HB graders finished within 80 min; the 6th (v0_seed7919) finished 3 min later.
+
+**Leakage:** 0 hits across 800 test prompts vs `v1_train.jsonl` (10,178 rows).
+Same caveat as Run 1: V2.5-corpus-specific check is a follow-up.
+
+**Outputs landed under `findings/2026-05-05-v2.5-eval-thinking/`:**
+- `SHIP-RULE-RESULTS.md` (FAIL)
+- `SHIP-RULE-RESULTS.json` (paired-bootstrap CIs + Holm)
+- `MANIFEST.sha256` (84 files)
+- `LEAKAGE-AUDIT.md` (0/800)
+- `REPRO.sh`
+- `stats.json`
+
+**Verdict:** thinking=True does NOT rescue V2.5. Per PREREG `ship_rule.on_fail`,
+this branch terminates. Decision-tree options on issue #130:
+- V2.5b PREREG: adjust corpora (more diverse CoT, better task balance)
+- Skip to V2.7 tool-call SFT (pivot rather than iterate)
+- Investigate dataset issues with V2.5 reasoning-SFT data quality
+
+PR #122 stays Ready (NOT merged) per task instructions.
+
