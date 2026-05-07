@@ -206,8 +206,8 @@ def main() -> int:
         print(f"[info] reflect rows: {len(reflects)}")
         for r in reflects:
             print(
-                f"       {str(r.get('hypothesis','?')):<8s} "
-                f"{str(r.get('verdict','?')):<24s} {r.get('ts','?')}"
+                f"       {str(r.get('hypothesis', '?')):<8s} "
+                f"{str(r.get('verdict', '?')):<24s} {r.get('ts', '?')}"
             )
 
     if not failures:

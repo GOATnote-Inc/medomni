@@ -73,7 +73,7 @@ def assert_upstream_pinned() -> None:
         ref_path = UPSTREAM_DIR / ".git" / head.split(" ", 1)[1]
         if not ref_path.exists():
             raise UpstreamPinError(
-                f"simple-evals HEAD ref {head} does not resolve (missing " f"{ref_path})"
+                f"simple-evals HEAD ref {head} does not resolve (missing {ref_path})"
             )
         head = ref_path.read_text().strip()
     if head != UPSTREAM_PIN_SHA:

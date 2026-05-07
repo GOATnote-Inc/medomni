@@ -224,6 +224,6 @@ def test_no_gpu_rail_forbidden_fields_in_clinical_outputs(
             continue
         text = path.read_text()
         for f in forbidden:
-            assert f not in text, (
-                f"{path.name}: forbidden GPU-rail substring {f!r} in " f"clinical-demo output"
-            )
+            assert (
+                f not in text
+            ), f"{path.name}: forbidden GPU-rail substring {f!r} in clinical-demo output"

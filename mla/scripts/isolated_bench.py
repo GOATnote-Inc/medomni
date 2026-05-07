@@ -240,11 +240,11 @@ def format_markdown(summary: list[dict], grid: Grid, session_meta: dict) -> str:
             row = (
                 f"| {s['subject']} | {s['batch']} | {s['kv_len']} | {s['dtype']} "
                 f"| {s['replicates_ok']}/{s['replicates_total']} "
-                f"| {s['p50_mean_ns']/1000:.2f} "
-                f"| {s['p50_stdev_ns']/1000:.2f} "
-                f"| {s['p50_min_ns']/1000:.2f}..{s['p50_max_ns']/1000:.2f} "
+                f"| {s['p50_mean_ns'] / 1000:.2f} "
+                f"| {s['p50_stdev_ns'] / 1000:.2f} "
+                f"| {s['p50_min_ns'] / 1000:.2f}..{s['p50_max_ns'] / 1000:.2f} "
                 f"| {(s['compile_s_mean'] or 0):.1f} "
-                f"| {(s['cold_ns_mean'] or 0)/1000:.1f} "
+                f"| {(s['cold_ns_mean'] or 0) / 1000:.1f} "
                 f"| {(s['max_abs_error'] or 0):.2e} "
                 f"| {('yes' if s['errors'] else '')} |"
             )
@@ -268,7 +268,7 @@ def format_markdown(summary: list[dict], grid: Grid, session_meta: dict) -> str:
             continue
         fi_ref = fi["p50_mean_ns"]
         lines.append(
-            f"**B={b}  kv_len={k}  dtype={d}** -- flashinfer p50 mean = {fi_ref/1000:.2f} µs"
+            f"**B={b}  kv_len={k}  dtype={d}** -- flashinfer p50 mean = {fi_ref / 1000:.2f} µs"
         )
         for s in [
             ss for ss in summary if ss["batch"] == b and ss["kv_len"] == k and ss["dtype"] == d
@@ -370,10 +370,10 @@ def main() -> int:
                 rows.append(row)
                 st = row.get("status", "?")
                 pmed = (row.get("warm") or {}).get("p50_ns")
-                msg = f"p50={pmed/1000:.1f}us" if pmed else row.get("error", "")[:80]
+                msg = f"p50={pmed / 1000:.1f}us" if pmed else row.get("error", "")[:80]
                 print(
                     f"  [{i:>3d}/{total}] {subj:<22s} B={b} k={k:>5d} d={d} r={rep} "
-                    f"wall={time.perf_counter()-t0:5.1f}s  {st}  {msg}"
+                    f"wall={time.perf_counter() - t0:5.1f}s  {st}  {msg}"
                 )
     finally:
         _try_reset_clocks()

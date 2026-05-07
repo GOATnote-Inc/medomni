@@ -148,7 +148,7 @@ def do_dry_run(args: argparse.Namespace, run_id: str) -> int:
 
     print("(dry-run) medqa_runner.py plan:")
     print("  benchmark        : medqa")
-    print("  role             : null-result control " "(|harness - baseline| <= 0.01 noise floor)")
+    print("  role             : null-result control (|harness - baseline| <= 0.01 noise floor)")
     print(f"  manifest         : {manifest_path}")
     print(f"  out              : {out_path}")
     print(f"  seed             : {args.seed}")

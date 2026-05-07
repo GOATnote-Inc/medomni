@@ -246,7 +246,7 @@ def test_H5_2_summarizes_the_real_guidance():
     assert seq_drift >= 10 * acc_drift, (
         f"Expected >=10x drift gap between sequential-bf16 and "
         f"fp32-accum; got seq={seq_drift:.3e}, acc={acc_drift:.3e} "
-        f"(ratio {seq_drift/max(acc_drift,1e-12):.1f}x). Guidance for "
+        f"(ratio {seq_drift / max(acc_drift, 1e-12):.1f}x). Guidance for "
         f"mutation prompts ('demand fp32 accumulator') loses its numeric "
         f"grounding."
     )

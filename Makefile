@@ -221,3 +221,13 @@ adversarial-probe-dry: ## Adversarial-probe dry run (no HTTP) — verifies CARD 
 	@command -v $(PY) >/dev/null 2>&1 && PYBIN="$(PY)" || PYBIN="python3"; \
 	  $$PYBIN scripts/adversarial_probe.py --dry-run --findings-dir /tmp/probe-dry-run; \
 	  echo "Dry-run CARD: /tmp/probe-dry-run/"
+
+.PHONY: ship-rule-smoke
+ship-rule-smoke: ## V2.5 ship-rule eval driver self-test (no GPU, no network)
+	@command -v $(PY) >/dev/null 2>&1 && PYBIN="$(PY)" || PYBIN="python3"; \
+	  $$PYBIN scripts/ship_rule_eval.py smoke
+
+.PHONY: ship-rule-test
+ship-rule-test: ## Run the ship-rule eval driver unit tests
+	@command -v $(PY) >/dev/null 2>&1 && PYBIN="$(PY)" || PYBIN="python3"; \
+	  $$PYBIN -m pytest tests/test_ship_rule_eval.py -q

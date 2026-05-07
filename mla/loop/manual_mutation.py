@@ -128,9 +128,7 @@ def main() -> int:
     naive_score = score(naive.tokens_per_sec, cov_stability(naive))
     absorbed_score = score(absorbed.tokens_per_sec, cov_stability(absorbed))
     winner = "absorbed" if absorbed_score > naive_score else "naive"
-    print(
-        f"\n[score] naive={naive_score:,.2f}  absorbed={absorbed_score:,.2f}  " f"winner={winner}"
-    )
+    print(f"\n[score] naive={naive_score:,.2f}  absorbed={absorbed_score:,.2f}  winner={winner}")
 
     # ---- Step 5: persist ----
     out_path = Path(__file__).resolve().parent.parent / "results" / "logs" / "manual_mutation.json"

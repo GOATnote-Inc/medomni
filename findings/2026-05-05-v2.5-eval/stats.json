@@ -1,0 +1,106 @@
+{
+  "generated_at": "2026-05-06T23:03:26.749065Z",
+  "alpha_per_test": 0.05,
+  "family_alpha": 0.05,
+  "n_resamples": 10000,
+  "seeds_per_arm": [
+    42,
+    123,
+    7919
+  ],
+  "per_benchmark": {
+    "medqa": {
+      "status": "ok",
+      "n_paired": 600,
+      "n_dropped_unpaired": 0,
+      "v0_mean": 0.695,
+      "v25_mean": 0.6833333333333333,
+      "delta": -0.011666666666666603,
+      "ci_low": -0.028333333333333332,
+      "ci_high": 0.005,
+      "p_two_sided": 0.198,
+      "cohen_d_z": -0.05720061593259473,
+      "power_post_hoc": 0.0011596284752616315,
+      "n_resamples": 10000
+    },
+    "pubmedqa": {
+      "status": "ok",
+      "n_paired": 600,
+      "n_dropped_unpaired": 0,
+      "v0_mean": 0.5416666666666666,
+      "v25_mean": 0.535,
+      "delta": -0.006666666666666599,
+      "ci_low": -0.02666666666666667,
+      "ci_high": 0.013333333333333334,
+      "p_two_sided": 0.563,
+      "cohen_d_z": -0.026477854501945636,
+      "power_post_hoc": 0.010911746876687722,
+      "n_resamples": 10000
+    },
+    "medxpertqa-text": {
+      "status": "ok",
+      "n_paired": 600,
+      "n_dropped_unpaired": 0,
+      "v0_mean": 0.2916666666666667,
+      "v25_mean": 0.2783333333333333,
+      "delta": -0.013333333333333364,
+      "ci_low": -0.03166666666666667,
+      "ci_high": 0.005,
+      "p_two_sided": 0.1684,
+      "cohen_d_z": -0.056052502457370784,
+      "power_post_hoc": 0.0012728579166230158,
+      "n_resamples": 10000
+    },
+    "healthbench-hard": {
+      "status": "ok",
+      "n_paired": 600,
+      "n_dropped_unpaired": 0,
+      "v0_mean": 0.008737807888111439,
+      "v25_mean": 0.023553859153352615,
+      "delta": 0.014816051265241176,
+      "ci_low": -0.006559993745970241,
+      "ci_high": 0.03619557003344283,
+      "p_two_sided": 0.1769,
+      "cohen_d_z": 0.05512277162182625,
+      "power_post_hoc": 0.38413942157173103,
+      "n_resamples": 10000
+    }
+  },
+  "holm_bonferroni": {
+    "medqa": false,
+    "pubmedqa": false,
+    "medxpertqa-text": false,
+    "healthbench-hard": false
+  },
+  "ship_rule": {
+    "medqa": {
+      "rule": "delta_lower_ci > 0",
+      "lower_bound": 0.0,
+      "value_against_rule": -0.028333333333333332,
+      "passed": false,
+      "holm_rejects_null": false
+    },
+    "medxpertqa-text": {
+      "rule": "delta_lower_ci >= +5pp",
+      "lower_bound": 0.05,
+      "value_against_rule": -0.03166666666666667,
+      "passed": false,
+      "holm_rejects_null": false
+    },
+    "healthbench-hard": {
+      "rule": "delta_point_estimate > 0",
+      "lower_bound": null,
+      "value_against_rule": 0.014816051265241176,
+      "passed": true,
+      "holm_rejects_null": false
+    },
+    "pubmedqa": {
+      "rule": "delta_lower_ci >= -1pp (no regression)",
+      "lower_bound": -0.01,
+      "value_against_rule": -0.02666666666666667,
+      "passed": false,
+      "holm_rejects_null": false
+    }
+  },
+  "overall_pass": false
+}

@@ -58,9 +58,7 @@ def make_reward_model_judge(
     client = httpx.Client(base_url=base_url, timeout=timeout_s)
 
     def _judge(conversation: str, item: RubricItem) -> dict:
-        prompt = (
-            f"{conversation}\n\n" f"Rubric criterion (judge whether it is met): {item.criterion}"
-        )
+        prompt = f"{conversation}\n\nRubric criterion (judge whether it is met): {item.criterion}"
         last_error: str | None = None
         for attempt in range(max_retries):
             started = time.time()

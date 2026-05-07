@@ -255,7 +255,7 @@ def main() -> int:
             continue
         speedup = cpu_s / gpu_s
         rows.append({"algo": algo, "cpu_s": cpu_s, "cugraph_s": gpu_s, "speedup": speedup})
-        print(f"  {algo:32s}  cpu={cpu_s:8.3f}s  gpu={gpu_s:8.3f}s  " f"speedup={speedup:7.2f}x")
+        print(f"  {algo:32s}  cpu={cpu_s:8.3f}s  gpu={gpu_s:8.3f}s  speedup={speedup:7.2f}x")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps({"suites": suites, "speedup_table": rows}, indent=2))

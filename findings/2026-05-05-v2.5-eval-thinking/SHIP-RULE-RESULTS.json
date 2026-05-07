@@ -1,0 +1,113 @@
+{
+  "generated_at": "2026-05-07T04:55:39.270569Z",
+  "prereg": "findings/2026-05-05-v2.5-reasoning-sft/PREREG.yaml",
+  "git_head": "490a3e59901b8e2795f0e6ad16dd7a3b8d523201",
+  "stats": {
+    "generated_at": "2026-05-07T04:53:43.643364Z",
+    "alpha_per_test": 0.05,
+    "family_alpha": 0.05,
+    "n_resamples": 10000,
+    "seeds_per_arm": [
+      42,
+      123,
+      7919
+    ],
+    "per_benchmark": {
+      "medqa": {
+        "status": "ok",
+        "n_paired": 600,
+        "n_dropped_unpaired": 0,
+        "v0_mean": 0.835,
+        "v25_mean": 0.8466666666666667,
+        "delta": 0.011666666666666714,
+        "ci_low": -0.01,
+        "ci_high": 0.035,
+        "p_two_sided": 0.3072,
+        "cohen_d_z": 0.04168587410888057,
+        "power_post_hoc": 0.26639181326136346,
+        "n_resamples": 10000
+      },
+      "pubmedqa": {
+        "status": "ok",
+        "n_paired": 600,
+        "n_dropped_unpaired": 0,
+        "v0_mean": 0.6733333333333333,
+        "v25_mean": 0.6483333333333333,
+        "delta": -0.025000000000000022,
+        "ci_low": -0.05,
+        "ci_high": -0.0016666666666666668,
+        "p_two_sided": 0.041,
+        "cohen_d_z": -0.08278615168465775,
+        "power_post_hoc": 0.00012000438641340816,
+        "n_resamples": 10000
+      },
+      "medxpertqa-text": {
+        "status": "ok",
+        "n_paired": 600,
+        "n_dropped_unpaired": 0,
+        "v0_mean": 0.33,
+        "v25_mean": 0.31666666666666665,
+        "delta": -0.013333333333333364,
+        "ci_low": -0.04833333333333333,
+        "ci_high": 0.021666666666666667,
+        "p_two_sided": 0.4451,
+        "cohen_d_z": -0.03084963584511654,
+        "power_post_hoc": 0.008186070462058104,
+        "n_resamples": 10000
+      },
+      "healthbench-hard": {
+        "status": "ok",
+        "n_paired": 600,
+        "n_dropped_unpaired": 0,
+        "v0_mean": 0.12515930873664294,
+        "v25_mean": 0.11205068267057096,
+        "delta": -0.01310862606607198,
+        "ci_low": -0.037113700222363225,
+        "ci_high": 0.011298161242505848,
+        "p_two_sided": 0.2961,
+        "cohen_d_z": -0.04371584711216642,
+        "power_post_hoc": 0.003307102292436137,
+        "n_resamples": 10000
+      }
+    },
+    "holm_bonferroni": {
+      "medqa": false,
+      "pubmedqa": false,
+      "medxpertqa-text": false,
+      "healthbench-hard": false
+    },
+    "ship_rule": {
+      "medqa": {
+        "rule": "delta_lower_ci > 0",
+        "lower_bound": 0.0,
+        "value_against_rule": -0.01,
+        "passed": false,
+        "holm_rejects_null": false
+      },
+      "medxpertqa-text": {
+        "rule": "delta_lower_ci >= +5pp",
+        "lower_bound": 0.05,
+        "value_against_rule": -0.04833333333333333,
+        "passed": false,
+        "holm_rejects_null": false
+      },
+      "healthbench-hard": {
+        "rule": "delta_point_estimate > 0",
+        "lower_bound": null,
+        "value_against_rule": -0.01310862606607198,
+        "passed": false,
+        "holm_rejects_null": false
+      },
+      "pubmedqa": {
+        "rule": "delta_lower_ci >= -1pp (no regression)",
+        "lower_bound": -0.01,
+        "value_against_rule": -0.05,
+        "passed": false,
+        "holm_rejects_null": false
+      }
+    },
+    "overall_pass": false
+  },
+  "manifest_sha256_file": "MANIFEST.sha256",
+  "leakage_audit_md": "LEAKAGE-AUDIT.md"
+}

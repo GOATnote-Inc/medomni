@@ -5,6 +5,22 @@
 **Pre-registration:** `findings/2026-05-05-v2.5-reasoning-sft/PREREG.yaml`.
 **Training run:** `/workspace/v2.5-prod` on evil-cyan-lobster (H200).
 
+## 2026-05-06 thinking=True re-fire (methodology fix)
+
+The first ship-rule eval run (artifact id `a676fa16791dcee2a`,
+`gen-laptop/`) was performed with `enable_thinking=False` and 1/4 PASS,
+which is methodologically deniable on a reasoning-SFT model whose entire
+training (MedReason 32K + medical-o1-reasoning-SFT 25K) optimized the
+thinking channel — evaluating that channel disabled measures the wrong
+thing. The 2026-05-06 re-fire turns it back on (canonical pattern from
+medomni tasks #63/#65/#66). Driver default flipped to
+`enable_thinking=True, max_tokens=8192` in `generators.DECODE_PARAMS`;
+overrides exposed as `--enable-thinking / --no-enable-thinking` and
+`--max-new-tokens` on `ship_rule_eval.py gen`. New artifacts land in
+`findings/2026-05-05-v2.5-eval-thinking/` (sibling dir, no overwrite of
+the thinking=False prior). The combined two-arm A5 ablation table will be
+appended to this CARD and `SHIP-RULE-RESULTS.md` once Phase E completes.
+
 ## Run identifiers (TBD on completion)
 
 | Field | Value |
@@ -73,8 +89,13 @@ Smoke passed: train loss decreased, eval loss only slightly higher (no overfit),
 | iter-105 | 00:57 | 490/3243 | train 0.990 | continuing to drop |
 | iter-106 | 01:01 | 500/3243 | train 1.038 | step 500 reached |
 | **iter-108** | **01:05** | **500 (eval)** | **eval 1.046** | **first eval — vs smoke 1.511 = -30.8%** |
-| ... | | | | |
-| (final) | TBD | 3243/3243 | TBD | epoch complete; ship-rule eval fires |
+| (mid) | 04:33 | 1000 (eval) | eval 1.029 | -31.9% vs smoke; checkpoint-1000 saved |
+| (mid) | 08:03 | 1500 (eval) | eval 1.020 | -32.5% vs smoke |
+| **iter-276** | **11:35** | **2000 (eval)** | **eval 1.016** | **-32.8% vs smoke; checkpoint-2000 saved (146MB adapter); 61.7% epoch** |
+| **iter-338** | **15:13** | **2500 (eval)** | **eval 1.013** | **-33.0% vs smoke; 77.1% epoch** |
+| **iter-400** | **18:56** | **3000 (eval)** | **eval 1.012** | **-33.0% vs smoke; 92.5% epoch; checkpoint-3000 saved** |
+| **iter-429** | **20:46** | **3243 (FINAL)** | **train 0.992 / eval 1.012** | **🎯 RUN COMPLETE. walltime 23h 10min. Adapter saved. sha256: `94d1f8d1eb23fad2e4d7ad6e5c5123963f1ef8795cad44aa2ca4b3221ed59b3c`** |
+| (next) | TBD | ship-rule eval | TBD | paired-bootstrap eval fires; this is the gating evidence |
 
 ## **MILESTONE — first held-out eval (step 500, iter-108)**
 
@@ -91,6 +112,28 @@ converging cleanly. Both train and eval losses dropped substantially, eval
 schedule still has 84.6% of its decay budget. Final eval at step 3243 is
 expected materially below 1.046; ship-rule paired-CI evals fire after
 adapter saves.
+
+## Eval driver (NEW 2026-05-06)
+
+Unified two-stage driver lives at `scripts/ship_rule_eval.py` (PR open).
+Subcommands: `smoke`, `gen` (pod-side), `grade` (laptop-side, gpt-4.1
+primary), `stats` (paired bootstrap + Holm-Bonferroni), `manifest`,
+`leakage`, `report`. Stage 1 emits per-item JSONL with prompt sha + decode
+params hash; stage 2 reads on the laptop, runs gpt-4.1 grader (after a
+mandatory pre-flight call to catch silent 401s — see memory
+`feedback_eval_preflight_judge_key.md`), and writes paired results.
+Stats engine: paired bootstrap, 10K resamples, 95% CI, Holm-Bonferroni
+across the 4-benchmark family at family-wise alpha 0.05.
+
+The driver authors `SHIP-RULE-RESULTS.{json,md}`, `MANIFEST.sha256`,
+`LEAKAGE-AUDIT.md`, and `REPRO.sh` into this directory once the eval
+fires. Sub-commands tested via `tests/test_ship_rule_eval.py` (12 cases:
+paired-CI math, Holm step-down, manifest roundtrip, MinHash overlap,
+Levenshtein extremes, post-hoc power monotonicity).
+
+Pre-PR readiness: the driver is wired but DEFERRED-FIRE pending user
+authorization. The manifest at the bottom of this CARD records what
+subset of the pipeline has run.
 
 ## Eval protocol (per PREREG `eval_protocol`)
 
