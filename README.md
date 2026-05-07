@@ -21,9 +21,17 @@
 # MedOmni
 
 **Sovereign nurse-first medical reasoning on NVIDIA's open-component stack.**
-Held-out **0.378** mean across 30 fixtures spanning 9 medical subdomains,
-**deterministic** across N=3 seeded trials with cross-family judge,
-manifest sha256 `f9372e0cc948` byte-stable. Released open as proof-of-quality.
+
+**Headline (2026-05-07, paired-bootstrap N=600 per benchmark, gpt-4.1 grader, `thinking=True`):**
+
+| Benchmark | V0 (Nemotron-3-Nano-Omni-30B-Reasoning, FP8) |
+|---|---:|
+| MedQA-USMLE | **83.50%** |
+| PubMedQA-L | **67.33%** |
+| MedXpertQA-Text | **33.00%** |
+| HealthBench-Hard | **12.52%** |
+
+These are the **base-model-with-thinking-enabled** numbers. The V2.5 reasoning-SFT we trained on top did NOT improve them — see PR [#122](https://github.com/GOATnote-Inc/medomni/pull/122) and [`findings/2026-05-05-v2.5-eval/DISPOSITION.md`](findings/2026-05-05-v2.5-eval/DISPOSITION.md) for the full A5 ablation (thinking=False vs thinking=True, 0/4 ship-rule criteria PASS in either polarity). The negative result + reproducibility audit is the rigor story; the strong V0 baseline is the deployment story.
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![CUDA](https://img.shields.io/badge/CUDA-13.2-76B900.svg)](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html)
@@ -54,25 +62,25 @@ The training / eval / methodology stack below is the proof-of-quality behind tha
 
 For the **world-class trajectory** (V2.5 reasoning-SFT → V2.7 tool-call SFT → V3 GRPO → V3.5 DPO refusal → V_final HF release as Apache-2.0; eval gauntlet with MedAgentBench as the headline target), see the navigable index at [`findings/INDEX.md`](findings/INDEX.md). 16+ pre-registered documents covering every stage with surgical recipe additions per the iter-38 4-agent improvement-dimensions synthesis; ~32-41 H200-hrs total.
 
-**Live status (2026-05-05):** all 3 user-action pre-flight blockers cleared (HF_TOKEN install, lobster Stage B prune, Omni BF16 base download). V2.5 reasoning-SFT **production training in flight** on lobster H200 (3243-step full epoch, ~22 hr wall-clock, seq=1536 + LoRA r=64 on attention/Mamba projectors + mlp1). Per-stage recipe amendments landed: V2.7 → Megatron-Bridge cookbook (12.4× speedup vs HF PEFT-eager); V3 → +PRM channel at weight 0.15 (Med-PRM EMNLP 2025 +13.5pp on MedQA-class); V3.5 → Cal-DPO + `<abstain/>` token + Health-ORSC-Bench joint ship rule. V_final inference scaffolding (system prompt + verifier-vote + Skills) staged at [`mvp/medomni-inference/`](mvp/medomni-inference/) per the synthesis.
+**Live status (2026-05-07):** V2.5 reasoning-SFT eval landed (PR [#122](https://github.com/GOATnote-Inc/medomni/pull/122)) — A5 ablation closed with both arms FAILing the pre-registered ship rule. Real story is the V0 baseline strength (numbers above) once `enable_thinking=True` is set as canonical. Production demo at [`/4UWHAt`](https://www.thegoatnote.com/4UWHAt) now serves V0 FP8 from a single H100 (Hopper, 80 GB) — migrated from the prior 3-GPU B300+H200×2 fleet on 2026-05-07 with ~80% cost reduction (~$15-20/hr → $3.70/hr). The Karpathy-autoresearcher training loop (catfish + lobster + narwhal) is decommissioned; future SFT runs (V2.5b corpus-tweak, V2.7 PRM channel) wait for the next training-budget cycle (Issue [#130](https://github.com/GOATnote-Inc/medomni/issues/130)).
 
 ---
 
-## Headline result
+## Headline result (current — 2026-05-07)
 
-> **Held-out mean 0.385 ± 0.000** across 6 chemoprevention fixtures, **N=3 seeded trials**,
-> manifest byte-stable, score progression **v0 0.273 → v1.0 0.385 (+41%)**.
+> **V0 baseline with thinking=True is the medical reasoner.** Pre-registered paired-bootstrap eval (PR [#122](https://github.com/GOATnote-Inc/medomni/pull/122), N=600 per benchmark, 4 benchmarks × 3 seeds, gpt-4.1 grader, sha256-verified manifest):
 >
-> 5 of 6 targeted fixtures lifted monotonically vs v0:
-> HPV +0.22, 5ARI +0.14, bisphosphonate +0.12, smoking +0.11, aspirin +0.08.
+> - **MedQA-USMLE 83.50%** — competitive with claimed-SOTA medical LLMs on the same harness
+> - **HealthBench-Hard 12.52%** — vs published OpenAI-paper baseline on the same rubric
+> - **PubMedQA-L 67.33%**, **MedXpertQA-Text 33.00%**
 >
-> Cross-family judge: Qwen2.5-7B-Instruct (sovereign, no cloud LLM keys in any path).
-> Comparator verdict: **PASS** on v0 → v1.0 (+0.112, no major regression).
+> The V2.5 reasoning-SFT we trained on top (MedReason 32K + medical-o1-reasoning-SFT 25K + R1-distill-USMLE) **did not add value** — both thinking=False (1/4 PASS, deniable) and thinking=True (0/4 PASS, canonical) FAILed the pre-registered ship-rule criteria. The A5 ablation is documented in [`findings/2026-05-05-v2.5-eval/DISPOSITION.md`](findings/2026-05-05-v2.5-eval/DISPOSITION.md).
 >
-> SPEC §6 ≥ 0.45 gate **NOT YET MET** (-0.065). Closes via Phase 1.6 broader corpus +
-> Phase 1.7 fixture scale + Phase 2.3 ensemble cross-judge.
->
-> Showcase artifact: [`results/canonical-2026-05-01-hb-hard-n1000/CARD.md`](results/canonical-2026-05-01-hb-hard-n1000/CARD.md)
+> The **negative-result-with-rigor** is the publication-grade story; the strong V0 baseline is the deployment story. Both are reproducible end-to-end via [`findings/2026-05-05-v2.5-eval-thinking/REPRO.sh`](findings/2026-05-05-v2.5-eval-thinking/REPRO.sh) on a fresh GPU.
+
+### Prior anchor (2026-05-01, superseded)
+
+> Held-out mean 0.385 ± 0.000 across 6 chemoprevention fixtures, N=3 seeded trials, manifest byte-stable, score progression v0 0.273 → v1.0 0.385 (+41%). HPV +0.22, 5ARI +0.14, bisphosphonate +0.12, smoking +0.11, aspirin +0.08. Cross-family judge: Qwen2.5-7B-Instruct. Showcase artifact: [`results/canonical-2026-05-01-hb-hard-n1000/CARD.md`](results/canonical-2026-05-01-hb-hard-n1000/CARD.md). Superseded by the 4-benchmark paired-bootstrap eval above; preserved here for historical audit.
 
 This is the v0.1.0 public scaffold. The held-out mean is honest, the methodology is documented
 in [`docs/methodology.md`](findings/research/2026-04-29-medomni-v0/methodology-status.md), and the
