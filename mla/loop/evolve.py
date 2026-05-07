@@ -180,7 +180,7 @@ def _pick_best_overall(islands: list[Island]) -> ScoredCandidate | None:
 
 def _population_summary(island: Island) -> str:
     lines = [
-        f"  {i+1}. hash={m.candidate.source_hash} score={m.score:,.1f}"
+        f"  {i + 1}. hash={m.candidate.source_hash} score={m.score:,.1f}"
         for i, m in enumerate(island.members)
     ]
     return f"island={island.name!r}; current members:\n" + "\n".join(lines) if lines else "(empty)"

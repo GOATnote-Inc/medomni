@@ -109,7 +109,7 @@ def strip_thinking(text: str) -> str:
     matches = list(_THINK_CLOSE_RE.finditer(text))
     if not matches:
         return text
-    return text[matches[-1].end():].strip()
+    return text[matches[-1].end() :].strip()
 
 
 def grade_mcq_local(*, response: str, expected: str | None) -> dict:

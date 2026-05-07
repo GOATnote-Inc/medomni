@@ -144,7 +144,7 @@ def main() -> int:
     )
     baseline_b = benchmark_torch(b_compiled, inputs, warmup=20, iters=50, batch_size=cfg.batch)
     print(
-        f"  median={baseline_b.median_ns/1000:.1f}us  tok/s={baseline_b.tokens_per_sec:.0f}  "
+        f"  median={baseline_b.median_ns / 1000:.1f}us  tok/s={baseline_b.tokens_per_sec:.0f}  "
         f"max_err={baseline_v.max_abs_error:.2e}"
     )
 
@@ -163,7 +163,7 @@ def main() -> int:
     )
     fi = run_flashinfer_mla_decode(fi_cfg)
     print(
-        f"  median={fi['bench']['median_ns']/1000:.1f}us  tok/s={fi['bench']['tokens_per_sec']:.0f}"
+        f"  median={fi['bench']['median_ns'] / 1000:.1f}us  tok/s={fi['bench']['tokens_per_sec']:.0f}"
     )
 
     # Claude candidates.
@@ -171,7 +171,7 @@ def main() -> int:
     cand_results = []
     for rec in payload["records"]:
         if not rec.get("compile_ok"):
-            print(f"[skip] #{rec['index']} safety/compile: {rec.get('compile_error','?')[:120]}")
+            print(f"[skip] #{rec['index']} safety/compile: {rec.get('compile_error', '?')[:120]}")
             cand_results.append(
                 {
                     "index": rec["index"],
@@ -189,7 +189,7 @@ def main() -> int:
         cand_results.append(r)
         if r.get("status") == "pass":
             print(
-                f"  [PASS] median={r['median_ns']/1000:.1f}us  "
+                f"  [PASS] median={r['median_ns'] / 1000:.1f}us  "
                 f"tok/s={r['tokens_per_sec']:.0f}  max_err={r['max_abs_error']:.2e}  "
                 f"compile={r['compile_s']:.1f}s"
             )
@@ -203,16 +203,16 @@ def main() -> int:
     print("\n=== final ranking ===")
     fi_med = fi["bench"]["median_ns"]
     base_med = baseline_b.median_ns
-    print(f"  flashinfer                  : median={fi_med/1000:7.2f}us  1.00x (ceiling)")
+    print(f"  flashinfer                  : median={fi_med / 1000:7.2f}us  1.00x (ceiling)")
     print(
-        f"  baseline_bf16+max-autotune  : median={base_med/1000:7.2f}us  "
-        f"{base_med/fi_med:.2f}x (parent)"
+        f"  baseline_bf16+max-autotune  : median={base_med / 1000:7.2f}us  "
+        f"{base_med / fi_med:.2f}x (parent)"
     )
     for r in passing:
         ratio_fi = r["median_ns"] / fi_med
         ratio_base = r["median_ns"] / base_med
         print(
-            f"  {r['name']:<27s} : median={r['median_ns']/1000:7.2f}us  "
+            f"  {r['name']:<27s} : median={r['median_ns'] / 1000:7.2f}us  "
             f"{ratio_fi:.2f}x FI   {ratio_base:.2f}x parent   "
             f"{'***BEATS PARENT***' if ratio_base < 1.0 else ''}"
             f"{'  ***BEATS FI***' if ratio_fi < 1.0 else ''}"

@@ -330,8 +330,7 @@ def _load_healthbench_jsonl(path: Path) -> list[dict]:
             prompt = row.get("prompt")
             if isinstance(prompt, list):
                 messages = [
-                    {"role": m.get("role", "user"), "content": m.get("content", "")}
-                    for m in prompt
+                    {"role": m.get("role", "user"), "content": m.get("content", "")} for m in prompt
                 ]
             elif isinstance(prompt, str):
                 messages = [{"role": "user", "content": prompt}]

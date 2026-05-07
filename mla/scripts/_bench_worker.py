@@ -297,7 +297,7 @@ def main() -> int:
             backend = args.subject.split("=", 1)[1]
             if backend not in ("auto", "cutlass", "fa3", "fa2"):
                 raise ValueError(
-                    f"flashinfer backend {backend!r} not in " f"{{auto, cutlass, fa3, fa2}}"
+                    f"flashinfer backend {backend!r} not in {{auto, cutlass, fa3, fa2}}"
                 )
             invoke, build_info = _build_flashinfer(config, backend=backend)
         elif args.subject == "flashinfer_cudagraph":

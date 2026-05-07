@@ -706,7 +706,7 @@ def serialize_subgraph_for_prompt(sub) -> str:
         "Nodes:",
     ]
     for n, attrs in sub.nodes(data=True):
-        lines.append(f"  {n} :: {attrs.get('label', n)} ({attrs.get('type','?')})")
+        lines.append(f"  {n} :: {attrs.get('label', n)} ({attrs.get('type', '?')})")
     lines.append("")
     lines.append("Edges:")
     for u, v, attrs in sub.edges(data=True):

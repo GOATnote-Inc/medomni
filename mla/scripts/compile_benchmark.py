@@ -162,7 +162,7 @@ def run(cfg: TorchMLAConfig) -> dict:
             results.append(rec)
             if rec["passed"]:
                 print(
-                    f"  {mode_label:<20s} median={rec['median_ns']/1000:7.1f}us  "
+                    f"  {mode_label:<20s} median={rec['median_ns'] / 1000:7.1f}us  "
                     f"tok/s={rec['tokens_per_sec']:>8.0f}  "
                     f"compile={rec['compile_s']:>5.1f}s  "
                     f"max_err={rec['max_abs_error']:.2e}"
@@ -228,12 +228,12 @@ def main() -> int:
             if rec is None or not rec["passed"] or rec["median_ns"] is None:
                 row += f"{'--':>15s} "
             else:
-                row += f"{rec['median_ns']/1000:>12.1f} us "
+                row += f"{rec['median_ns'] / 1000:>12.1f} us "
         print(row)
 
     fi_median = summary["flashinfer"]["bench"]["median_ns"]
     print(
-        f"\nflashinfer@{cfg.kv_len}: {fi_median/1000:.1f} us  "
+        f"\nflashinfer@{cfg.kv_len}: {fi_median / 1000:.1f} us  "
         f"(tok/s={summary['flashinfer']['bench']['tokens_per_sec']:.0f})"
     )
 
@@ -243,7 +243,7 @@ def main() -> int:
         best = min(passing, key=lambda r: r["median_ns"])
         ratio = best["median_ns"] / fi_median if fi_median > 0 else float("inf")
         print(
-            f"\n[winner] {best['name']}  median={best['median_ns']/1000:.1f}us  "
+            f"\n[winner] {best['name']}  median={best['median_ns'] / 1000:.1f}us  "
             f"is {ratio:.2f}x flashinfer"
         )
 

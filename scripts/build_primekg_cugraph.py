@@ -175,7 +175,7 @@ def main() -> int:
             node_name=str(row.node_name),
             node_source=str(row.node_source),
         )
-    print(f"[primekg] nx nodes added: {G_nx.number_of_nodes():,} " f"({time.time() - t0:.2f}s)")
+    print(f"[primekg] nx nodes added: {G_nx.number_of_nodes():,} ({time.time() - t0:.2f}s)")
 
     # Add edges with attrs.
     t0 = time.time()
@@ -187,7 +187,7 @@ def main() -> int:
             relation=str(row.relation),
             display_relation=str(row.display_relation),
         )
-    print(f"[primekg] nx edges added: {G_nx.number_of_edges():,} " f"({time.time() - t0:.2f}s)")
+    print(f"[primekg] nx edges added: {G_nx.number_of_edges():,} ({time.time() - t0:.2f}s)")
 
     # ---- Build name + node_id → node_index secondary indices ----
     # These are essential for `seed_entities_from_query` — string match on

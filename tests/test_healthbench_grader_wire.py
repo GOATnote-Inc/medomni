@@ -217,12 +217,12 @@ def test_per_axis_scores_handles_healthbench_axis_prefix() -> None:
     per_axis = hbr._per_axis_scores(items, responses)
     # With two positive-point items on accuracy and 1-of-2 met, accuracy
     # score is 0.5. completeness has 1-of-1, score is 1.0.
-    assert per_axis["accuracy"] == pytest.approx(
-        0.5, abs=1e-6
-    ), f"accuracy should be 0.5 (1 of 2 met), got {per_axis['accuracy']}"
-    assert per_axis["completeness"] == pytest.approx(
-        1.0, abs=1e-6
-    ), f"completeness should be 1.0 (1 of 1 met), got {per_axis['completeness']}"
+    assert per_axis["accuracy"] == pytest.approx(0.5, abs=1e-6), (
+        f"accuracy should be 0.5 (1 of 2 met), got {per_axis['accuracy']}"
+    )
+    assert per_axis["completeness"] == pytest.approx(1.0, abs=1e-6), (
+        f"completeness should be 1.0 (1 of 1 met), got {per_axis['completeness']}"
+    )
     # Axes with no items remain 0.0 — unchanged behavior.
     assert per_axis["communication_quality"] == 0.0
     assert per_axis["instruction_following"] == 0.0

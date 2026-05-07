@@ -107,11 +107,11 @@ def _load_manifest(path: Path) -> dict:
             for key in ("id", "question", "choices", "answer_letter"):
                 if key not in ex:
                     raise ValueError(
-                        f"{path}: subsets['{subset_name}'][{i}] " f"missing required key '{key}'"
+                        f"{path}: subsets['{subset_name}'][{i}] missing required key '{key}'"
                     )
             if not isinstance(ex["choices"], list) or len(ex["choices"]) != 4:
                 raise ValueError(
-                    f"{path}: subsets['{subset_name}'][{i}].choices " f"must be a list of 4 options"
+                    f"{path}: subsets['{subset_name}'][{i}].choices must be a list of 4 options"
                 )
             if ex["answer_letter"] not in VALID_LETTERS:
                 raise ValueError(
@@ -193,7 +193,7 @@ def do_dry_run(args: argparse.Namespace, run_id: str) -> int:
 
     print("(dry-run) mmlu_medical_runner.py plan:")
     print("  benchmark        : mmlu_medical")
-    print("  role             : null-result breadth control " "(same |delta| <= 0.01 gate as B2)")
+    print("  role             : null-result breadth control (same |delta| <= 0.01 gate as B2)")
     print(f"  manifest         : {manifest_path}")
     print(f"  out              : {out_path}")
     print(f"  seed             : {args.seed}")

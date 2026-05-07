@@ -100,8 +100,8 @@ def run_flashinfer_sweep() -> list[dict]:
         b = r["bench"]
         print(
             f"  kv_len={kv_len:>5d}  max_err={v['max_abs_error']:.2e}  "
-            f"median={b['median_ns']/1000:7.1f} us  p90={b['p90_ns']/1000:7.1f} us  "
-            f"tok/s={b['tokens_per_sec']:>8.0f}  setup_s={wall-(b['median_ns']*b['iters']/1e9):.2f}"
+            f"median={b['median_ns'] / 1000:7.1f} us  p90={b['p90_ns'] / 1000:7.1f} us  "
+            f"tok/s={b['tokens_per_sec']:>8.0f}  setup_s={wall - (b['median_ns'] * b['iters'] / 1e9):.2f}"
         )
         results.append({"kv_len": kv_len, "verify": v, "bench": b, "config": r["config"]})
     return results
@@ -135,13 +135,13 @@ def main() -> int:
     best = evolve_result["summary"]["best"]
     print(
         f"  stub evolve winner      :: {best['tokens_per_sec']:>10.0f} tok/s  "
-        f"median={best['median_ns']/1000:>6.1f} us   (numpy, toy dims)"
+        f"median={best['median_ns'] / 1000:>6.1f} us   (numpy, toy dims)"
     )
     for r in flashinfer_sweep:
         print(
             f"  flashinfer kv_len={r['kv_len']:>5d} :: "
             f"{r['bench']['tokens_per_sec']:>10.0f} tok/s  "
-            f"median={r['bench']['median_ns']/1000:>6.1f} us   "
+            f"median={r['bench']['median_ns'] / 1000:>6.1f} us   "
             f"(GPU, DeepSeek dims, bf16)"
         )
     print(f"\n[log] {out}")

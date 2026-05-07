@@ -119,9 +119,9 @@ def test_rubric_cards_have_both_markers(tmp_path: Path) -> None:
     for case_id in CASES:
         text = (out / case_id / "rubric-card.md").read_text()
         assert SYNTHETIC_MARKER in text, f"{case_id}/rubric-card.md missing '{SYNTHETIC_MARKER}'"
-        assert (
-            PHYSICIAN_REVIEW_MARKER in text
-        ), f"{case_id}/rubric-card.md missing '{PHYSICIAN_REVIEW_MARKER}'"
+        assert PHYSICIAN_REVIEW_MARKER in text, (
+            f"{case_id}/rubric-card.md missing '{PHYSICIAN_REVIEW_MARKER}'"
+        )
 
 
 def test_rubric_card_weights_sum_to_one(tmp_path: Path) -> None:
@@ -225,5 +225,5 @@ def test_no_gpu_rail_forbidden_fields_in_clinical_outputs(
         text = path.read_text()
         for f in forbidden:
             assert f not in text, (
-                f"{path.name}: forbidden GPU-rail substring {f!r} in " f"clinical-demo output"
+                f"{path.name}: forbidden GPU-rail substring {f!r} in clinical-demo output"
             )

@@ -4,6 +4,7 @@
 Drop-in replacement for the serial grader.grade_jsonl() for healthbench-hard.
 Issues all 10 rubric calls per item in parallel (10x speedup per item).
 """
+
 import json
 import os
 import re
@@ -129,7 +130,7 @@ def main():
             if n % 10 == 0:
                 elapsed = time.time() - t_start
                 print(
-                    f"[hbgrade] {n} done, elapsed={elapsed:.0f}s rate={n/elapsed:.2f}/s",
+                    f"[hbgrade] {n} done, elapsed={elapsed:.0f}s rate={n / elapsed:.2f}/s",
                     flush=True,
                 )
 

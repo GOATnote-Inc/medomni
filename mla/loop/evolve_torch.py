@@ -136,7 +136,7 @@ def run(cfg: TorchMLAConfig, *, sweep_kv_lens: tuple[int, ...] = (1024,), seed: 
         print(
             f"  [PASS]   {cand.name:<24s} "
             f"max_err={v.max_abs_error:.2e}  "
-            f"median={b.median_ns/1000:7.1f}us  "
+            f"median={b.median_ns / 1000:7.1f}us  "
             f"tok/s={b.tokens_per_sec:>8.0f}  "
             f"val+bench wall={wall:.1f}s"
         )
@@ -195,7 +195,7 @@ def main() -> int:
     for i, name in enumerate(summary["ranking_by_median"], 1):
         sc = next(s for s in summary["scored"] if s["name"] == name)
         print(
-            f"  {i}. {name:<24s} median={sc['median_ns']/1000:7.1f}us  tok/s={sc['tokens_per_sec']:>8.0f}"
+            f"  {i}. {name:<24s} median={sc['median_ns'] / 1000:7.1f}us  tok/s={sc['tokens_per_sec']:>8.0f}"
         )
 
     print("\n[flashinfer baseline — same dims]")
@@ -203,7 +203,7 @@ def main() -> int:
         b = r["bench"]
         v = r["verify"]
         print(
-            f"  kv_len={r['kv_len']:>5d}  median={b['median_ns']/1000:7.1f}us  "
+            f"  kv_len={r['kv_len']:>5d}  median={b['median_ns'] / 1000:7.1f}us  "
             f"tok/s={b['tokens_per_sec']:>8.0f}  max_err={v['max_abs_error']:.2e}"
         )
 
@@ -215,10 +215,10 @@ def main() -> int:
         ratio = winner["median_ns"] / fi_median if fi_median > 0 else float("inf")
         print(
             f"\n[gap] winner '{winner['name']}' is {ratio:.2f}x flashinfer "
-            f"({winner['median_ns']/1000:.1f}us vs {fi_median/1000:.1f}us)"
+            f"({winner['median_ns'] / 1000:.1f}us vs {fi_median / 1000:.1f}us)"
         )
         if ratio < 1.0:
-            print(f"       >>> winner beats flashinfer by {(1-ratio)*100:.1f}%")
+            print(f"       >>> winner beats flashinfer by {(1 - ratio) * 100:.1f}%")
 
     out = Path(__file__).resolve().parent.parent / "results" / "logs" / "torch_evolve.json"
     out.parent.mkdir(parents=True, exist_ok=True)

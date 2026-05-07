@@ -598,7 +598,7 @@ def main() -> int:
                 if not ok:
                     rail_log.append(rail_msg)
                     response_text = (
-                        "[blocked by input rail; refusing to process. " f"reason={rail_msg}]"
+                        f"[blocked by input rail; refusing to process. reason={rail_msg}]"
                     )
                     graded = _real_grader(response_text, example, judge_fn=judge_fn)
                     per_example.append(
@@ -674,7 +674,7 @@ def main() -> int:
                         )
                     except Exception as e:  # noqa: BLE001
                         print(
-                            f"  WARN trial={trial_idx} ex={ex_idx} " f"primekg-svc fail: {e}",
+                            f"  WARN trial={trial_idx} ex={ex_idx} primekg-svc fail: {e}",
                             file=sys.stderr,
                         )
                         primekg_block = ""
