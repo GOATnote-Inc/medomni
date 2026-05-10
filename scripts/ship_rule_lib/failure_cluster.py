@@ -156,9 +156,7 @@ def _pair_key(rec: dict) -> tuple[str, int]:
     return (str(rec["item_id"]), int(rec["seed"]))
 
 
-def select_regressions(
-    arm0_records: list[dict], arm1_records: list[dict]
-) -> list[Regression]:
+def select_regressions(arm0_records: list[dict], arm1_records: list[dict]) -> list[Regression]:
     """Return Regressions where arm1.score < arm0.score, paired by (item_id, seed).
 
     arm0 = V0, arm1 = V2.5. For each regression, walks the paired judge_log to
@@ -273,22 +271,19 @@ def _build_prompt(reg: Regression, *, v25_visible: str) -> str:
     discrimination threshold rather than reaching for the default tiebreaker.
     """
     cats_block = "\n".join(
-        f"  {k}. {name}: {definition}"
-        for k, (name, definition) in CATEGORIES.items()
+        f"  {k}. {name}: {definition}" for k, (name, definition) in CATEGORIES.items()
     )
     if reg.rubric_deltas:
         events = []
         for d in reg.rubric_deltas:
             text = d["rubric_text"]
             is_negation = (
-                d["points"] < 0
-                and isinstance(text, str)
-                and text.lower().startswith("fails to ")
+                d["points"] < 0 and isinstance(text, str) and text.lower().startswith("fails to ")
             )
             if is_negation:
                 # Pre-rewrite "Fails to X" rubric to positive form so gpt-4.1
                 # doesn't read it as a generic silent-omission Knowledge Gap.
-                positive = text[len("Fails to "):].lstrip()
+                positive = text[len("Fails to ") :].lstrip()
                 v0_did = "did NOT" if d["v0_met"] else "DID"
                 v25_did = "did NOT" if d["v25_met"] else "DID"
                 kind = (
@@ -304,9 +299,7 @@ def _build_prompt(reg: Regression, *, v25_visible: str) -> str:
                     f"    v25 judge said: {d['v25_explanation']!r}"
                 )
             else:
-                kind = (
-                    "PENALTY TRIGGERED" if d["points"] < 0 else "POSITIVE CREDIT LOST"
-                )
+                kind = "PENALTY TRIGGERED" if d["points"] < 0 else "POSITIVE CREDIT LOST"
                 events.append(
                     f"  - [{kind}] points={d['points']:+d}, v0_met={d['v0_met']}, "
                     f"v25_met={d['v25_met']}, point_delta={d['point_delta']:+d}\n"
@@ -359,10 +352,7 @@ def _default_classify_fn(prompt: str) -> dict:
             text = (resp.choices[0].message.content or "").strip()
             if text.startswith("```"):
                 # Strip markdown fence if model added one despite instruction.
-                lines = [
-                    ln for ln in text.splitlines()
-                    if not ln.strip().startswith("```")
-                ]
+                lines = [ln for ln in text.splitlines() if not ln.strip().startswith("```")]
                 text = "\n".join(lines).strip()
             try:
                 return json.loads(text)
@@ -401,9 +391,7 @@ def classify_regression(
     except (TypeError, ValueError) as e:
         raise ValueError(f"classifier returned non-int category: {cat_raw!r}") from e
     if cat not in CATEGORIES:
-        raise ValueError(
-            f"classifier returned out-of-range category: {cat} (expected 1..5)"
-        )
+        raise ValueError(f"classifier returned out-of-range category: {cat} (expected 1..5)")
     justification = str(out.get("justification", ""))
     confident = bool(out.get("confident", True))
     return ClusterAssignment(
@@ -429,9 +417,7 @@ def summarize_clusters(
     All 5 categories are present in `per_category`, even with count=0, so
     downstream rendering (markdown table, JSON) need not branch on missing keys.
     """
-    per_category: dict[int, dict] = {
-        k: {"count": 0, "exemplars": []} for k in CATEGORIES
-    }
+    per_category: dict[int, dict] = {k: {"count": 0, "exemplars": []} for k in CATEGORIES}
     for a in assignments:
         bucket = per_category[a.category]
         bucket["count"] += 1

@@ -44,10 +44,18 @@ def test_categories_locked_to_5_with_stable_ints() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _mk_record(*, item_id: str, seed: int, arm: str, score: float, n_rubrics: int = 3,
-               judge_pattern: list[bool] | None = None,
-               rubric_points: list[int] | None = None,
-               prompt: str = "scenario X", response: str = "answer Y") -> dict:
+def _mk_record(
+    *,
+    item_id: str,
+    seed: int,
+    arm: str,
+    score: float,
+    n_rubrics: int = 3,
+    judge_pattern: list[bool] | None = None,
+    rubric_points: list[int] | None = None,
+    prompt: str = "scenario X",
+    response: str = "answer Y",
+) -> dict:
     """Build a synthetic graded record matching the schema verified on disk."""
     if judge_pattern is None:
         n_passed = int(round(score * n_rubrics))
@@ -55,15 +63,22 @@ def _mk_record(*, item_id: str, seed: int, arm: str, score: float, n_rubrics: in
     if rubric_points is None:
         rubric_points = [1] * n_rubrics
     judge_log = [
-        {"criteria_met": p, "explanation": f"{arm}-r{i}-{'met' if p else 'unmet'}",
-         "judge_model": "gpt-4.1"}
+        {
+            "criteria_met": p,
+            "explanation": f"{arm}-r{i}-{'met' if p else 'unmet'}",
+            "judge_model": "gpt-4.1",
+        }
         for i, p in enumerate(judge_pattern)
     ]
-    rubric = [{"text": f"rubric_{i}_text", "points": rubric_points[i]}
-              for i in range(n_rubrics)]
+    rubric = [{"text": f"rubric_{i}_text", "points": rubric_points[i]} for i in range(n_rubrics)]
     return {
-        "item_id": item_id, "benchmark": "healthbench-hard", "arm": arm,
-        "seed": seed, "trial": 0, "prompt": prompt, "response": response,
+        "item_id": item_id,
+        "benchmark": "healthbench-hard",
+        "arm": arm,
+        "seed": seed,
+        "trial": 0,
+        "prompt": prompt,
+        "response": response,
         "rubric": rubric,
         "graded": {"score": score, "n_rubrics": n_rubrics, "judge_log": judge_log},
     }
@@ -90,10 +105,10 @@ def test_select_regressions_returns_only_v25_losses() -> None:
 
 def test_select_regressions_attaches_missed_rubric_explanations() -> None:
     """SPEC §Architecture: each Regression carries the rubrics where v25 failed but v0 passed."""
-    v0 = [_mk_record(item_id="X", seed=42, arm="v0", score=1.0,
-                     judge_pattern=[True, True, True])]
-    v25 = [_mk_record(item_id="X", seed=42, arm="v25", score=0.333,
-                     judge_pattern=[True, False, False])]
+    v0 = [_mk_record(item_id="X", seed=42, arm="v0", score=1.0, judge_pattern=[True, True, True])]
+    v25 = [
+        _mk_record(item_id="X", seed=42, arm="v25", score=0.333, judge_pattern=[True, False, False])
+    ]
     regs = fc.select_regressions(v0, v25)
     assert len(regs) == 1
     missed = regs[0].missed_rubrics_v25
@@ -117,12 +132,26 @@ def test_select_regressions_surfaces_penalty_rubric_triggers() -> None:
     'Fails to advise on emergency visit'. V0 met=False (avoided penalty), V2.5
     met=True (triggered -10). The rich `rubric_deltas` field carries this event.
     """
-    v0 = [_mk_record(item_id="P", seed=42, arm="v0", score=0.0,
-                     judge_pattern=[False, False, False],
-                     rubric_points=[5, 5, -10])]
-    v25 = [_mk_record(item_id="P", seed=42, arm="v25", score=-0.5,
-                     judge_pattern=[False, False, True],
-                     rubric_points=[5, 5, -10])]
+    v0 = [
+        _mk_record(
+            item_id="P",
+            seed=42,
+            arm="v0",
+            score=0.0,
+            judge_pattern=[False, False, False],
+            rubric_points=[5, 5, -10],
+        )
+    ]
+    v25 = [
+        _mk_record(
+            item_id="P",
+            seed=42,
+            arm="v25",
+            score=-0.5,
+            judge_pattern=[False, False, True],
+            rubric_points=[5, 5, -10],
+        )
+    ]
     regs = fc.select_regressions(v0, v25)
     assert len(regs) == 1
     deltas = regs[0].rubric_deltas
@@ -143,12 +172,26 @@ def test_select_regressions_surfaces_penalty_rubric_triggers() -> None:
 def test_select_regressions_rubric_deltas_includes_positive_flips_lost() -> None:
     """SPEC §Round 2: rubric_deltas is the rich superset; positive-flip-lost
     events still appear (with point_delta < 0) so the classifier sees them too."""
-    v0 = [_mk_record(item_id="X", seed=42, arm="v0", score=1.0,
-                     judge_pattern=[True, True, True],
-                     rubric_points=[3, 5, 7])]
-    v25 = [_mk_record(item_id="X", seed=42, arm="v25", score=0.2,
-                     judge_pattern=[True, False, False],
-                     rubric_points=[3, 5, 7])]
+    v0 = [
+        _mk_record(
+            item_id="X",
+            seed=42,
+            arm="v0",
+            score=1.0,
+            judge_pattern=[True, True, True],
+            rubric_points=[3, 5, 7],
+        )
+    ]
+    v25 = [
+        _mk_record(
+            item_id="X",
+            seed=42,
+            arm="v25",
+            score=0.2,
+            judge_pattern=[True, False, False],
+            rubric_points=[3, 5, 7],
+        )
+    ]
     regs = fc.select_regressions(v0, v25)
     assert len(regs) == 1
     deltas = regs[0].rubric_deltas
@@ -180,11 +223,16 @@ def test_select_regressions_pairs_across_seeds() -> None:
 
 def _mk_regression(category_hint: int = 1) -> fc.Regression:
     return fc.Regression(
-        item_id="A", seed=42, prompt="patient with chest pain",
-        v0_response="ED now; consider PE/MI", v25_response="probably anxiety",
-        v0_score=0.6, v25_score=0.4,
-        missed_rubrics_v25=[{"rubric_text": "must include MI",
-                             "explanation": "v25 did not mention MI"}],
+        item_id="A",
+        seed=42,
+        prompt="patient with chest pain",
+        v0_response="ED now; consider PE/MI",
+        v25_response="probably anxiety",
+        v0_score=0.6,
+        v25_score=0.4,
+        missed_rubrics_v25=[
+            {"rubric_text": "must include MI", "explanation": "v25 did not mention MI"}
+        ],
     )
 
 
@@ -221,15 +269,25 @@ def test_build_prompt_rewrites_fails_to_rubrics_to_positive() -> None:
         return {"category": 3, "justification": "calibration", "confident": True}
 
     reg = fc.Regression(
-        item_id="A", seed=42, prompt="scenario", v0_response="v0",
-        v25_response="v25", v0_score=0.5, v25_score=-0.1,
+        item_id="A",
+        seed=42,
+        prompt="scenario",
+        v0_response="v0",
+        v25_response="v25",
+        v0_score=0.5,
+        v25_score=-0.1,
         missed_rubrics_v25=[],
-        rubric_deltas=[{
-            "rubric_text": "Fails to advise on emergency visit",
-            "points": -10, "v0_met": False, "v25_met": True,
-            "v0_explanation": "v0 advised", "v25_explanation": "v25 did not",
-            "point_delta": -10,
-        }],
+        rubric_deltas=[
+            {
+                "rubric_text": "Fails to advise on emergency visit",
+                "points": -10,
+                "v0_met": False,
+                "v25_met": True,
+                "v0_explanation": "v0 advised",
+                "v25_explanation": "v25 did not",
+                "point_delta": -10,
+            }
+        ],
     )
     fc.classify_regression(reg, classify_fn=stub)
     p = captured[0]
@@ -253,14 +311,25 @@ def test_build_prompt_preserves_normal_rubrics_verbatim() -> None:
         return {"category": 1, "justification": "kg", "confident": True}
 
     reg = fc.Regression(
-        item_id="A", seed=42, prompt="s", v0_response="v0", v25_response="v25",
-        v0_score=0.5, v25_score=0.3, missed_rubrics_v25=[],
-        rubric_deltas=[{
-            "rubric_text": "Provides advice on allergy avoidance",
-            "points": 5, "v0_met": True, "v25_met": False,
-            "v0_explanation": "v0 advised", "v25_explanation": "v25 omitted",
-            "point_delta": -5,
-        }],
+        item_id="A",
+        seed=42,
+        prompt="s",
+        v0_response="v0",
+        v25_response="v25",
+        v0_score=0.5,
+        v25_score=0.3,
+        missed_rubrics_v25=[],
+        rubric_deltas=[
+            {
+                "rubric_text": "Provides advice on allergy avoidance",
+                "points": 5,
+                "v0_met": True,
+                "v25_met": False,
+                "v0_explanation": "v0 advised",
+                "v25_explanation": "v25 omitted",
+                "point_delta": -5,
+            }
+        ],
     )
     fc.classify_regression(reg, classify_fn=stub)
     p = captured[0]
@@ -275,8 +344,10 @@ def test_classify_regression_passes_confident_flag_through() -> None:
     """SPEC §Round 2: classifier may report confident=False to honestly signal
     'signal below discrimination threshold' instead of forcing a tiebreaker default.
     The flag rides on ClusterAssignment so summarize_clusters can split it out."""
+
     def stub_low_signal(prompt: str) -> dict:
         return {"category": 1, "justification": "weak signal", "confident": False}
+
     reg = _mk_regression()
     out = fc.classify_regression(reg, classify_fn=stub_low_signal)
     assert out.confident is False
@@ -286,8 +357,10 @@ def test_classify_regression_passes_confident_flag_through() -> None:
 
 def test_classify_regression_rejects_out_of_range_category() -> None:
     """SPEC §Tiebreakers: classifier output must be a valid category int in 1..5."""
+
     def bad_stub(prompt: str) -> dict:
         return {"category": 7, "justification": "off-by-five"}
+
     reg = _mk_regression()
     with pytest.raises(ValueError, match="category"):
         fc.classify_regression(reg, classify_fn=bad_stub)
@@ -304,10 +377,14 @@ def test_classify_regression_strips_thinking_before_passing_to_classify_fn() -> 
         return {"category": 1, "justification": "knowledge gap"}
 
     reg = fc.Regression(
-        item_id="A", seed=42, prompt="scenario",
+        item_id="A",
+        seed=42,
+        prompt="scenario",
         v0_response="visible answer V0",
         v25_response="<think>internal mono</think>visible answer V25",
-        v0_score=0.6, v25_score=0.4, missed_rubrics_v25=[],
+        v0_score=0.6,
+        v25_score=0.4,
+        missed_rubrics_v25=[],
     )
     fc.classify_regression(reg, classify_fn=stub)
     assert len(captured) == 1
@@ -325,15 +402,30 @@ def test_classify_regression_strips_thinking_before_passing_to_classify_fn() -> 
 def test_summarize_clusters_counts_per_category() -> None:
     """SPEC §Architecture: summarize_clusters returns counts per category int."""
     assignments = [
-        fc.ClusterAssignment(item_id="A", seed=42, category=1,
-                             category_name="Knowledge Gap", justification="j1",
-                             confident=True),
-        fc.ClusterAssignment(item_id="B", seed=42, category=1,
-                             category_name="Knowledge Gap", justification="j2",
-                             confident=True),
-        fc.ClusterAssignment(item_id="C", seed=42, category=2,
-                             category_name="Reasoning Collapse", justification="j3",
-                             confident=True),
+        fc.ClusterAssignment(
+            item_id="A",
+            seed=42,
+            category=1,
+            category_name="Knowledge Gap",
+            justification="j1",
+            confident=True,
+        ),
+        fc.ClusterAssignment(
+            item_id="B",
+            seed=42,
+            category=1,
+            category_name="Knowledge Gap",
+            justification="j2",
+            confident=True,
+        ),
+        fc.ClusterAssignment(
+            item_id="C",
+            seed=42,
+            category=2,
+            category_name="Reasoning Collapse",
+            justification="j3",
+            confident=True,
+        ),
     ]
     summary = fc.summarize_clusters(assignments, n_exemplars=2)
     assert summary.n_total == 3
@@ -346,9 +438,13 @@ def test_summarize_clusters_counts_per_category() -> None:
 def test_summarize_clusters_picks_n_exemplars_per_category() -> None:
     """SPEC §Architecture: each category lists up to n_exemplars sample assignments."""
     assignments = [
-        fc.ClusterAssignment(item_id=f"X{i}", seed=42, category=1,
-                             category_name="Knowledge Gap",
-                             justification=f"justification {i}")
+        fc.ClusterAssignment(
+            item_id=f"X{i}",
+            seed=42,
+            category=1,
+            category_name="Knowledge Gap",
+            justification=f"justification {i}",
+        )
         for i in range(5)
     ]
     summary = fc.summarize_clusters(assignments, n_exemplars=2)
@@ -367,15 +463,21 @@ def test_load_paired_graded_round_trip(tmp_path: Path) -> None:
     flat per-record lists usable by select_regressions."""
     graded_dir = tmp_path / "graded"
     graded_dir.mkdir()
-    for arm, seed, score in [("v0", 42, 0.6), ("v0", 123, 0.5),
-                             ("v25", 42, 0.4), ("v25", 123, 0.6)]:
+    for arm, seed, score in [
+        ("v0", 42, 0.6),
+        ("v0", 123, 0.5),
+        ("v25", 42, 0.4),
+        ("v25", 123, 0.6),
+    ]:
         path = graded_dir / f"healthbench-hard__{arm}__seed{seed}.jsonl"
         with path.open("w") as f:
             f.write(json.dumps(_mk_record(item_id="A", seed=seed, arm=arm, score=score)) + "\n")
 
     arm0, arm1 = fc.load_paired_graded(
-        graded_dir=graded_dir, benchmark="healthbench-hard",
-        arms=("v0", "v25"), seeds=(42, 123),
+        graded_dir=graded_dir,
+        benchmark="healthbench-hard",
+        arms=("v0", "v25"),
+        seeds=(42, 123),
     )
     assert len(arm0) == 2 and len(arm1) == 2
     assert {r["seed"] for r in arm0} == {42, 123}
@@ -393,5 +495,6 @@ def test_load_paired_graded_missing_file_raises(tmp_path: Path) -> None:
         json.dumps(_mk_record(item_id="A", seed=42, arm="v0", score=0.5)) + "\n"
     )
     with pytest.raises(FileNotFoundError):
-        fc.load_paired_graded(graded_dir=graded_dir, benchmark="healthbench-hard",
-                              arms=("v0", "v25"), seeds=(42,))
+        fc.load_paired_graded(
+            graded_dir=graded_dir, benchmark="healthbench-hard", arms=("v0", "v25"), seeds=(42,)
+        )
