@@ -351,6 +351,21 @@ open-source medical imaging datasets across CT, X-ray, MRI, ultrasound, and imag
 Manifests cover ~7.4 PB cataloged and ~700 TB pullable in the open + registration tiers; the
 demo's `Imaging` rail (X-ray · MRI · panoramic) is the first surface that benefits.
 
+**Audit ledger — [`GOATnote-Inc/receipts`](https://github.com/GOATnote-Inc/receipts)** — append-only
+intent-vs-execution attestation layer that sits beside MedOmni's existing Medplum `AuditEvent` +
+S3 Object Lock pipeline and turns it into malpractice-defense-grade evidence. Every 5-tool /
+4-persona inference becomes a `clinical_drift_finding` row plus a Merkle hash-chain attestation;
+the κ-graded dual-judge agreement engine (`claude-opus-4-7` + `gpt-5.4-2026-03-05`) scores each
+output against the encounter contract; the FHIRConnector then writes an `AttestationExtension`
+(`https://goatnote.dev/receipts/attestation`) back onto the committed `Composition`. PHI-aware
+emitter has no Slack handle by design — patient text never leaves the FHIR + Markdown surface.
+The clinical vertical (`receipts-clin`) audits MedOmni inferences end-to-end; the engineering
+vertical (`receipts-eng`) audits the Linear/GitHub/Slack/Granola scope-drift on the training
++ eval workflows themselves. Shared substrate: 9-table eng schema + 3-table clinical schema +
+Merkle log + CEIS L0/L1/L2 + Cohen's κ + Wilson CI + pass^k regression gate + 4 regulatory
+export formats (FHIR R4 Bundle / SARIF v2.1 / Markdown / CSV). Hermetic test suite: 441 tests,
+zero live API calls.
+
 Detailed phasing and acceptance criteria: [`SPEC.md`](findings/research/2026-04-29-medomni-v1-northstar/SPEC.md) §8.
 
 ---
