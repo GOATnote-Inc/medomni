@@ -48,6 +48,11 @@ The trajectory chain (1-6 above) defines the WHAT (V2.5→V_final). These 5 docu
 - **[`2026-05-05-secret-scanner-swap/CARD.md`](2026-05-05-secret-scanner-swap/CARD.md)** — gitleaks → TruffleHog OSS swap research (NVIDIA bionemo-framework convention).
 - **[`2026-05-05-up037-safety-plan/SPEC.md`](2026-05-05-up037-safety-plan/SPEC.md) + [CARD.md](2026-05-05-up037-safety-plan/CARD.md)** — Generator-Validator-Attacker pattern applied to lint cleanup; surfaced 1 latent F821 bug.
 
+## Positioning + GTM
+
+- **[`2026-05-06-goatnote-v2-thesis-em-correction/SPEC.md`](2026-05-06-goatnote-v2-thesis-em-correction/SPEC.md)** — Emergency-Medicine domain correction over PR #104. Architectural skeleton preserved verbatim; domain + corpora + pilot site + paper venue + credentialing + pricing re-pointed to EM.
+- **[`2026-05-18-elder-care-agent-os-positioning/SPEC.md`](2026-05-18-elder-care-agent-os-positioning/SPEC.md)** — Investor positioning. Re-frames the consumer-elder Trojan-horse pitch (broken by graveyard evidence) as sovereign clinical agent OS with MA-plan-paid RPM/CCM distribution and four hardware-agnostic surfaces (iPad → Echo Show → ElliQ → humanoid robotics). Unit economics: ~$250 PMPM blended, payor-paid CAC. Investor sequence: GC Health Assurance first, a16z Bio+Health second.
+
 ## How to fire the chain
 
 The trajectory is **gated on three user-action items** per the LOOP-STATUS ESCALATION block:
