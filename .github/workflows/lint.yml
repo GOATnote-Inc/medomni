@@ -54,9 +54,15 @@ jobs:
       # `--results=verified,unknown` excludes unverified false-positive matches
       # (live API checks on 700+ verifiers eliminate the FP fatigue that made
       # gitleaks noisy on a public repo).
+      # Do not pass explicit base/head. On push to main the prior config
+      # resolved base=`main` and head=`HEAD` to the same commit (the push
+      # commit IS the new head of main), tripping TruffleHog's
+      # "BASE and HEAD commits are the same" error and red-X'ing every
+      # push since the workflow landed. Leaving them unset lets the
+      # action infer from the event payload: push → before..after diff;
+      # pull_request → base..head diff; schedule / workflow_dispatch →
+      # full-history scan.
       - name: TruffleHog OSS — verifier-based secret scan
         uses: trufflesecurity/trufflehog@v3.95.2
         with:
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
           extra_args: --results=verified,unknown

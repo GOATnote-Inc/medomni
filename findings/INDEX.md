@@ -53,6 +53,10 @@ The trajectory chain (1-6 above) defines the WHAT (V2.5→V_final). These 5 docu
 - **[`2026-05-06-goatnote-v2-thesis-em-correction/SPEC.md`](2026-05-06-goatnote-v2-thesis-em-correction/SPEC.md)** — Emergency-Medicine domain correction over PR #104. Architectural skeleton preserved verbatim; domain + corpora + pilot site + paper venue + credentialing + pricing re-pointed to EM.
 - **[`2026-05-18-elder-care-agent-os-positioning/SPEC.md`](2026-05-18-elder-care-agent-os-positioning/SPEC.md)** — Investor positioning. Re-frames the consumer-elder Trojan-horse pitch (broken by graveyard evidence) as sovereign clinical agent OS with MA-plan-paid RPM/CCM distribution and four hardware-agnostic surfaces (iPad → Echo Show → ElliQ → humanoid robotics). Unit economics: ~$250 PMPM blended, payor-paid CAC. Investor sequence: GC Health Assurance first, a16z Bio+Health second.
 
+## Ops
+
+- **[`2026-05-18-ci-cd-audit/CARD.md`](2026-05-18-ci-cd-audit/CARD.md)** — CI/CD audit across 10 GOATnote-Inc public repos. Five green; medomni `lint` (TruffleHog BASE=HEAD bug) and receipts `test` (`branches: [main]` while branch is `master`) fixed this cycle; medomni `adversarial-probe` regression and lostbench `OPENAI_API_KEY` 401 flagged for founder action; Node.js 20 → 24 forced flip 2026-06-02 tracked as sweep item.
+
 ## How to fire the chain
 
 The trajectory is **gated on three user-action items** per the LOOP-STATUS ESCALATION block:
