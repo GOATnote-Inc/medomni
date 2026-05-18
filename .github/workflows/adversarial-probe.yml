@@ -39,7 +39,13 @@ concurrency:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    # Wall-clock breakdown of a typical 20-case run against the live agent:
+    # preflight ~5s, 20 cases @ ~25s avg = ~8.3 min, plus setup/upload/post
+    # steps ~30-60s. The prior 8-min cap clipped a clean 18/20 PASS run at
+    # 8m 39s — the probe finished but the JOB timed out, cancelling the
+    # write of probe_rc and cascading into a spurious "failure" verdict.
+    # 18 min gives headroom for slow vllm cold-starts + retries.
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
 
@@ -193,6 +199,18 @@ jobs:
         if: always()
         run: |
           rc='${{ steps.probe.outputs.probe_rc }}'
+          # Empty rc = probe step was cancelled / killed before it could
+          # write to GITHUB_OUTPUT (job timeout, runner pre-empted, etc.).
+          # Treat as infrastructure failure: same downstream issue label,
+          # different cause line than a 4xx endpoint.
+          if [ -z "$rc" ]; then
+            echo "Probe did not report an exit code — step was cancelled or"
+            echo "killed before writing to GITHUB_OUTPUT. Treating as"
+            echo "infrastructure failure; the upstream Open-or-update-alarm"
+            echo "step will skip because steps.probe.outputs.probe_rc is empty,"
+            echo "so this gate is the only alarm surface. Failing the job."
+            exit 2
+          fi
           if [ "$rc" != "0" ]; then
             echo "Adversarial probe regressed (rc=$rc); failing the job."
             exit 1
