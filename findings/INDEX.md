@@ -56,6 +56,7 @@ The trajectory chain (1-6 above) defines the WHAT (V2.5→V_final). These 5 docu
 ## Ops
 
 - **[`2026-05-18-ci-cd-audit/CARD.md`](2026-05-18-ci-cd-audit/CARD.md)** — CI/CD audit across 10 GOATnote-Inc public repos. Five green; medomni `lint` (TruffleHog BASE=HEAD bug) and receipts `test` (`branches: [main]` while branch is `master`) fixed this cycle; medomni `adversarial-probe` regression and lostbench `OPENAI_API_KEY` 401 flagged for founder action; Node.js 20 → 24 forced flip 2026-06-02 tracked as sweep item.
+- **[`2026-05-18-adversarial-probe-fix/CARD.md`](2026-05-18-adversarial-probe-fix/CARD.md)** — Root cause of the 200-issue runaway: probe hardcoded `medomni.vercel.app/api/agent` which returns 404 since the 2026-05-07 migration; real endpoint is `https://www.thegoatnote.com/4UWHAt/api/agent` behind the Vercel apex rewrite. Ships endpoint fix, preflight smoke (rc=2 infra vs rc=3 regression), distinct issue labels, 24h dedup window, 10-test coverage. Live validation post-fix: preflight OK + RD-001 100% pass.
 
 ## How to fire the chain
 

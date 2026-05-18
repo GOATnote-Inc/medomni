@@ -24,9 +24,9 @@ on:
         required: false
         default: "0.70"
       endpoint:
-        description: "Endpoint to probe"
+        description: "Endpoint to probe (default: live demo behind Vercel apex rewrite)"
         required: false
-        default: "https://medomni.vercel.app/api/agent"
+        default: "https://www.thegoatnote.com/4UWHAt/api/agent"
 
 permissions:
   contents: read
@@ -54,7 +54,7 @@ jobs:
         id: probe
         env:
           THRESHOLD: ${{ github.event.inputs.threshold || '0.70' }}
-          ENDPOINT: ${{ github.event.inputs.endpoint || 'https://medomni.vercel.app/api/agent' }}
+          ENDPOINT: ${{ github.event.inputs.endpoint || 'https://www.thegoatnote.com/4UWHAt/api/agent' }}
         # `continue-on-error: true` so we still get the artifact upload step
         # and the issue-creation step on regression. The job's overall
         # success is decided by the final `gate` step below.
@@ -86,7 +86,16 @@ jobs:
           path: ${{ steps.card.outputs.card_dir }}
           retention-days: 30
 
-      - name: Open issue on regression
+      # Open OR update an alarm issue.
+      # 1. rc=2 (infrastructure) and rc=3 (regression) get distinct labels so
+      #    the on-call runbook is unambiguous: infra → "wake the platform
+      #    team / check the URL"; regression → "look at the model's actual
+      #    answers".
+      # 2. Dedup window: if an open issue with the same kind-label exists
+      #    that was opened in the last 24h, comment on it instead of
+      #    creating a new one. Prevents the 200-issue runaway that pre-fix
+      #    accumulated when the probe hit a 404 endpoint hourly.
+      - name: Open or update alarm issue
         if: steps.probe.outputs.probe_rc != '0' && steps.card.outputs.card_path != ''
         uses: actions/github-script@v7
         env:
@@ -96,28 +105,76 @@ jobs:
           script: |
             const fs = require('fs');
             const cardPath = process.env.CARD_PATH;
+            const rc = process.env.PROBE_RC;
+            const kindLabel = rc === '2' ? 'infrastructure' : 'regression';
+            const kindWord = rc === '2' ? 'INFRASTRUCTURE FAILURE' : 'regression detected';
+
             let body = '';
             try {
               body = fs.readFileSync(cardPath, 'utf8');
             } catch (e) {
               body = `Could not read CARD at ${cardPath}: ${e.message}`;
             }
-            // GH issue body cap is 65k chars; truncate generously.
             const MAX = 60000;
             if (body.length > MAX) {
               body = body.slice(0, MAX) + `\n\n[... CARD truncated; full artifact attached to run ${context.runId}]`;
             }
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
-            const title = `[adversarial-probe] regression detected — ${stamp}`;
+
+            // Dedup: find an OPEN issue with both the kind label and the
+            // umbrella `adversarial-probe` label, created within the last
+            // 24h. If found, comment on it instead of opening a new one.
+            const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+            const existing = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: `adversarial-probe,${kindLabel}`,
+              since,
+              per_page: 100,
+            });
+            // listForRepo with `since` filters by updated-at, not created-at;
+            // narrow to issues created in window so we don't graft onto a
+            // long-standing issue someone hand-opened weeks ago.
+            const sinceMs = Date.now() - 24 * 60 * 60 * 1000;
+            const candidates = existing.filter(i => new Date(i.created_at).getTime() >= sinceMs);
+            candidates.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            const open = candidates[0];
+
+            if (open) {
+              const commentBody = [
+                `Still failing as of ${stamp}.`,
+                `**Run:** ${runUrl}`,
+                `**Probe exit code:** ${rc} (${kindLabel})`,
+                ``,
+                `Latest CARD:`,
+                ``,
+                body,
+              ].join('\n');
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.number,
+                body: commentBody,
+              });
+              core.info(`Appended to existing issue #${open.number}; ${candidates.length} candidate(s) in 24h window.`);
+              return;
+            }
+
+            const title = `[adversarial-probe] ${kindWord} — ${stamp}`;
             const fullBody = [
               `**Run:** ${runUrl}`,
-              `**Probe exit code:** ${process.env.PROBE_RC}`,
+              `**Probe exit code:** ${rc} (${kindLabel})`,
               ``,
               `Track #4 of the Cherny-pattern initiative. The hourly adversarial probe`,
-              `against the live \`/api/agent\` endpoint dropped below the configured`,
-              `pass-rate threshold. CARD attached below; full per-case JSON in the`,
+              `against the live \`/api/agent\` endpoint hit a ${kindLabel} alarm. CARD`,
+              `attached below; full per-case JSON in the`,
               `\`adversarial-probe-card-${context.runId}\` workflow artifact.`,
+              ``,
+              `Future failures of the same kind within 24h will append as comments`,
+              `on this issue instead of opening duplicates. Close this issue when`,
+              `the underlying cause is resolved; the next failure will open a fresh one.`,
               ``,
               `---`,
               ``,
@@ -128,8 +185,9 @@ jobs:
               repo: context.repo.repo,
               title,
               body: fullBody,
-              labels: ['adversarial-probe', 'regression'],
+              labels: ['adversarial-probe', kindLabel],
             });
+            core.info(`Opened new ${kindLabel} issue.`);
 
       - name: Gate — fail job on regression
         if: always()
