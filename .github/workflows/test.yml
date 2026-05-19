@@ -19,7 +19,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt 2>/dev/null || pip install -e . 2>/dev/null || true
-          pip install pytest pytest-asyncio httpx pyyaml rank_bm25 jsonschema
+          pip install pytest pytest-asyncio httpx pyyaml rank_bm25 jsonschema requests
 
       - name: Clone simple-evals upstream pin
         # Several tests (test_healthbench_grader_wire, test_healthbench_judge)

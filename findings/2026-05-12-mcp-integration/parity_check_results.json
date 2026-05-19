@@ -1,0 +1,1300 @@
+{
+  "mcp_url": "https://mcp.thegoatnote.com/mcp",
+  "ts": "2026-05-12T21:53:49.516Z",
+  "summary": {
+    "total": 50,
+    "pass": 50,
+    "byRule": {
+      "CHA2DS2-VASc": {
+        "total": 8,
+        "pass": 8,
+        "mismatch": 0,
+        "error": 0
+      },
+      "HAS-BLED": {
+        "total": 8,
+        "pass": 8,
+        "mismatch": 0,
+        "error": 0
+      },
+      "MELD-Na": {
+        "total": 8,
+        "pass": 8,
+        "mismatch": 0,
+        "error": 0
+      },
+      "Wells DVT": {
+        "total": 8,
+        "pass": 8,
+        "mismatch": 0,
+        "error": 0
+      },
+      "PERC": {
+        "total": 8,
+        "pass": 8,
+        "mismatch": 0,
+        "error": 0
+      },
+      "HEART": {
+        "total": 5,
+        "pass": 5,
+        "mismatch": 0,
+        "error": 0
+      },
+      "Wells PE": {
+        "total": 5,
+        "pass": 5,
+        "mismatch": 0,
+        "error": 0
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "cha-01",
+      "rule": "CHA2DS2-VASc",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age": 60,
+        "sex": "male"
+      },
+      "mcp_variables": {
+        "Congestive heart failure": 0,
+        "Hypertension": 0,
+        "Age >= 75": 0,
+        "Age 65-74": 0,
+        "Diabetes": 0,
+        "Stroke/TIA history": 0,
+        "Vascular disease": 0,
+        "Sex (female)": 0
+      },
+      "medomni_score": 0,
+      "mcp_score": 0,
+      "mcp_risk_level": "low",
+      "match": true,
+      "detail": "medomni=0 mcp=0 tol=0",
+      "ruleVersion": "e40654845466"
+    },
+    {
+      "id": "cha-02",
+      "rule": "CHA2DS2-VASc",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age": 65,
+        "sex": "male",
+        "hypertension": true
+      },
+      "mcp_variables": {
+        "Congestive heart failure": 0,
+        "Hypertension": 1,
+        "Age >= 75": 0,
+        "Age 65-74": 1,
+        "Diabetes": 0,
+        "Stroke/TIA history": 0,
+        "Vascular disease": 0,
+        "Sex (female)": 0
+      },
+      "medomni_score": 2,
+      "mcp_score": 2,
+      "mcp_risk_level": "moderate",
+      "match": true,
+      "detail": "medomni=2 mcp=2 tol=0",
+      "ruleVersion": "e40654845466"
+    },
+    {
+      "id": "cha-03",
+      "rule": "CHA2DS2-VASc",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age": 75,
+        "sex": "female",
+        "hypertension": true,
+        "diabetes": true
+      },
+      "mcp_variables": {
+        "Congestive heart failure": 0,
+        "Hypertension": 1,
+        "Age >= 75": 2,
+        "Age 65-74": 0,
+        "Diabetes": 1,
+        "Stroke/TIA history": 0,
+        "Vascular disease": 0,
+        "Sex (female)": 1
+      },
+      "medomni_score": 5,
+      "mcp_score": 5,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni=5 mcp=5 tol=0",
+      "ruleVersion": "e40654845466"
+    },
+    {
+      "id": "cha-04",
+      "rule": "CHA2DS2-VASc",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age": 80,
+        "sex": "male",
+        "hypertension": true,
+        "chf": true,
+        "stroke_tia_thromboembolism": true
+      },
+      "mcp_variables": {
+        "Congestive heart failure": 1,
+        "Hypertension": 1,
+        "Age >= 75": 2,
+        "Age 65-74": 0,
+        "Diabetes": 0,
+        "Stroke/TIA history": 2,
+        "Vascular disease": 0,
+        "Sex (female)": 0
+      },
+      "medomni_score": 6,
+      "mcp_score": 6,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni=6 mcp=6 tol=0",
+      "ruleVersion": "e40654845466"
+    },
+    {
+      "id": "cha-05",
+      "rule": "CHA2DS2-VASc",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age": 50,
+        "sex": "female"
+      },
+      "mcp_variables": {
+        "Congestive heart failure": 0,
+        "Hypertension": 0,
+        "Age >= 75": 0,
+        "Age 65-74": 0,
+        "Diabetes": 0,
+        "Stroke/TIA history": 0,
+        "Vascular disease": 0,
+        "Sex (female)": 1
+      },
+      "medomni_score": 1,
+      "mcp_score": 1,
+      "mcp_risk_level": "low",
+      "match": true,
+      "detail": "medomni=1 mcp=1 tol=0",
+      "ruleVersion": "e40654845466"
+    },
+    {
+      "id": "cha-06",
+      "rule": "CHA2DS2-VASc",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age": 70,
+        "sex": "male",
+        "diabetes": true,
+        "vascular_disease": true
+      },
+      "mcp_variables": {
+        "Congestive heart failure": 0,
+        "Hypertension": 0,
+        "Age >= 75": 0,
+        "Age 65-74": 1,
+        "Diabetes": 1,
+        "Stroke/TIA history": 0,
+        "Vascular disease": 1,
+        "Sex (female)": 0
+      },
+      "medomni_score": 3,
+      "mcp_score": 3,
+      "mcp_risk_level": "moderate",
+      "match": true,
+      "detail": "medomni=3 mcp=3 tol=0",
+      "ruleVersion": "e40654845466"
+    },
+    {
+      "id": "cha-07",
+      "rule": "CHA2DS2-VASc",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age": 85,
+        "sex": "female",
+        "chf": true,
+        "hypertension": true,
+        "diabetes": true,
+        "stroke_tia_thromboembolism": true,
+        "vascular_disease": true
+      },
+      "mcp_variables": {
+        "Congestive heart failure": 1,
+        "Hypertension": 1,
+        "Age >= 75": 2,
+        "Age 65-74": 0,
+        "Diabetes": 1,
+        "Stroke/TIA history": 2,
+        "Vascular disease": 1,
+        "Sex (female)": 1
+      },
+      "medomni_score": 9,
+      "mcp_score": 9,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni=9 mcp=9 tol=0",
+      "ruleVersion": "e40654845466"
+    },
+    {
+      "id": "cha-08",
+      "rule": "CHA2DS2-VASc",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age": 65,
+        "sex": "female",
+        "vascular_disease": true
+      },
+      "mcp_variables": {
+        "Congestive heart failure": 0,
+        "Hypertension": 0,
+        "Age >= 75": 0,
+        "Age 65-74": 1,
+        "Diabetes": 0,
+        "Stroke/TIA history": 0,
+        "Vascular disease": 1,
+        "Sex (female)": 1
+      },
+      "medomni_score": 3,
+      "mcp_score": 3,
+      "mcp_risk_level": "moderate",
+      "match": true,
+      "detail": "medomni=3 mcp=3 tol=0",
+      "ruleVersion": "e40654845466"
+    },
+    {
+      "id": "hb-01",
+      "rule": "HAS-BLED",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {},
+      "mcp_variables": {
+        "Hypertension uncontrolled": 0,
+        "Abnormal renal function": 0,
+        "Abnormal liver function": 0,
+        "Stroke history": 0,
+        "Bleeding history": 0,
+        "Labile INR": 0,
+        "Elderly (>65)": 0,
+        "Drugs (antiplatelet/NSAID)": 0,
+        "Alcohol >= 8 drinks/week": 0
+      },
+      "medomni_score": 0,
+      "mcp_score": 0,
+      "mcp_risk_level": "low",
+      "match": true,
+      "detail": "medomni=0 mcp=0 tol=0",
+      "ruleVersion": "abdffe948b57"
+    },
+    {
+      "id": "hb-02",
+      "rule": "HAS-BLED",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "hypertension_uncontrolled": true
+      },
+      "mcp_variables": {
+        "Hypertension uncontrolled": 1,
+        "Abnormal renal function": 0,
+        "Abnormal liver function": 0,
+        "Stroke history": 0,
+        "Bleeding history": 0,
+        "Labile INR": 0,
+        "Elderly (>65)": 0,
+        "Drugs (antiplatelet/NSAID)": 0,
+        "Alcohol >= 8 drinks/week": 0
+      },
+      "medomni_score": 1,
+      "mcp_score": 1,
+      "mcp_risk_level": "low",
+      "match": true,
+      "detail": "medomni=1 mcp=1 tol=0",
+      "ruleVersion": "abdffe948b57"
+    },
+    {
+      "id": "hb-03",
+      "rule": "HAS-BLED",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "hypertension_uncontrolled": true,
+        "abnormal_renal": true
+      },
+      "mcp_variables": {
+        "Hypertension uncontrolled": 1,
+        "Abnormal renal function": 1,
+        "Abnormal liver function": 0,
+        "Stroke history": 0,
+        "Bleeding history": 0,
+        "Labile INR": 0,
+        "Elderly (>65)": 0,
+        "Drugs (antiplatelet/NSAID)": 0,
+        "Alcohol >= 8 drinks/week": 0
+      },
+      "medomni_score": 2,
+      "mcp_score": 2,
+      "mcp_risk_level": "moderate",
+      "match": true,
+      "detail": "medomni=2 mcp=2 tol=0",
+      "ruleVersion": "abdffe948b57"
+    },
+    {
+      "id": "hb-04",
+      "rule": "HAS-BLED",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "stroke_history": true,
+        "bleeding_history": true
+      },
+      "mcp_variables": {
+        "Hypertension uncontrolled": 0,
+        "Abnormal renal function": 0,
+        "Abnormal liver function": 0,
+        "Stroke history": 1,
+        "Bleeding history": 1,
+        "Labile INR": 0,
+        "Elderly (>65)": 0,
+        "Drugs (antiplatelet/NSAID)": 0,
+        "Alcohol >= 8 drinks/week": 0
+      },
+      "medomni_score": 2,
+      "mcp_score": 2,
+      "mcp_risk_level": "moderate",
+      "match": true,
+      "detail": "medomni=2 mcp=2 tol=0",
+      "ruleVersion": "abdffe948b57"
+    },
+    {
+      "id": "hb-05",
+      "rule": "HAS-BLED",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "labile_inr": true,
+        "age_over_65": true,
+        "drugs_predisposing_bleeding": true
+      },
+      "mcp_variables": {
+        "Hypertension uncontrolled": 0,
+        "Abnormal renal function": 0,
+        "Abnormal liver function": 0,
+        "Stroke history": 0,
+        "Bleeding history": 0,
+        "Labile INR": 1,
+        "Elderly (>65)": 1,
+        "Drugs (antiplatelet/NSAID)": 1,
+        "Alcohol >= 8 drinks/week": 0
+      },
+      "medomni_score": 3,
+      "mcp_score": 3,
+      "mcp_risk_level": "moderate",
+      "match": true,
+      "detail": "medomni=3 mcp=3 tol=0",
+      "ruleVersion": "abdffe948b57"
+    },
+    {
+      "id": "hb-06",
+      "rule": "HAS-BLED",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "hypertension_uncontrolled": true,
+        "abnormal_renal": true,
+        "abnormal_liver": true,
+        "stroke_history": true,
+        "bleeding_history": true,
+        "labile_inr": true,
+        "age_over_65": true,
+        "drugs_predisposing_bleeding": true,
+        "alcohol_use": true
+      },
+      "mcp_variables": {
+        "Hypertension uncontrolled": 1,
+        "Abnormal renal function": 1,
+        "Abnormal liver function": 1,
+        "Stroke history": 1,
+        "Bleeding history": 1,
+        "Labile INR": 1,
+        "Elderly (>65)": 1,
+        "Drugs (antiplatelet/NSAID)": 1,
+        "Alcohol >= 8 drinks/week": 1
+      },
+      "medomni_score": 9,
+      "mcp_score": 9,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni=9 mcp=9 tol=0",
+      "ruleVersion": "abdffe948b57"
+    },
+    {
+      "id": "hb-07",
+      "rule": "HAS-BLED",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "hypertension_uncontrolled": true,
+        "age_over_65": true,
+        "alcohol_use": true
+      },
+      "mcp_variables": {
+        "Hypertension uncontrolled": 1,
+        "Abnormal renal function": 0,
+        "Abnormal liver function": 0,
+        "Stroke history": 0,
+        "Bleeding history": 0,
+        "Labile INR": 0,
+        "Elderly (>65)": 1,
+        "Drugs (antiplatelet/NSAID)": 0,
+        "Alcohol >= 8 drinks/week": 1
+      },
+      "medomni_score": 3,
+      "mcp_score": 3,
+      "mcp_risk_level": "moderate",
+      "match": true,
+      "detail": "medomni=3 mcp=3 tol=0",
+      "ruleVersion": "abdffe948b57"
+    },
+    {
+      "id": "hb-08",
+      "rule": "HAS-BLED",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "abnormal_liver": true,
+        "bleeding_history": true,
+        "drugs_predisposing_bleeding": true
+      },
+      "mcp_variables": {
+        "Hypertension uncontrolled": 0,
+        "Abnormal renal function": 0,
+        "Abnormal liver function": 1,
+        "Stroke history": 0,
+        "Bleeding history": 1,
+        "Labile INR": 0,
+        "Elderly (>65)": 0,
+        "Drugs (antiplatelet/NSAID)": 1,
+        "Alcohol >= 8 drinks/week": 0
+      },
+      "medomni_score": 3,
+      "mcp_score": 3,
+      "mcp_risk_level": "moderate",
+      "match": true,
+      "detail": "medomni=3 mcp=3 tol=0",
+      "ruleVersion": "abdffe948b57"
+    },
+    {
+      "id": "meld-01",
+      "rule": "MELD-Na",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "bilirubin_mgdl": 1,
+        "inr": 1,
+        "creatinine_mgdl": 1,
+        "sodium_meql": 137
+      },
+      "mcp_variables": {
+        "Creatinine (mg/dL)": 1,
+        "Bilirubin (mg/dL)": 1,
+        "INR": 1,
+        "Sodium (mmol/L)": 137
+      },
+      "medomni_score": 6,
+      "mcp_score": 6,
+      "mcp_risk_level": "low",
+      "match": true,
+      "detail": "medomni=6 mcp=6 tol=1",
+      "ruleVersion": "a297f2508135"
+    },
+    {
+      "id": "meld-02",
+      "rule": "MELD-Na",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "bilirubin_mgdl": 2,
+        "inr": 1.5,
+        "creatinine_mgdl": 1.5,
+        "sodium_meql": 132
+      },
+      "mcp_variables": {
+        "Creatinine (mg/dL)": 1.5,
+        "Bilirubin (mg/dL)": 2,
+        "INR": 1.5,
+        "Sodium (mmol/L)": 132
+      },
+      "medomni_score": 21,
+      "mcp_score": 21,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni=21 mcp=21 tol=1",
+      "ruleVersion": "a297f2508135"
+    },
+    {
+      "id": "meld-03",
+      "rule": "MELD-Na",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "bilirubin_mgdl": 5,
+        "inr": 2,
+        "creatinine_mgdl": 2,
+        "sodium_meql": 128
+      },
+      "mcp_variables": {
+        "Creatinine (mg/dL)": 2,
+        "Bilirubin (mg/dL)": 5,
+        "INR": 2,
+        "Sodium (mmol/L)": 128
+      },
+      "medomni_score": 31,
+      "mcp_score": 31,
+      "mcp_risk_level": "very_high",
+      "match": true,
+      "detail": "medomni=31 mcp=31 tol=1",
+      "ruleVersion": "a297f2508135"
+    },
+    {
+      "id": "meld-04",
+      "rule": "MELD-Na",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "bilirubin_mgdl": 0.8,
+        "inr": 0.9,
+        "creatinine_mgdl": 0.7,
+        "sodium_meql": 138
+      },
+      "mcp_variables": {
+        "Creatinine (mg/dL)": 1,
+        "Bilirubin (mg/dL)": 1,
+        "INR": 1,
+        "Sodium (mmol/L)": 138
+      },
+      "medomni_score": 6,
+      "mcp_score": 6,
+      "mcp_risk_level": "low",
+      "match": true,
+      "detail": "medomni=6 mcp=6 tol=1",
+      "ruleVersion": "a297f2508135"
+    },
+    {
+      "id": "meld-05",
+      "rule": "MELD-Na",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "bilirubin_mgdl": 10,
+        "inr": 3,
+        "creatinine_mgdl": 3.5,
+        "sodium_meql": 130
+      },
+      "mcp_variables": {
+        "Creatinine (mg/dL)": 3.5,
+        "Bilirubin (mg/dL)": 10,
+        "INR": 3,
+        "Sodium (mmol/L)": 130
+      },
+      "medomni_score": 39,
+      "mcp_score": 39,
+      "mcp_risk_level": "very_high",
+      "match": true,
+      "detail": "medomni=39 mcp=39 tol=1",
+      "ruleVersion": "a297f2508135"
+    },
+    {
+      "id": "meld-06",
+      "rule": "MELD-Na",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "bilirubin_mgdl": 1.5,
+        "inr": 1.2,
+        "creatinine_mgdl": 1.2,
+        "sodium_meql": 135
+      },
+      "mcp_variables": {
+        "Creatinine (mg/dL)": 1.2,
+        "Bilirubin (mg/dL)": 1.5,
+        "INR": 1.2,
+        "Sodium (mmol/L)": 135
+      },
+      "medomni_score": 14,
+      "mcp_score": 14,
+      "mcp_risk_level": "moderate",
+      "match": true,
+      "detail": "medomni=14 mcp=14 tol=1",
+      "ruleVersion": "a297f2508135"
+    },
+    {
+      "id": "meld-07",
+      "rule": "MELD-Na",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "bilirubin_mgdl": 3,
+        "inr": 1.8,
+        "creatinine_mgdl": 2.5,
+        "sodium_meql": 128
+      },
+      "mcp_variables": {
+        "Creatinine (mg/dL)": 2.5,
+        "Bilirubin (mg/dL)": 3,
+        "INR": 1.8,
+        "Sodium (mmol/L)": 128
+      },
+      "medomni_score": 30,
+      "mcp_score": 30,
+      "mcp_risk_level": "very_high",
+      "match": true,
+      "detail": "medomni=30 mcp=30 tol=1",
+      "ruleVersion": "a297f2508135"
+    },
+    {
+      "id": "meld-08",
+      "rule": "MELD-Na",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "bilirubin_mgdl": 1,
+        "inr": 1,
+        "creatinine_mgdl": 4,
+        "on_dialysis": true,
+        "sodium_meql": 125
+      },
+      "mcp_variables": {
+        "Creatinine (mg/dL)": 4,
+        "Bilirubin (mg/dL)": 1,
+        "INR": 1,
+        "Sodium (mmol/L)": 125
+      },
+      "medomni_score": 28,
+      "mcp_score": 28,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni=28 mcp=28 tol=1",
+      "ruleVersion": "a297f2508135"
+    },
+    {
+      "id": "wd-01",
+      "rule": "Wells DVT",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {},
+      "mcp_variables": {
+        "Active cancer": 0,
+        "Paralysis, paresis, or recent cast": 0,
+        "Bedridden > 3 days or major surgery within 12 weeks": 0,
+        "Localized tenderness along deep venous system": 0,
+        "Entire leg swollen": 0,
+        "Calf swelling > 3 cm compared to other leg": 0,
+        "Pitting edema": 0,
+        "Collateral superficial veins": 0,
+        "Previously documented DVT": 0,
+        "Alternative diagnosis at least as likely": 0
+      },
+      "medomni_score": 0,
+      "mcp_score": 0,
+      "mcp_risk_level": "low",
+      "match": true,
+      "detail": "medomni=0 mcp=0 tol=0",
+      "ruleVersion": "8b48562c4b18"
+    },
+    {
+      "id": "wd-02",
+      "rule": "Wells DVT",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "active_cancer": true,
+        "localized_tenderness_along_deep_veins": true
+      },
+      "mcp_variables": {
+        "Active cancer": 1,
+        "Paralysis, paresis, or recent cast": 0,
+        "Bedridden > 3 days or major surgery within 12 weeks": 0,
+        "Localized tenderness along deep venous system": 1,
+        "Entire leg swollen": 0,
+        "Calf swelling > 3 cm compared to other leg": 0,
+        "Pitting edema": 0,
+        "Collateral superficial veins": 0,
+        "Previously documented DVT": 0,
+        "Alternative diagnosis at least as likely": 0
+      },
+      "medomni_score": 2,
+      "mcp_score": 2,
+      "mcp_risk_level": "moderate",
+      "match": true,
+      "detail": "medomni=2 mcp=2 tol=0",
+      "ruleVersion": "8b48562c4b18"
+    },
+    {
+      "id": "wd-03",
+      "rule": "Wells DVT",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "calf_swelling_3cm_vs_other": true,
+        "entire_leg_swollen": true,
+        "localized_tenderness_along_deep_veins": true,
+        "pitting_edema_symptomatic_leg": true
+      },
+      "mcp_variables": {
+        "Active cancer": 0,
+        "Paralysis, paresis, or recent cast": 0,
+        "Bedridden > 3 days or major surgery within 12 weeks": 0,
+        "Localized tenderness along deep venous system": 1,
+        "Entire leg swollen": 1,
+        "Calf swelling > 3 cm compared to other leg": 1,
+        "Pitting edema": 1,
+        "Collateral superficial veins": 0,
+        "Previously documented DVT": 0,
+        "Alternative diagnosis at least as likely": 0
+      },
+      "medomni_score": 4,
+      "mcp_score": 4,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni=4 mcp=4 tol=0",
+      "ruleVersion": "8b48562c4b18"
+    },
+    {
+      "id": "wd-04",
+      "rule": "Wells DVT",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "active_cancer": true,
+        "paralysis_paresis_recent_immobilization": true,
+        "bedridden_3d_or_major_surgery_12wk": true,
+        "localized_tenderness_along_deep_veins": true,
+        "entire_leg_swollen": true,
+        "calf_swelling_3cm_vs_other": true,
+        "pitting_edema_symptomatic_leg": true,
+        "collateral_superficial_veins": true,
+        "previously_documented_dvt": true,
+        "alternative_diagnosis_at_least_as_likely": true
+      },
+      "mcp_variables": {
+        "Active cancer": 1,
+        "Paralysis, paresis, or recent cast": 1,
+        "Bedridden > 3 days or major surgery within 12 weeks": 1,
+        "Localized tenderness along deep venous system": 1,
+        "Entire leg swollen": 1,
+        "Calf swelling > 3 cm compared to other leg": 1,
+        "Pitting edema": 1,
+        "Collateral superficial veins": 1,
+        "Previously documented DVT": 1,
+        "Alternative diagnosis at least as likely": -2
+      },
+      "medomni_score": 7,
+      "mcp_score": 7,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni=7 mcp=7 tol=0",
+      "ruleVersion": "8b48562c4b18"
+    },
+    {
+      "id": "wd-05",
+      "rule": "Wells DVT",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "bedridden_3d_or_major_surgery_12wk": true,
+        "paralysis_paresis_recent_immobilization": true,
+        "entire_leg_swollen": true
+      },
+      "mcp_variables": {
+        "Active cancer": 0,
+        "Paralysis, paresis, or recent cast": 1,
+        "Bedridden > 3 days or major surgery within 12 weeks": 1,
+        "Localized tenderness along deep venous system": 0,
+        "Entire leg swollen": 1,
+        "Calf swelling > 3 cm compared to other leg": 0,
+        "Pitting edema": 0,
+        "Collateral superficial veins": 0,
+        "Previously documented DVT": 0,
+        "Alternative diagnosis at least as likely": 0
+      },
+      "medomni_score": 3,
+      "mcp_score": 3,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni=3 mcp=3 tol=0",
+      "ruleVersion": "8b48562c4b18"
+    },
+    {
+      "id": "wd-06",
+      "rule": "Wells DVT",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "active_cancer": true,
+        "alternative_diagnosis_at_least_as_likely": true
+      },
+      "mcp_variables": {
+        "Active cancer": 1,
+        "Paralysis, paresis, or recent cast": 0,
+        "Bedridden > 3 days or major surgery within 12 weeks": 0,
+        "Localized tenderness along deep venous system": 0,
+        "Entire leg swollen": 0,
+        "Calf swelling > 3 cm compared to other leg": 0,
+        "Pitting edema": 0,
+        "Collateral superficial veins": 0,
+        "Previously documented DVT": 0,
+        "Alternative diagnosis at least as likely": -2
+      },
+      "medomni_score": -1,
+      "mcp_score": -1,
+      "mcp_risk_level": "low",
+      "match": true,
+      "detail": "medomni=-1 mcp=-1 tol=0",
+      "ruleVersion": "8b48562c4b18"
+    },
+    {
+      "id": "wd-07",
+      "rule": "Wells DVT",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "localized_tenderness_along_deep_veins": true,
+        "calf_swelling_3cm_vs_other": true
+      },
+      "mcp_variables": {
+        "Active cancer": 0,
+        "Paralysis, paresis, or recent cast": 0,
+        "Bedridden > 3 days or major surgery within 12 weeks": 0,
+        "Localized tenderness along deep venous system": 1,
+        "Entire leg swollen": 0,
+        "Calf swelling > 3 cm compared to other leg": 1,
+        "Pitting edema": 0,
+        "Collateral superficial veins": 0,
+        "Previously documented DVT": 0,
+        "Alternative diagnosis at least as likely": 0
+      },
+      "medomni_score": 2,
+      "mcp_score": 2,
+      "mcp_risk_level": "moderate",
+      "match": true,
+      "detail": "medomni=2 mcp=2 tol=0",
+      "ruleVersion": "8b48562c4b18"
+    },
+    {
+      "id": "wd-08",
+      "rule": "Wells DVT",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "pitting_edema_symptomatic_leg": true,
+        "entire_leg_swollen": true,
+        "previously_documented_dvt": true
+      },
+      "mcp_variables": {
+        "Active cancer": 0,
+        "Paralysis, paresis, or recent cast": 0,
+        "Bedridden > 3 days or major surgery within 12 weeks": 0,
+        "Localized tenderness along deep venous system": 0,
+        "Entire leg swollen": 1,
+        "Calf swelling > 3 cm compared to other leg": 0,
+        "Pitting edema": 1,
+        "Collateral superficial veins": 0,
+        "Previously documented DVT": 1,
+        "Alternative diagnosis at least as likely": 0
+      },
+      "medomni_score": 3,
+      "mcp_score": 3,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni=3 mcp=3 tol=0",
+      "ruleVersion": "8b48562c4b18"
+    },
+    {
+      "id": "perc-01",
+      "rule": "PERC",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age_under_50": true,
+        "hr_under_100": true,
+        "spo2_at_least_95": true,
+        "no_unilateral_leg_swelling": true,
+        "no_hemoptysis": true,
+        "no_recent_surgery_trauma_4wk": true,
+        "no_prior_pe_dvt": true,
+        "no_estrogen_use": true
+      },
+      "mcp_variables": {
+        "Age >= 50": 0,
+        "Heart rate >= 100": 0,
+        "SpO2 < 95% on room air": 0,
+        "Unilateral leg swelling": 0,
+        "Hemoptysis": 0,
+        "Recent surgery or trauma": 0,
+        "Prior DVT or PE": 0,
+        "Hormone use (estrogen)": 0
+      },
+      "medomni_score": 8,
+      "mcp_score": 0,
+      "mcp_risk_level": "low",
+      "match": true,
+      "detail": "medomni_perc_negative=true mcp_score=0 mcp_perc_negative=true",
+      "ruleVersion": "c52a8a491aa8"
+    },
+    {
+      "id": "perc-02",
+      "rule": "PERC",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age_under_50": false,
+        "hr_under_100": true,
+        "spo2_at_least_95": true,
+        "no_unilateral_leg_swelling": true,
+        "no_hemoptysis": true,
+        "no_recent_surgery_trauma_4wk": true,
+        "no_prior_pe_dvt": true,
+        "no_estrogen_use": true
+      },
+      "mcp_variables": {
+        "Age >= 50": 1,
+        "Heart rate >= 100": 0,
+        "SpO2 < 95% on room air": 0,
+        "Unilateral leg swelling": 0,
+        "Hemoptysis": 0,
+        "Recent surgery or trauma": 0,
+        "Prior DVT or PE": 0,
+        "Hormone use (estrogen)": 0
+      },
+      "medomni_score": 7,
+      "mcp_score": 1,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni_perc_negative=false mcp_score=1 mcp_perc_negative=false",
+      "ruleVersion": "c52a8a491aa8"
+    },
+    {
+      "id": "perc-03",
+      "rule": "PERC",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age_under_50": true,
+        "hr_under_100": false,
+        "spo2_at_least_95": true,
+        "no_unilateral_leg_swelling": true,
+        "no_hemoptysis": true,
+        "no_recent_surgery_trauma_4wk": true,
+        "no_prior_pe_dvt": true,
+        "no_estrogen_use": true
+      },
+      "mcp_variables": {
+        "Age >= 50": 0,
+        "Heart rate >= 100": 1,
+        "SpO2 < 95% on room air": 0,
+        "Unilateral leg swelling": 0,
+        "Hemoptysis": 0,
+        "Recent surgery or trauma": 0,
+        "Prior DVT or PE": 0,
+        "Hormone use (estrogen)": 0
+      },
+      "medomni_score": 7,
+      "mcp_score": 1,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni_perc_negative=false mcp_score=1 mcp_perc_negative=false",
+      "ruleVersion": "c52a8a491aa8"
+    },
+    {
+      "id": "perc-04",
+      "rule": "PERC",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age_under_50": true,
+        "hr_under_100": true,
+        "spo2_at_least_95": false,
+        "no_unilateral_leg_swelling": true,
+        "no_hemoptysis": true,
+        "no_recent_surgery_trauma_4wk": true,
+        "no_prior_pe_dvt": true,
+        "no_estrogen_use": true
+      },
+      "mcp_variables": {
+        "Age >= 50": 0,
+        "Heart rate >= 100": 0,
+        "SpO2 < 95% on room air": 1,
+        "Unilateral leg swelling": 0,
+        "Hemoptysis": 0,
+        "Recent surgery or trauma": 0,
+        "Prior DVT or PE": 0,
+        "Hormone use (estrogen)": 0
+      },
+      "medomni_score": 7,
+      "mcp_score": 1,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni_perc_negative=false mcp_score=1 mcp_perc_negative=false",
+      "ruleVersion": "c52a8a491aa8"
+    },
+    {
+      "id": "perc-05",
+      "rule": "PERC",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age_under_50": true,
+        "hr_under_100": true,
+        "spo2_at_least_95": true,
+        "no_unilateral_leg_swelling": false,
+        "no_hemoptysis": true,
+        "no_recent_surgery_trauma_4wk": true,
+        "no_prior_pe_dvt": true,
+        "no_estrogen_use": true
+      },
+      "mcp_variables": {
+        "Age >= 50": 0,
+        "Heart rate >= 100": 0,
+        "SpO2 < 95% on room air": 0,
+        "Unilateral leg swelling": 1,
+        "Hemoptysis": 0,
+        "Recent surgery or trauma": 0,
+        "Prior DVT or PE": 0,
+        "Hormone use (estrogen)": 0
+      },
+      "medomni_score": 7,
+      "mcp_score": 1,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni_perc_negative=false mcp_score=1 mcp_perc_negative=false",
+      "ruleVersion": "c52a8a491aa8"
+    },
+    {
+      "id": "perc-06",
+      "rule": "PERC",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age_under_50": true,
+        "hr_under_100": true,
+        "spo2_at_least_95": true,
+        "no_unilateral_leg_swelling": true,
+        "no_hemoptysis": false,
+        "no_recent_surgery_trauma_4wk": true,
+        "no_prior_pe_dvt": true,
+        "no_estrogen_use": true
+      },
+      "mcp_variables": {
+        "Age >= 50": 0,
+        "Heart rate >= 100": 0,
+        "SpO2 < 95% on room air": 0,
+        "Unilateral leg swelling": 0,
+        "Hemoptysis": 1,
+        "Recent surgery or trauma": 0,
+        "Prior DVT or PE": 0,
+        "Hormone use (estrogen)": 0
+      },
+      "medomni_score": 7,
+      "mcp_score": 1,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni_perc_negative=false mcp_score=1 mcp_perc_negative=false",
+      "ruleVersion": "c52a8a491aa8"
+    },
+    {
+      "id": "perc-07",
+      "rule": "PERC",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age_under_50": true,
+        "hr_under_100": true,
+        "spo2_at_least_95": true,
+        "no_unilateral_leg_swelling": true,
+        "no_hemoptysis": true,
+        "no_recent_surgery_trauma_4wk": true,
+        "no_prior_pe_dvt": false,
+        "no_estrogen_use": false
+      },
+      "mcp_variables": {
+        "Age >= 50": 0,
+        "Heart rate >= 100": 0,
+        "SpO2 < 95% on room air": 0,
+        "Unilateral leg swelling": 0,
+        "Hemoptysis": 0,
+        "Recent surgery or trauma": 0,
+        "Prior DVT or PE": 1,
+        "Hormone use (estrogen)": 1
+      },
+      "medomni_score": 6,
+      "mcp_score": 2,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni_perc_negative=false mcp_score=2 mcp_perc_negative=false",
+      "ruleVersion": "c52a8a491aa8"
+    },
+    {
+      "id": "perc-08",
+      "rule": "PERC",
+      "kind": "parity",
+      "ok": true,
+      "inputs": {
+        "age_under_50": false,
+        "hr_under_100": false,
+        "spo2_at_least_95": true,
+        "no_unilateral_leg_swelling": true,
+        "no_hemoptysis": true,
+        "no_recent_surgery_trauma_4wk": true,
+        "no_prior_pe_dvt": true,
+        "no_estrogen_use": true
+      },
+      "mcp_variables": {
+        "Age >= 50": 1,
+        "Heart rate >= 100": 1,
+        "SpO2 < 95% on room air": 0,
+        "Unilateral leg swelling": 0,
+        "Hemoptysis": 0,
+        "Recent surgery or trauma": 0,
+        "Prior DVT or PE": 0,
+        "Hormone use (estrogen)": 0
+      },
+      "medomni_score": 6,
+      "mcp_score": 2,
+      "mcp_risk_level": "high",
+      "match": true,
+      "detail": "medomni_perc_negative=false mcp_score=2 mcp_perc_negative=false",
+      "ruleVersion": "c52a8a491aa8"
+    },
+    {
+      "id": "heart-01",
+      "rule": "HEART",
+      "kind": "mcp_only_canonical",
+      "mcp_score": 0,
+      "expected": 0,
+      "match": true,
+      "mcp_risk_level": "low",
+      "ruleVersion": "1c0b1c2cd148",
+      "ok": true,
+      "detail": "mcp=0 expected=0 tol=0"
+    },
+    {
+      "id": "heart-02",
+      "rule": "HEART",
+      "kind": "mcp_only_canonical",
+      "mcp_score": 5,
+      "expected": 5,
+      "match": true,
+      "mcp_risk_level": "moderate",
+      "ruleVersion": "1c0b1c2cd148",
+      "ok": true,
+      "detail": "mcp=5 expected=5 tol=0"
+    },
+    {
+      "id": "heart-03",
+      "rule": "HEART",
+      "kind": "mcp_only_canonical",
+      "mcp_score": 10,
+      "expected": 10,
+      "match": true,
+      "mcp_risk_level": "high",
+      "ruleVersion": "1c0b1c2cd148",
+      "ok": true,
+      "detail": "mcp=10 expected=10 tol=0"
+    },
+    {
+      "id": "heart-04",
+      "rule": "HEART",
+      "kind": "mcp_only_canonical",
+      "mcp_score": 4,
+      "expected": 4,
+      "match": true,
+      "mcp_risk_level": "moderate",
+      "ruleVersion": "1c0b1c2cd148",
+      "ok": true,
+      "detail": "mcp=4 expected=4 tol=0"
+    },
+    {
+      "id": "heart-05",
+      "rule": "HEART",
+      "kind": "mcp_only_canonical",
+      "mcp_score": 6,
+      "expected": 6,
+      "match": true,
+      "mcp_risk_level": "moderate",
+      "ruleVersion": "1c0b1c2cd148",
+      "ok": true,
+      "detail": "mcp=6 expected=6 tol=0"
+    },
+    {
+      "id": "wpe-01",
+      "rule": "Wells PE",
+      "kind": "mcp_only_canonical",
+      "mcp_score": 0,
+      "expected": 0,
+      "match": true,
+      "mcp_risk_level": "low",
+      "ruleVersion": "699bef582a63",
+      "ok": true,
+      "detail": "mcp=0 expected=0 tol=0.000001"
+    },
+    {
+      "id": "wpe-02",
+      "rule": "Wells PE",
+      "kind": "mcp_only_canonical",
+      "mcp_score": 12.5,
+      "expected": 12.5,
+      "match": true,
+      "mcp_risk_level": "high",
+      "ruleVersion": "699bef582a63",
+      "ok": true,
+      "detail": "mcp=12.5 expected=12.5 tol=0.000001"
+    },
+    {
+      "id": "wpe-03",
+      "rule": "Wells PE",
+      "kind": "mcp_only_canonical",
+      "mcp_score": 6,
+      "expected": 6,
+      "match": true,
+      "mcp_risk_level": "moderate",
+      "ruleVersion": "699bef582a63",
+      "ok": true,
+      "detail": "mcp=6 expected=6 tol=0.000001"
+    },
+    {
+      "id": "wpe-04",
+      "rule": "Wells PE",
+      "kind": "mcp_only_canonical",
+      "mcp_score": 7,
+      "expected": 7,
+      "match": true,
+      "mcp_risk_level": "high",
+      "ruleVersion": "699bef582a63",
+      "ok": true,
+      "detail": "mcp=7 expected=7 tol=0.000001"
+    },
+    {
+      "id": "wpe-05",
+      "rule": "Wells PE",
+      "kind": "mcp_only_canonical",
+      "mcp_score": 7,
+      "expected": 7,
+      "match": true,
+      "mcp_risk_level": "high",
+      "ruleVersion": "699bef582a63",
+      "ok": true,
+      "detail": "mcp=7 expected=7 tol=0.000001"
+    }
+  ]
+}

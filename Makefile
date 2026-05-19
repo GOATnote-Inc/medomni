@@ -203,6 +203,7 @@ sync-skills: ## Mirror canonical skill markdown from mvp/medomni-inference/ → 
 	@cp mvp/medomni-inference/skills/differential.md web/lib/agent/skills/
 	@cp mvp/medomni-inference/skills/calc.md web/lib/agent/skills/
 	@cp mvp/medomni-inference/skills/handoff.md web/lib/agent/skills/
+	@cp mvp/medomni-inference/skills/explain.md web/lib/agent/skills/
 	@echo "Synced skill markdown into web/lib/agent/skills/. The /api/agent route reads these at server cold start when ?profile=v_final is set."
 
 # ---------------------------------------------------------------------------

@@ -41,11 +41,29 @@ import requests
 
 REPO = Path(__file__).resolve().parent.parent
 
-DEFAULT_ENDPOINT = "https://medomni.vercel.app/api/agent"
+# 2026-05-18: production demo lives at `https://www.thegoatnote.com/4UWHAt`
+# (Vercel edge rewrite from the apex; the `medomni.vercel.app` host returns
+# 404 outside that path prefix). The API route is reachable via the same
+# prefix, NOT at the bare `medomni.vercel.app/api/agent` the probe used
+# before today's fix. Hitting the wrong URL is the failure mode that
+# produced rc=3 on every hourly run since 2026-05-07 and 200+ auto-filed
+# regression issues. See findings/2026-05-18-adversarial-probe-fix/CARD.md.
+DEFAULT_ENDPOINT = "https://www.thegoatnote.com/4UWHAt/api/agent"
 DEFAULT_THRESHOLD = 0.70
 DEFAULT_TIMEOUT_S = 30  # per-case wall-clock; the agent itself has 45s budget
 DEFAULT_RETRIES = 3
 DEFAULT_RETRY_BACKOFF_S = 2.0
+
+# Exit codes. The workflow gate distinguishes these so an on-call gets the
+# right runbook: rc=2 means "go fix the URL / wake the platform team",
+# rc=3 means "go look at the model's actual answers".
+EXIT_OK = 0
+EXIT_INFRASTRUCTURE = 2  # preflight failed; cases not run
+EXIT_REGRESSION = 3  # cases ran, pass rate < threshold
+
+# Trivial query used by preflight. The full 20-case suite is expensive
+# (~5 min wall-clock) and worthless against a dead endpoint — fail fast.
+PREFLIGHT_QUERY = "What is the capital of France? One word answer."
 
 
 # ---------------------------------------------------------------------------
@@ -521,6 +539,40 @@ def _build_request_body(query: str) -> dict:
     }
 
 
+def preflight(endpoint: str, timeout_s: float = 30.0) -> tuple[bool, str]:
+    """Smoke-test the endpoint with a trivial query.
+
+    Returns (ok, reason). `ok` is True iff:
+      - POST returns HTTP 200,
+      - the response stream contains no `error` events,
+      - the assembled text-delta stream is non-empty.
+
+    Hitting the full 20-case suite against a dead URL produces 20 identical
+    "empty response" failures, an rc=3 regression alarm, and an auto-filed
+    issue — every hour. Preflight short-circuits that loop into a single
+    rc=2 infrastructure alarm with a clear cause line.
+    """
+    body = _build_request_body(PREFLIGHT_QUERY)
+    try:
+        resp = requests.post(
+            endpoint,
+            json=body,
+            timeout=timeout_s,
+            headers={"Content-Type": "application/json"},
+        )
+    except requests.RequestException as e:
+        return False, f"preflight network error: {type(e).__name__}: {e}"
+    if resp.status_code != 200:
+        snippet = resp.text[:200].replace("\n", " ")
+        return False, f"preflight HTTP {resp.status_code}: {snippet}"
+    text, errors = parse_uimessage_stream(resp.content)
+    if errors:
+        return False, f"preflight stream errors: {'; '.join(errors)}"
+    if not text.strip():
+        return False, "preflight returned empty text stream"
+    return True, f"preflight OK ({len(text)} chars in {len(resp.content)} bytes)"
+
+
 def probe_one(
     endpoint: str,
     case: dict,
@@ -774,6 +826,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Do not POST; emit a CARD with all cases recorded as 'not run'.",
     )
+    p.add_argument(
+        "--skip-preflight",
+        action="store_true",
+        help="Skip the preflight smoke-test (for tests / local debugging only).",
+    )
     args = p.parse_args(argv)
 
     cases = CASES if args.limit is None else CASES[: args.limit]
@@ -783,6 +840,20 @@ def main(argv: list[str] | None = None) -> int:
         f"[probe] threshold={args.threshold:.2%} timeout={args.timeout}s retries={args.retries}",
         flush=True,
     )
+
+    # Preflight — fail fast on a dead endpoint instead of burning 5 minutes
+    # producing 20 identical "empty response" failures. Dry-run skips this
+    # because no POST happens at all. Tests pass --skip-preflight.
+    if not args.dry_run and not args.skip_preflight:
+        ok, reason = preflight(args.endpoint, timeout_s=args.timeout)
+        print(f"[probe] {reason}", flush=True)
+        if not ok:
+            print(
+                f"[probe] INFRASTRUCTURE FAILURE — not running cases; exit {EXIT_INFRASTRUCTURE}",
+                file=sys.stderr,
+                flush=True,
+            )
+            return EXIT_INFRASTRUCTURE
 
     results: list[CaseResult] = []
     for i, case in enumerate(cases, 1):
@@ -836,8 +907,8 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
             flush=True,
         )
-        return 3
-    return 0
+        return EXIT_REGRESSION
+    return EXIT_OK
 
 
 if __name__ == "__main__":

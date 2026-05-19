@@ -49,8 +49,14 @@ const SYSTEM_PROMPT_V_FINAL = readSkill("system_prompt_v1");
 const SKILL_DIFFERENTIAL = readSkill("differential");
 const SKILL_CALC = readSkill("calc");
 const SKILL_HANDOFF = readSkill("handoff");
+const SKILL_EXPLAIN = readSkill("explain");
 
-export type SkillIntent = "differential" | "calc" | "handoff" | "default";
+export type SkillIntent =
+  | "differential"
+  | "calc"
+  | "handoff"
+  | "explain"
+  | "default";
 
 const DIFFERENTIAL_KEYWORDS = [
   "differential",
@@ -94,13 +100,38 @@ const HANDOFF_KEYWORDS = [
   "sign-out",
 ];
 
+// Patient-shaped phrases. High-precision: a clinician would rarely write
+// "my doctor said" or "they sent me home". When one of these fires, the
+// query is almost certainly from a patient or caregiver and the right
+// skill is `explain` (decision-rule grounded, patient-facing framing).
+const EXPLAIN_KEYWORDS = [
+  "why did my doctor",
+  "why did the doctor",
+  "why did my er",
+  "why did the er",
+  "my doctor said",
+  "my doctor wants",
+  "my doctor prescribed",
+  "my doctor recommended",
+  "the doctor recommended",
+  "they sent me home",
+  "i was discharged",
+  "should i be worried",
+  "what does this score mean",
+  "what does my score mean",
+  "explain why",
+];
+
 export function classifyIntent(userText: string): SkillIntent {
   const lower = userText.toLowerCase();
-  // Calc beats differential when a score keyword fires alongside DDx phrasing
-  // ("calculate the CHA2DS2-VASc"). Handoff is a write-side intent and
-  // shouldn't fire if the user's just thinking aloud.
+  // Order: calc + handoff beat explain because they are specific actions
+  // ("calculate my CHA2DS2-VASc" from a patient still wants the score
+  // computed; the explain framing layers on top in output). Explain beats
+  // differential because patient-shaped phrasing is a stronger signal
+  // than the broader DDx keywords.
   if (CALC_KEYWORDS.some((k) => lower.includes(k))) return "calc";
   if (HANDOFF_KEYWORDS.some((k) => lower.includes(k))) return "handoff";
+  if (EXPLAIN_KEYWORDS.some((k) => lower.includes(k))) return "explain";
   if (DIFFERENTIAL_KEYWORDS.some((k) => lower.includes(k))) return "differential";
   return "default";
 }
@@ -109,15 +140,17 @@ const VALID_INTENTS: ReadonlySet<SkillIntent> = new Set<SkillIntent>([
   "differential",
   "calc",
   "handoff",
+  "explain",
   "default",
 ]);
 
-const CLASSIFIER_SYSTEM_PROMPT = `You are an intent classifier for a medical reasoning assistant. The user is a clinician (RN/NP/PA/MD). You must read the most recent user message and pick ONE label that best describes what they want next.
+const CLASSIFIER_SYSTEM_PROMPT = `You are an intent classifier for a medical reasoning assistant. The user is usually a clinician (RN/NP/PA/MD) but can also be a patient or caregiver asking about their own care. You must read the most recent user message and pick ONE label that best describes what they want next.
 
 Labels (pick exactly one):
 - "differential" — the user is asking for a list of possibilities, what could be going on, what to rule out, broaden/narrow the workup, or general DDx-shaped reasoning.
-- "calc" — the user wants a clinical score or calculation (CHA2DS2-VASc, HAS-BLED, MELD-Na, Wells DVT, PERC, GFR, creatinine clearance, etc.).
+- "calc" — the user wants a clinical score or calculation (CHA2DS2-VASc, HAS-BLED, MELD-Na, Wells DVT, PERC, GFR, creatinine clearance, HEART, Wells PE, CURB-65, etc.).
 - "handoff" — the user wants to write something downstream: place an order, consult, refer, transfer, admit, discharge, sign-out, draft a note.
+- "explain" — the user is a patient or caregiver asking WHY a clinician made a decision about their own care (e.g., "why did my doctor prescribe X?", "what does my HEART score mean?", "should I be worried about Y?", "they sent me home for Z — why?"). First-person framing about their own visit / prescription / discharge.
 - "default" — none of the above; a general clinical question, definition lookup, or chitchat.
 
 Output JSON only, exactly: {"intent":"<label>"}
@@ -255,7 +288,9 @@ export async function buildVFinalSystemContent(
         ? SKILL_CALC
         : intent === "handoff"
           ? SKILL_HANDOFF
-          : "";
+          : intent === "explain"
+            ? SKILL_EXPLAIN
+            : "";
 
   const sections: string[] = [baseSystemPrompt];
   if (SYSTEM_PROMPT_V_FINAL) {

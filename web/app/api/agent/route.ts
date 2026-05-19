@@ -45,6 +45,16 @@ import {
   isVFinalProfile,
   type SkillIntent,
 } from "@/lib/agent/skills";
+import {
+  callMcpTool,
+  listMcpTools,
+  type McpToolSchema,
+} from "@/lib/mcp/ed-rules-client";
+import {
+  adaptMcpToolList,
+  stripMcpPrefix,
+  type OpenAIFunctionTool,
+} from "@/lib/mcp/tool-spec-adapter";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -253,6 +263,75 @@ Tool use:
 
 This is a public demo. Be tight; every word counts.`;
 
+// Patient-facing system prompt — activated by ?role=patient. The audience is
+// a patient or caregiver asking either a general medical question or, more
+// commonly, "why did my clinician suggest X?". The agent EXPLAINS clinical
+// reasoning; it never diagnoses, prescribes, or tells anyone to change
+// medication. MCP-augmented decision-rule scoring (?profile=mcp) makes this
+// concrete — instead of "your doctor probably used a scoring tool," the agent
+// can name the rule, plug in the user's described inputs, and report the
+// published risk band that drove the disposition.
+const PATIENT_SYSTEM_PROMPT = `You are MedOmni, a medical-decision explainer for patients and caregivers. Your job is to help people understand the clinical reasoning behind their visits, tests, prescriptions, and discharge instructions — not to replace their clinician's judgment, but to demystify it.
+
+Audience: a patient or family member, not a clinician. Use plain language. When a medical term is unavoidable, translate briefly (e.g., "anticoagulation (blood thinners)").
+
+Discipline:
+- You EXPLAIN clinical reasoning. You do NOT diagnose, prescribe, recommend starting or stopping medication, or tell anyone to skip a scheduled visit. If asked "should I take X?" or "do I have Y?", redirect: "That's a call for the clinician who knows your full chart. Here's what the published reasoning looks like..."
+- When applying a decision rule (HEART, Wells, PERC, CHA2DS2-VASc, CURB-65, etc.), name the rule, plug in the inputs the person described, report the score with the published risk band and what clinicians typically do at that band. Make explicit that the rule guides the clinician — it is not a verdict on the patient.
+- Cite published guidelines (AHA/ACC, USPSTF, FDA, IDSA, ASCO, EBCTCG, etc.) by name with the year when a tool result gives you one. Do NOT invent guideline years.
+- If someone describes signs that sound emergent — crushing chest pain, sudden severe headache, weakness on one side, shortness of breath at rest, hemoptysis, suicidal ideation, severe abdominal pain — tell them clearly to call 911 or go to the nearest ED. This is the only place you give direct safety advice instead of an explanation.
+- Never request, accept, or echo PHI beyond what the user volunteered. If they paste identifiable information (full name, MRN, DOB), ask them to redact and re-ask.
+- If a question is outside published clinical reasoning, say so plainly rather than guessing.
+
+When the message contains audio:
+- Begin your response with "Transcript: <verbatim transcript>" on the first line so the user can see what you heard.
+
+When the message contains an image:
+- Begin your response with "Image: <one-sentence visual description>" so the user can see what you saw.
+- For diagnostic-looking questions ("is this rash X?", "is this infected?"): describe how a clinician would approach it, list red flags that warrant in-person care, recommend evaluation by their clinician. Do NOT give a diagnosis from the image alone.
+- For non-diagnostic image questions (medication identification, reading a lab printout, explaining a wearable display): answer directly without escalation language.
+
+Tool use:
+- When you call mcp_applyDecisionRule, end with a sentence like: "The rule clinicians use is X. With the inputs you described, the score is Y, which the published validation puts in [low/moderate/high] risk. Whether that interpretation matches your situation specifically is a call for your clinician — they have information I don't."
+- Call pubmed_search when the user asks why a published guideline changed.
+- Call guideline_currency_check when they ask if their care matches what is current.
+- Call clinical_calculate or mcp_applyDecisionRule whenever the user gives enough detail to compute the score that drove a clinical decision they are asking about.
+- Skip get_patient_context in patient mode — the only "chart" available here is what the user has just told you.
+
+This is a public demo. Be tight, plain, and never reach beyond what the published literature supports. Every word counts.`;
+
+// Tool guidance appended to the system prompt when ?profile=mcp is active and
+// the HealthCraft ED Decision Rules MCP returned a tool list. Keep it tight;
+// the existing SYSTEM_PROMPT already covers clinical_calculate. This block
+// teaches the model that a wider rule catalog is available and how to chain.
+const MCP_SYSTEM_APPEND = `
+
+# Extended decision-rule catalog (HealthCraft MCP)
+
+You also have access to ED-decision-rules tools via MCP, exposing 100 bundled rules (HEART, Wells PE, CURB-65, TIMI, GRACE, NEXUS C-Spine, Ottawa Ankle, PSI/PORT, qSOFA, sPESI, etc.). Tool names are prefixed mcp_.
+
+When a question involves a chief complaint that maps to a recognized rule (chest pain → HEART/TIMI/GRACE, suspected PE → Wells PE/PERC/Geneva, pneumonia severity → CURB-65/PSI, sepsis → qSOFA/SIRS, etc.):
+- Call mcp_getCoverageForComplaint(complaint) first to learn the ranked rule list for that complaint.
+- Then call mcp_applyDecisionRule(ruleName, variables) with the canonical variable encoding (mcp_getRuleSchema returns it). Variables accept integers OR natural-language phrases per the rule's synonym table.
+- The MCP returns a score, risk_level, recommendation, and a SHA-256 ruleVersion for audit. Cite the score and risk_level verbatim; do NOT re-derive the math.
+
+For the 5 scores already in clinical_calculate (CHA2DS2-VASc, HAS-BLED, MELD-Na, Wells DVT, PERC), either tool is acceptable; prefer mcp_applyDecisionRule when you need the audit ruleVersion or are already chaining other MCP rules in this turn.`;
+
+function isMcpProfileActive(params: URLSearchParams): boolean {
+  const v = (params.get("profile") ?? "").toLowerCase();
+  if (!v.includes("mcp")) return false;
+  return process.env.MCP_ED_RULES_ENABLED === "1";
+}
+
+// ?role=patient swaps the base system prompt to the patient-facing variant.
+// Default (no role param OR role!=patient) keeps the existing clinician-
+// facing SYSTEM_PROMPT — this preserves bit-for-bit behavior on the default
+// /4UWHAt URL while making the demo URL `?role=patient&profile=mcp` the
+// patient-explainer flow that surfaces the wider market.
+function isPatientRole(params: URLSearchParams): boolean {
+  return (params.get("role") ?? "").toLowerCase() === "patient";
+}
+
 // --- Vllm message shape ----------------------------------------------------
 //
 // The user can attach audio + image to a single turn. We forward each
@@ -370,6 +449,7 @@ async function streamOneStep(
   history: ChatMessage[],
   writer: UIMessageStreamWriter,
   step: number,
+  toolSpec: readonly unknown[] = TOOL_SPEC,
 ): Promise<StepResult> {
   const payload = {
     model: MODEL_ID,
@@ -381,7 +461,7 @@ async function streamOneStep(
     chat_template_kwargs: {
       enable_thinking: true,
     },
-    tools: TOOL_SPEC,
+    tools: toolSpec,
     tool_choice: "auto",
   };
 
@@ -491,6 +571,7 @@ type ToolResult =
   | GuidelineCurrencyResult
   | CalculatorResult
   | PatientContextResult
+  | { _mcp_tool: string; data: unknown }
   | { error: string };
 
 interface ToolContext {
@@ -510,6 +591,16 @@ async function runTool(
     parsed = JSON.parse(argsRaw || "{}") as Record<string, unknown>;
   } catch (e) {
     return { error: `invalid tool arguments JSON: ${(e as Error).message}` };
+  }
+
+  // MCP-routed tool (prefix `mcp_`). Fails open: if the MCP server is
+  // unreachable, return a structured error so the agent loop keeps going
+  // with the remaining hand-rolled tools.
+  const mcpName = stripMcpPrefix(name);
+  if (mcpName) {
+    const r = await callMcpTool(mcpName, parsed);
+    if (!r.ok) return { error: `mcp(${mcpName}): ${r.error}` };
+    return { _mcp_tool: mcpName, data: r.data };
   }
 
   if (name === "pubmed_search") {
@@ -630,20 +721,30 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Role detection first — patient mode swaps the base system prompt AND
+  // skips chart-context loading (the user IS the patient in this mode, not
+  // a clinician reading a chart; only their narrative is in scope).
+  const url = new URL(req.url);
+  const role: "patient" | "clinician" = isPatientRole(url.searchParams)
+    ? "patient"
+    : "clinician";
+  const baseSystemPromptForRole = role === "patient" ? PATIENT_SYSTEM_PROMPT : SYSTEM_PROMPT;
+
   // Pre-load patient context into the system prompt when a patientId is
-  // present. Design-mode (patientId === "design-sample-patient") renders
-  // synchronously from sample-data.ts; live-mode calls the FHIR fetch.
-  // Failures fall back to a vanilla system prompt — the agent still
-  // answers, just without patient-specific data. See lib/tools/patient-context.ts
-  // for the rationale (the public demo at /4UWHAt must be able to reason
-  // about the patient already on the page even when MEDOMNI_FHIR_BASE_URL
-  // is unset).
-  const patientContextBlock = await buildPatientContextForSystemPrompt(
-    requestPatientId,
-  );
+  // present AND we are in clinician mode. Design-mode (patientId ===
+  // "design-sample-patient") renders synchronously from sample-data.ts;
+  // live-mode calls the FHIR fetch. Failures fall back to a vanilla system
+  // prompt — the agent still answers, just without patient-specific data.
+  // See lib/tools/patient-context.ts for the rationale (the public demo at
+  // /4UWHAt must be able to reason about the patient already on the page
+  // even when MEDOMNI_FHIR_BASE_URL is unset).
+  const patientContextBlock =
+    role === "clinician"
+      ? await buildPatientContextForSystemPrompt(requestPatientId)
+      : "";
   const baseSystemContent = patientContextBlock
-    ? `${SYSTEM_PROMPT}\n\n---\n\n# Active patient session\n\nThe user is currently viewing the following patient's record. Reason from this context whenever the question concerns this patient. Do NOT ask for "patient ID" — the patient is already loaded.\n\n${patientContextBlock}`
-    : SYSTEM_PROMPT;
+    ? `${baseSystemPromptForRole}\n\n---\n\n# Active patient session\n\nThe user is currently viewing the following patient's record. Reason from this context whenever the question concerns this patient. Do NOT ask for "patient ID" — the patient is already loaded.\n\n${patientContextBlock}`
+    : baseSystemPromptForRole;
 
   // V_final profile (per Boris Cherny / Claude Code skills pattern):
   // `?profile=v_final` opts the request into the markdown-driven skills
@@ -651,10 +752,42 @@ export async function POST(req: NextRequest) {
   // header + the matched skill (differential / calc / handoff) into the
   // system prompt before dispatch. Ships every future skill at markdown
   // cadence rather than at training-cycle cadence.
-  const url = new URL(req.url);
+  //
+  // `?profile=mcp` is a separate, additive flag that augments the tool spec
+  // with HealthCraft's ED Decision Rules MCP catalog (100 rules) and adds
+  // a corresponding system-prompt block. DOUBLE-GATED: requires both the
+  // query-param AND MCP_ED_RULES_ENABLED=1 in the environment. With env-var
+  // absent (default), `?profile=mcp` is a silent no-op so a deploy can land
+  // without affecting the live demo until the env var is flipped.
   const useVFinal = isVFinalProfile(url.searchParams);
+  const useMcp = isMcpProfileActive(url.searchParams);
+
+  let mcpStatus: "active" | "offline" | "disabled" = "disabled";
+  let effectiveToolSpec: readonly unknown[] = TOOL_SPEC;
+  let mcpTools: McpToolSchema[] = [];
+  if (useMcp) {
+    const r = await listMcpTools();
+    if (r.ok) {
+      mcpTools = r.data;
+      const adapted: OpenAIFunctionTool[] = adaptMcpToolList(mcpTools);
+      effectiveToolSpec = [...TOOL_SPEC, ...adapted];
+      mcpStatus = "active";
+    } else {
+      mcpStatus = "offline";
+      console.log(`[agent] mcp profile requested but offline: ${r.error}`);
+    }
+  }
   let activeSkill: SkillIntent | "default" = "default";
   let systemContent = baseSystemContent;
+  // Append MCP tool guidance to whichever system content is active (base
+  // or V_final-augmented) when MCP is the active profile and the catalog
+  // loaded. Without this block the model won't know the mcp_ tools exist.
+  if (mcpStatus === "active") {
+    // applied to systemContent after V_final block below so it always
+    // lands at the END of the prompt, where instruction-following models
+    // weight it most heavily.
+  }
+
   if (useVFinal) {
     const lastUserText = (() => {
       for (let i = incoming.length - 1; i >= 0; i--) {
@@ -681,6 +814,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (mcpStatus === "active") {
+    systemContent = systemContent + MCP_SYSTEM_APPEND;
+    console.log(
+      `[agent] profile=mcp tools=${mcpTools.length} systemPromptBytes=${systemContent.length}`,
+    );
+  }
+
   const stream = createUIMessageStream({
     async execute({ writer }) {
       const history: ChatMessage[] = [
@@ -703,7 +843,7 @@ export async function POST(req: NextRequest) {
 
         let result: StepResult;
         try {
-          result = await streamOneStep(tunnelUrl, history, writer, step);
+          result = await streamOneStep(tunnelUrl, history, writer, step, effectiveToolSpec);
         } catch (e) {
           writer.write({ type: "error", errorText: (e as Error).message });
           return;
@@ -802,9 +942,20 @@ export async function POST(req: NextRequest) {
   // Access-Control-Expose-Headers because /4UWHAt is served via the
   // www.thegoatnote.com reverse proxy.
   const responseHeaders: Record<string, string> = {};
+  const exposed: string[] = [];
+  responseHeaders["X-Active-Role"] = role;
+  exposed.push("X-Active-Role");
   if (useVFinal) {
     responseHeaders["X-Active-Skill"] = activeSkill;
-    responseHeaders["Access-Control-Expose-Headers"] = "X-Active-Skill";
+    exposed.push("X-Active-Skill");
+  }
+  if (useMcp) {
+    responseHeaders["X-MCP-Status"] = mcpStatus;
+    responseHeaders["X-MCP-Tool-Count"] = String(mcpTools.length);
+    exposed.push("X-MCP-Status", "X-MCP-Tool-Count");
+  }
+  if (exposed.length > 0) {
+    responseHeaders["Access-Control-Expose-Headers"] = exposed.join(", ");
   }
   return createUIMessageStreamResponse({ stream, headers: responseHeaders });
 }
