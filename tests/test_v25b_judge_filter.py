@@ -105,8 +105,10 @@ def test_judge_record_passes_below_threshold_returns_false() -> None:
 
 def test_judge_record_rejects_unknown_pattern() -> None:
     rec = _mk_record(pattern="X9_unknown_pattern")
+
     def stub(prompt: str) -> dict:
         return {"score": 1.0, "justification": "j"}
+
     with pytest.raises(ValueError, match="pattern"):
         jf.judge_record(rec, judge_fn=stub)
 
@@ -118,6 +120,7 @@ def test_judge_record_rejects_unknown_pattern() -> None:
 
 def test_filter_corpus_top_half_per_pattern() -> None:
     """4 records / pattern → keep top 2 by score (50%)."""
+
     def stub(prompt: str) -> dict:
         # Encode score in the prompt via a marker (test fixture quirk)
         if "high" in prompt:
@@ -128,14 +131,16 @@ def test_filter_corpus_top_half_per_pattern() -> None:
 
     records = []
     for i, marker in enumerate(["high", "high", "low", "low"]):
-        records.append({
-            "id": f"v25b_secA_{i:05d}",
-            "section": "A",
-            "section_name": "x",
-            "pattern_addressed": "A1_fabricated_specific_citation",
-            "scenario": f"{marker} scenario",
-            "expert_response": "r",
-        })
+        records.append(
+            {
+                "id": f"v25b_secA_{i:05d}",
+                "section": "A",
+                "section_name": "x",
+                "pattern_addressed": "A1_fabricated_specific_citation",
+                "scenario": f"{marker} scenario",
+                "expert_response": "r",
+            }
+        )
     kept = jf.filter_corpus(records, keep_top_fraction=0.5, judge_fn=stub)
     assert len(kept) == 2
     # Both kept records have score 0.9 (the "high" ones)
@@ -166,6 +171,7 @@ def test_filter_corpus_threshold_mode() -> None:
 
 def test_filter_corpus_balances_across_patterns() -> None:
     """Mixed-pattern corpus — top-half applied PER pattern, not globally."""
+
     def stub(prompt: str) -> dict:
         if "A1_high" in prompt:
             return {"score": 0.9, "justification": "j"}
@@ -176,22 +182,26 @@ def test_filter_corpus_balances_across_patterns() -> None:
         return {"score": 0.4, "justification": "j"}  # B1_low
 
     records = []
-    for pattern, marker in [("A1_fabricated_specific_citation", "A1_high"),
-                            ("A1_fabricated_specific_citation", "A1_high"),
-                            ("A1_fabricated_specific_citation", "A1_low"),
-                            ("A1_fabricated_specific_citation", "A1_low"),
-                            ("B1_disclaimer_prefix_on_urgent_scenario", "B1_high"),
-                            ("B1_disclaimer_prefix_on_urgent_scenario", "B1_high"),
-                            ("B1_disclaimer_prefix_on_urgent_scenario", "B1_low"),
-                            ("B1_disclaimer_prefix_on_urgent_scenario", "B1_low")]:
-        records.append({
-            "id": f"v25b_{marker}",
-            "section": pattern[0],
-            "section_name": "x",
-            "pattern_addressed": pattern,
-            "scenario": marker,
-            "expert_response": "r",
-        })
+    for pattern, marker in [
+        ("A1_fabricated_specific_citation", "A1_high"),
+        ("A1_fabricated_specific_citation", "A1_high"),
+        ("A1_fabricated_specific_citation", "A1_low"),
+        ("A1_fabricated_specific_citation", "A1_low"),
+        ("B1_disclaimer_prefix_on_urgent_scenario", "B1_high"),
+        ("B1_disclaimer_prefix_on_urgent_scenario", "B1_high"),
+        ("B1_disclaimer_prefix_on_urgent_scenario", "B1_low"),
+        ("B1_disclaimer_prefix_on_urgent_scenario", "B1_low"),
+    ]:
+        records.append(
+            {
+                "id": f"v25b_{marker}",
+                "section": pattern[0],
+                "section_name": "x",
+                "pattern_addressed": pattern,
+                "scenario": marker,
+                "expert_response": "r",
+            }
+        )
     kept = jf.filter_corpus(records, keep_top_fraction=0.5, judge_fn=stub)
     # 4 kept total: 2 from A1, 2 from B1 (top-half PER pattern)
     assert len(kept) == 4
@@ -204,6 +214,7 @@ def test_filter_corpus_balances_across_patterns() -> None:
 
 def test_filter_corpus_writes_judge_metadata() -> None:
     """Each kept record gets judge_score + judge_justification fields."""
+
     def stub(prompt: str) -> dict:
         return {"score": 0.8, "justification": "good fit"}
 
@@ -218,5 +229,6 @@ def test_filter_corpus_writes_judge_metadata() -> None:
 def test_filter_corpus_rejects_zero_records() -> None:
     def stub(prompt: str) -> dict:
         return {"score": 1.0, "justification": "j"}
+
     with pytest.raises(ValueError):
         jf.filter_corpus([], keep_top_fraction=0.5, judge_fn=stub)

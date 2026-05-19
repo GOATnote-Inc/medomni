@@ -30,11 +30,11 @@ def test_default_allocation_sums_to_target() -> None:
 def test_default_allocation_proportions_match_spec() -> None:
     """SPEC §Distribution-driven proportions: 70/25/2/2/1."""
     alloc = cg.default_allocation(target_n=10_000)
-    assert alloc[1] == 7000   # Knowledge Gap 70%
-    assert alloc[5] == 2500   # Hallucinated Safeguards 25% (over-weight)
-    assert alloc[3] == 200    # Calibration 2%
-    assert alloc[4] == 200    # Context Misapp 2%
-    assert alloc[2] == 100    # Reasoning Collapse 1% (held-out probe)
+    assert alloc[1] == 7000  # Knowledge Gap 70%
+    assert alloc[5] == 2500  # Hallucinated Safeguards 25% (over-weight)
+    assert alloc[3] == 200  # Calibration 2%
+    assert alloc[4] == 200  # Context Misapp 2%
+    assert alloc[2] == 100  # Reasoning Collapse 1% (held-out probe)
 
 
 def test_categories_match_failure_cluster_module() -> None:
@@ -73,6 +73,7 @@ def test_generate_v25b_examples_uses_injected_stub() -> None:
 def test_generate_v25b_examples_rejects_bad_category() -> None:
     def stub(category: int, idx: int) -> dict:
         return {"scenario": "s", "expert_response": "r"}
+
     with pytest.raises(ValueError, match="category"):
         cg.generate_v25b_examples(category=7, n_examples=1, generation_fn=stub)
 
@@ -80,6 +81,7 @@ def test_generate_v25b_examples_rejects_bad_category() -> None:
 def test_generate_v25b_examples_rejects_zero_or_negative_n() -> None:
     def stub(category: int, idx: int) -> dict:
         return {"scenario": "s", "expert_response": "r"}
+
     with pytest.raises(ValueError):
         cg.generate_v25b_examples(category=1, n_examples=0, generation_fn=stub)
     with pytest.raises(ValueError):
@@ -88,8 +90,10 @@ def test_generate_v25b_examples_rejects_zero_or_negative_n() -> None:
 
 def test_generate_v25b_examples_ids_are_deterministic() -> None:
     """Stable IDs allow incremental corpus extension without dup risk."""
+
     def stub(category: int, idx: int) -> dict:
         return {"scenario": "s", "expert_response": "r"}
+
     a = cg.generate_v25b_examples(category=5, n_examples=2, generation_fn=stub)
     b = cg.generate_v25b_examples(category=5, n_examples=2, generation_fn=stub)
     assert [e["id"] for e in a] == [e["id"] for e in b]
@@ -103,14 +107,17 @@ def test_generate_v25b_examples_ids_are_deterministic() -> None:
 def test_assemble_corpus_total_equals_target_n() -> None:
     def stub(category: int, idx: int) -> dict:
         return {"scenario": "s", "expert_response": "r"}
+
     corpus = cg.assemble_corpus(target_n=100, generation_fn=stub)
     assert len(corpus) == 100
 
 
 def test_assemble_corpus_distribution_per_category() -> None:
     """SPEC §Distribution-driven proportions: 70/25/2/2/1 at target_n=100."""
+
     def stub(category: int, idx: int) -> dict:
         return {"scenario": "s", "expert_response": "r"}
+
     corpus = cg.assemble_corpus(target_n=100, generation_fn=stub)
     counts = {c: sum(1 for ex in corpus if ex["category"] == c) for c in (1, 2, 3, 4, 5)}
     assert counts[1] == 70
@@ -269,7 +276,9 @@ def test_generate_collapsed_v25b_examples_uses_stub() -> None:
         return {"scenario": "s", "expert_response": "r"}
 
     examples = cg.generate_collapsed_v25b_examples(
-        section="A", n_examples=3, generation_fn=stub,
+        section="A",
+        n_examples=3,
+        generation_fn=stub,
     )
     assert len(examples) == 3
     assert captured == [("A", 0), ("A", 1), ("A", 2)]
@@ -282,6 +291,7 @@ def test_generate_collapsed_v25b_examples_uses_stub() -> None:
 def test_assemble_collapsed_corpus_distribution() -> None:
     def stub(section: str, idx: int) -> dict:
         return {"scenario": "s", "expert_response": "r"}
+
     corpus = cg.assemble_collapsed_corpus(target_n=100, generation_fn=stub)
     counts = {s: sum(1 for ex in corpus if ex["section"] == s) for s in ("A", "B", "C")}
     assert counts["A"] == 30
@@ -290,9 +300,7 @@ def test_assemble_collapsed_corpus_distribution() -> None:
 
 
 def test_make_collapsed_orca_generation_fn_returns_callable() -> None:
-    fn = cg.make_collapsed_orca_generation_fn(
-        base_url="http://localhost:8000/v1", model="x"
-    )
+    fn = cg.make_collapsed_orca_generation_fn(base_url="http://localhost:8000/v1", model="x")
     assert callable(fn)
 
 
@@ -317,9 +325,9 @@ def test_pattern_library_has_three_sections_with_expected_patterns() -> None:
     # Pattern IDs follow the convention "<section><idx>_<snake_case_name>"
     for section, patterns in cg.PATTERN_LIBRARY.items():
         for i, pattern in enumerate(patterns, 1):
-            assert pattern.startswith(f"{section}{i}_"), (
-                f"pattern {pattern!r} should start with {section}{i}_"
-            )
+            assert pattern.startswith(
+                f"{section}{i}_"
+            ), f"pattern {pattern!r} should start with {section}{i}_"
 
 
 def test_pattern_for_idx_round_robin() -> None:
@@ -338,10 +346,14 @@ def test_pattern_for_idx_rejects_invalid_section() -> None:
 
 def test_generated_collapsed_examples_carry_pattern_addressed() -> None:
     """Each example MUST have a pattern_addressed field for V2.5c bootstrap."""
+
     def stub(section: str, idx: int) -> dict:
         return {"scenario": "s", "expert_response": "r"}
+
     examples = cg.generate_collapsed_v25b_examples(
-        section="B", n_examples=10, generation_fn=stub,
+        section="B",
+        n_examples=10,
+        generation_fn=stub,
     )
     assert len(examples) == 10
     # Distinct patterns surface across the 10 (section B has 8 patterns)
@@ -401,8 +413,10 @@ def test_pattern_aware_prompt_rejects_unknown_pattern() -> None:
 def test_assemble_collapsed_corpus_balances_patterns_within_section() -> None:
     """A 5000-corpus B-section (n=3250) should have ~equal pattern coverage:
     3250 / 8 patterns ≈ 406 each (range 405-407)."""
+
     def stub(section: str, idx: int) -> dict:
         return {"scenario": "s", "expert_response": "r"}
+
     corpus = cg.assemble_collapsed_corpus(target_n=5000, generation_fn=stub)
     b_examples = [ex for ex in corpus if ex["section"] == "B"]
     assert len(b_examples) == 3250  # default 65% allocation

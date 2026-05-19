@@ -162,10 +162,7 @@ def _default_judge_fn(prompt: str) -> dict:
             )
             text = (resp.choices[0].message.content or "").strip()
             if text.startswith("```"):
-                lines = [
-                    ln for ln in text.splitlines()
-                    if not ln.strip().startswith("```")
-                ]
+                lines = [ln for ln in text.splitlines() if not ln.strip().startswith("```")]
                 text = "\n".join(lines).strip()
             return json.loads(text)
         except Exception as e:  # noqa: BLE001
@@ -234,9 +231,7 @@ def filter_corpus(
         scored.append((rec, result))
 
     if score_threshold is not None:
-        kept_pairs = [
-            (rec, res) for rec, res in scored if res.score >= score_threshold
-        ]
+        kept_pairs = [(rec, res) for rec, res in scored if res.score >= score_threshold]
     else:
         # Top-fraction PER pattern
         by_pattern: dict[str, list[tuple[dict, JudgmentResult]]] = defaultdict(list)

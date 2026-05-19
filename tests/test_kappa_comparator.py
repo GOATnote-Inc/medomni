@@ -148,6 +148,7 @@ def test_pair_user_to_answer_key_aligns_by_item_id(tmp_path) -> None:
         w.writerow(["A", "42", "1", "True", ""])
         w.writerow(["B", "123", "5", "True", ""])
     import json
+
     with key_path.open("w") as f:
         f.write(json.dumps({"item_id": "A", "seed": 42, "gpt41_category": 1}) + "\n")
         f.write(json.dumps({"item_id": "B", "seed": 123, "gpt41_category": 1}) + "\n")

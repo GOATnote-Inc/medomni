@@ -40,9 +40,7 @@ def cohen_kappa(
     if n == 0:
         raise ValueError("non-empty raters required")
     if n != len(rater_b):
-        raise ValueError(
-            f"equal-length raters required (got {len(rater_a)} vs {len(rater_b)})"
-        )
+        raise ValueError(f"equal-length raters required (got {len(rater_a)} vs {len(rater_b)})")
     po = sum(1 for a, b in zip(rater_a, rater_b, strict=True) if a == b) / n
     a_counts = Counter(rater_a)
     b_counts = Counter(rater_b)
@@ -59,9 +57,7 @@ def disagreement_matrix(
     categories: Sequence[int] = DEFAULT_CATEGORIES,
 ) -> dict[int, dict[int, int]]:
     """Confusion-style matrix: mat[gpt_cat][user_cat] = count."""
-    mat: dict[int, dict[int, int]] = {
-        c: {c2: 0 for c2 in categories} for c in categories
-    }
+    mat: dict[int, dict[int, int]] = {c: {c2: 0 for c2 in categories} for c in categories}
     for g, u in zip(gpt, user, strict=True):
         if g in mat and u in mat[g]:
             mat[g][u] += 1
@@ -173,8 +169,9 @@ def run_report(
 
     lines: list[str] = []
     lines.append("# κ-calibration report — physician vs gpt-4.1\n")
-    lines.append(f"- Paired items: **{len(paired)}** (used in κ: {len(used)}; "
-                 f"no-fit: {len(no_fit)})")
+    lines.append(
+        f"- Paired items: **{len(paired)}** (used in κ: {len(used)}; " f"no-fit: {len(no_fit)})"
+    )
     lines.append(f"- Cohen's κ: **{kappa:.3f}**")
     if kappa >= 0.81:
         verdict = "ALMOST PERFECT (Landis & Koch 1977)"
@@ -208,7 +205,9 @@ def run_report(
         lines.append("")
     # Disagreements (off-diagonal, top by count)
     disagreements = [
-        (g, u, mat[g][u]) for g in DEFAULT_CATEGORIES for u in DEFAULT_CATEGORIES
+        (g, u, mat[g][u])
+        for g in DEFAULT_CATEGORIES
+        for u in DEFAULT_CATEGORIES
         if g != u and mat[g][u] > 0
     ]
     disagreements.sort(key=lambda x: -x[2])

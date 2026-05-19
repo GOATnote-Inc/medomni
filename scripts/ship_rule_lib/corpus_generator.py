@@ -143,9 +143,7 @@ def assemble_corpus(
         if n <= 0:
             continue
         corpus.extend(
-            generate_v25b_examples(
-                category=cat, n_examples=n, generation_fn=generation_fn
-            )
+            generate_v25b_examples(category=cat, n_examples=n, generation_fn=generation_fn)
         )
     return corpus
 
@@ -300,9 +298,7 @@ def make_orca_generation_fn(
     The factory pattern means tests can inject stubs, the live caller
     constructs once and reuses the closure across N examples.
     """
-    base_url = base_url or os.environ.get(
-        "MEDOMNI_ORCA_VLLM_URL", "http://localhost:8000/v1"
-    )
+    base_url = base_url or os.environ.get("MEDOMNI_ORCA_VLLM_URL", "http://localhost:8000/v1")
     model = model or os.environ.get("MEDOMNI_ORCA_MODEL", "nemotron")
 
     def _fn(category: int, idx: int) -> dict[str, Any]:
@@ -319,10 +315,7 @@ def make_orca_generation_fn(
         )
         text = (resp.choices[0].message.content or "").strip()
         if text.startswith("```"):
-            lines = [
-                ln for ln in text.splitlines()
-                if not ln.strip().startswith("```")
-            ]
+            lines = [ln for ln in text.splitlines() if not ln.strip().startswith("```")]
             text = "\n".join(lines).strip()
         try:
             parsed = json.loads(text)
@@ -335,8 +328,7 @@ def make_orca_generation_fn(
         response = str(parsed.get("expert_response", "")).strip()
         if not scenario or not response:
             raise ValueError(
-                f"orca generation_fn: empty scenario/response for "
-                f"category={category} idx={idx}"
+                f"orca generation_fn: empty scenario/response for " f"category={category} idx={idx}"
             )
         return {"scenario": scenario, "expert_response": response}
 
@@ -423,9 +415,7 @@ def pattern_for_idx(*, section: str, idx: int) -> str:
     gives each pattern roughly equal training share within its section.
     """
     if section not in PATTERN_LIBRARY:
-        raise ValueError(
-            f"section must be in {sorted(PATTERN_LIBRARY)}, got {section!r}"
-        )
+        raise ValueError(f"section must be in {sorted(PATTERN_LIBRARY)}, got {section!r}")
     patterns = PATTERN_LIBRARY[section]
     return patterns[idx % len(patterns)]
 
@@ -593,9 +583,7 @@ def collapsed_default_allocation(target_n: int = 5000) -> dict[str, int]:
 def _collapsed_section_prompt(*, section: str, idx: int) -> str:
     """Build a section-specific prompt for V2.5b collapsed-corpus generation."""
     if section not in COLLAPSED_SECTIONS:
-        raise ValueError(
-            f"section must be in {sorted(COLLAPSED_SECTIONS)}, got {section!r}"
-        )
+        raise ValueError(f"section must be in {sorted(COLLAPSED_SECTIONS)}, got {section!r}")
     name = COLLAPSED_SECTIONS[section][0]
     pool = _COLLAPSED_TOPIC_POOLS[section]
     topic = pool[idx % len(pool)]
@@ -678,9 +666,7 @@ def generate_collapsed_v25b_examples(
     `generate_v25b_examples` — section is a string ('A'|'B'|'C'), not int.
     """
     if section not in COLLAPSED_SECTIONS:
-        raise ValueError(
-            f"section must be in {sorted(COLLAPSED_SECTIONS)}, got {section!r}"
-        )
+        raise ValueError(f"section must be in {sorted(COLLAPSED_SECTIONS)}, got {section!r}")
     if n_examples <= 0:
         raise ValueError(f"n_examples must be > 0, got {n_examples}")
     if generation_fn is None:
@@ -745,9 +731,7 @@ def make_collapsed_orca_generation_fn(
     that calls orca's vllm-omni endpoint. Mirror of `make_orca_generation_fn`
     but with section-string signature and section-specific prompts.
     """
-    base_url = base_url or os.environ.get(
-        "MEDOMNI_ORCA_VLLM_URL", "http://localhost:8000/v1"
-    )
+    base_url = base_url or os.environ.get("MEDOMNI_ORCA_VLLM_URL", "http://localhost:8000/v1")
     model = model or os.environ.get("MEDOMNI_ORCA_MODEL", "nemotron")
 
     def _fn(section: str, idx: int) -> dict[str, Any]:
@@ -764,10 +748,7 @@ def make_collapsed_orca_generation_fn(
         )
         text = (resp.choices[0].message.content or "").strip()
         if text.startswith("```"):
-            lines = [
-                ln for ln in text.splitlines()
-                if not ln.strip().startswith("```")
-            ]
+            lines = [ln for ln in text.splitlines() if not ln.strip().startswith("```")]
             text = "\n".join(lines).strip()
         try:
             parsed = json.loads(text)
