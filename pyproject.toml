@@ -7,6 +7,7 @@ requires-python = ">=3.10"
 [tool.pytest.ini_options]
 testpaths = ["tests", "mla/tests"]
 asyncio_mode = "auto"
+pythonpath = ["."]
 # Skip tests that reference files not present in the tree. All are
 # collection or load-time errors, not real test failures — the underlying
 # code/scripts/schemas need to be restored for these tests to mean anything.
