@@ -324,7 +324,7 @@ export function Composer() {
           <div>
             <h2 className="font-semibold text-slate-900 text-sm">MedOmni</h2>
             <p className="text-xs text-slate-500">
-              Nemotron-3-Nano-Omni · NVIDIA Blackwell B300 · open weights
+              Nemotron-3-Nano-Omni · open weights
             </p>
           </div>
           <span className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">

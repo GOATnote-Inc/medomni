@@ -1,5 +1,10 @@
 # DEMO — sovereign Nemotron-3 medical-LLM stack (judging walkthrough)
 
+> **STATUS (2026-05-20): superseded.** This runbook describes the April 2026 R1
+> pilot — an Anthropic-hackathon walkthrough on a since-retired multi-pod setup.
+> The live demo now runs on a single dedicated NVIDIA H100; see `README.md` for
+> the current architecture. A refreshed runbook lands with the flagship-demo work.
+
 > A three-minute walk through what's running, what's measured, and what's frozen.
 
 > **For Anthropic hackathon judges**: this work lives on PR

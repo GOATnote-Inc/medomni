@@ -29,7 +29,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "MedOmni — sovereign medical reasoning",
   description:
-    "Cited medical reasoning on NVIDIA Blackwell B300. Manifest-locked, reproducible, sovereign by construction. Demo for evaluation only — do not enter PHI.",
+    "Cited medical reasoning built on open-weight NVIDIA Nemotron. Manifest-locked, reproducible, sovereign by construction. Demo for evaluation only — do not enter PHI.",
 };
 
 export default function RootLayout({

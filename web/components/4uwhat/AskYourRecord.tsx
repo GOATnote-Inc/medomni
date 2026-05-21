@@ -146,7 +146,7 @@ export function AskYourRecord({
 
   // Image input — patient sends a wound photo, pill bottle, lab printout,
   // rash, etc. The Nemotron-Omni model accepts image_url content blocks
-  // natively (vllm-omni-b300 multimodal). The /api/agent route already
+  // natively (Nemotron-Omni multimodal). The /api/agent route already
   // handles image content blocks via the same FilePart pattern as audio
   // (web/app/api/agent/route.ts:279). Mirror the audio chip + state shape.
   const [pendingImage, setPendingImage] = useState<{
@@ -715,7 +715,7 @@ export function AskYourRecord({
                   "Coverage check: when a guideline isn't in our registry, the agent says so instead of guessing",
                   "Drug-interaction check: cross-referenced against PrimeKG and PubMed",
                   "Source-of-truth: every claim traceable to a tool result or your record",
-                  "Hardware: runs on dedicated NVIDIA Blackwell B300 · no third-party AI APIs called",
+                  "Sovereign stack: the model runs on dedicated hardware we operate · no third-party AI APIs called",
                 ];
                 return (
                   <details
@@ -738,7 +738,7 @@ export function AskYourRecord({
                         userSelect: "none",
                       }}
                     >
-                      VERIFIED · {tools.length} TOOLS USED · {checks.length}/{checks.length} CHECKS PASSED · NVIDIA B300
+                      VERIFIED · {tools.length} TOOLS USED · {checks.length}/{checks.length} CHECKS PASSED · SOVEREIGN
                     </summary>
                     <div style={{ marginTop: 6, display: "grid", gap: 3 }}>
                       <div>
