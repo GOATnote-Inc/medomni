@@ -89,7 +89,7 @@ export interface SampleImaging {
   studyUid?: string;
   /** Accession number from the imaging center — synthetic. */
   accessionNumber?: string;
-  /** Number of series in the study (1 for chest 2-view, ankle MRI, panoramic). */
+  /** Number of series in the study (1 for chest 2-view, knee MRI, panoramic). */
   seriesCount?: number;
   /** Number of instances (images) across all series. */
   instanceCount?: number;
@@ -259,7 +259,7 @@ export const SAMPLE_TIMELINE: SampleTimelineEntry[] = [
   { date: "2026-03-08", t: "14:30", kind: "imaging", title: "Chest X-ray, 2-view", who: "Dr. M. Hsu (Radiology)", loc: "Riverside Imaging", tag: "IMG" },
   { date: "2026-02-19", t: "08:45", kind: "visit", title: "Pulmonology follow-up", who: "Dr. Priya Patel", loc: "Riverside Pulmonary", tag: "SPEC" },
   { date: "2026-01-30", t: "11:00", kind: "vacc", title: "Influenza vaccine", who: "CVS Pharmacy", loc: "Walk-in", tag: "VAX" },
-  { date: "2025-11-04", t: "16:20", kind: "visit", title: "Urgent care — sprained ankle", who: "Dr. K. Nguyen", loc: "Westside Urgent", tag: "URG" },
+  { date: "2025-11-04", t: "16:20", kind: "visit", title: "Urgent care — knee sprain", who: "Dr. K. Nguyen", loc: "Westside Urgent", tag: "URG" },
   { date: "2025-10-15", t: "09:50", kind: "lab", title: "Lipid panel", who: "Quest Diagnostics", loc: "Mail-in kit", tag: "LAB" },
   { date: "2025-09-01", t: "10:00", kind: "msg", title: "Renewed Fluticasone Rx", who: "Dr. Patel", loc: "via portal", tag: "MSG" },
 ];
@@ -294,8 +294,8 @@ export const SAMPLE_IMAGING: SampleImaging[] = [
     id: "mri",
     date: "2025-11-04",
     kind: "MRI",
-    region: "Right ankle",
-    read: "Grade II ATFL sprain. No fracture.",
+    region: "Right knee",
+    read: "Grade II MCL sprain. No fracture.",
     radiologist: "Dr. L. Sato",
     studyUid: "1.2.840.113619.2.55.3.604688.1707.1730707200.mri",
     accessionNumber: "RSDIMG-2025-11-04-MRI-0007",
