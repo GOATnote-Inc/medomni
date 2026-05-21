@@ -61,6 +61,20 @@ const TRIGGER_FALLBACK: Record<SkillIntent, string[]> = {
     "handoff",
     "sign-out",
   ],
+  // Mirrors EXPLAIN_KEYWORDS in skills.ts — the patient-facing
+  // decision-explainer skill. This key was absent, leaving TRIGGER_FALLBACK
+  // short of the SkillIntent union and failing the type check.
+  explain: [
+    "why did my doctor",
+    "why did the doctor",
+    "my doctor said",
+    "my doctor prescribed",
+    "they sent me home",
+    "i was discharged",
+    "should i be worried",
+    "what does my score mean",
+    "explain why",
+  ],
   default: [],
 };
 
