@@ -16,7 +16,7 @@ export default function Home() {
           </h1>
           <p className="max-w-2xl text-base text-slate-600 leading-relaxed">
             Ask a clinical question below. Multimodal — text, image, voice.
-            Runs on NVIDIA Blackwell B300; no signup, no fees, no API keys.
+            Runs privately on dedicated hardware; no signup, no fees, no API keys.
             Open-weight stack on the same lineage that NVIDIA backs for
             <a
               href="https://huggingface.co/google/medgemma-4b-it"
@@ -47,7 +47,7 @@ export default function Home() {
           </p>
           <p>
             <strong className="text-slate-700">What this is:</strong> Nemotron-3-Nano-Omni
-            served on a Blackwell B300, exposed through a thin BFF. Open-weight
+            served on dedicated hardware, exposed through a thin BFF. Open-weight
             model, open-source app code, manifest-locked answers. The aim is a
             MedGemma-equivalent reference deployment on the NVIDIA stack —
             something any institution can replicate behind their own firewall.

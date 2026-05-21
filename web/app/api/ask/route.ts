@@ -1,4 +1,4 @@
-// /api/ask — SSE proxy from browser to vllm Nemotron-3-Nano-Omni on B300.
+// /api/ask — SSE proxy from browser to vllm Nemotron-3-Nano-Omni on the H100.
 // Sampling-mode aware: detects audio_url / image_url / text-only and applies
 // the right Nemotron-Omni params (per model card + REDTEAM-SAMPLING.md).
 //
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 // accepts that alias (NOT the full HF path).
 const MODEL_ID = "nemotron";
 
-const SYSTEM_PROMPT = `You are MedOmni, a medical reasoning assistant served sovereign on NVIDIA Blackwell B300 hardware. Your job is to help clinicians (RNs, NPs, PAs, MDs) and trained healthcare workers think through clinical scenarios.
+const SYSTEM_PROMPT = `You are MedOmni, a medical reasoning assistant served sovereign on dedicated hardware. Your job is to help clinicians (RNs, NPs, PAs, MDs) and trained healthcare workers think through clinical scenarios.
 
 Discipline:
 - State your reasoning briefly, then your recommendation.

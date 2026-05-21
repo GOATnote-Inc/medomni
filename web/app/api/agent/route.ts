@@ -1,6 +1,6 @@
 // /api/agent — server-side agent loop. Stays alongside /api/ask.
 //
-// Catfish vllm-omni-b300 is now launched with
+// The Nemotron-Omni vLLM server is now launched with
 //   --enable-auto-tool-choice --tool-call-parser qwen3_coder
 //   --reasoning-parser nemotron_v3
 // so vllm streams structured `delta.tool_calls[]` + `delta.reasoning` (note:
@@ -221,7 +221,7 @@ const TOOL_SPEC = [
   },
 ];
 
-const SYSTEM_PROMPT = `You are MedOmni, a medical reasoning assistant served sovereign on NVIDIA Blackwell B300 hardware. You help clinicians (RNs, NPs, PAs, MDs) and trained healthcare workers think through clinical scenarios.
+const SYSTEM_PROMPT = `You are MedOmni, a medical reasoning assistant served sovereign on dedicated hardware. You help clinicians (RNs, NPs, PAs, MDs) and trained healthcare workers think through clinical scenarios.
 
 Discipline:
 - State your reasoning briefly, then your recommendation.

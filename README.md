@@ -54,7 +54,7 @@ to `medomni.vercel.app/4UWHAt`. The page is the **Records OS** dashboard:
 - **FHIR R4 Bundle export** — Share button produces a valid Bundle with Patient + Conditions + Observations + MedicationRequests + AllergyIntolerances + DiagnosticReports + ImagingStudies, downloadable as JSON.
 - **Demo banner** — `Private by design · runs on dedicated NVIDIA hardware · no third-party AI APIs called` (for evaluation only; do not enter PHI).
 
-Inference path: every keystroke / image / audio chunk hits **Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4** on the B300 catfish pod via vllm. No cloud LLM API keys in the path; the only external service is the public `medomni.vercel.app` Vercel deploy that proxies `/api/agent` to the catfish vllm endpoint.
+Inference path: every keystroke / image / audio chunk hits **Nemotron-3-Nano-Omni-30B-A3B-Reasoning** (FP8) on a dedicated NVIDIA H100 via vllm. No cloud LLM API keys in the path; the only external service is the public `medomni.vercel.app` Vercel deploy that proxies `/api/agent` to the H100 vllm endpoint.
 
 Architecture decision behind the patient slice: **Pattern B (dual lookup)** — the agent hits FHIR (Medplum, self-hosted) and PrimeKG independently and merges in-prompt. Measured p95 = **11 ms** for the FHIR fetch across 12 patients, 60 samples (`findings/2026-05-04-pattern-b-spike/RESULTS.md`).
 
@@ -108,10 +108,13 @@ stack with persona-tagged graph edges is genuinely under-served.
 
 ---
 
-## Live demo + 3-GPU sovereign factory
+## Prior training-phase factory (retired 2026-05-07)
 
-The MedOmni stack is **operational now** — not a slide deck. Three GPUs run continuously,
-each with a distinct role in the training/serving/evaluation flywheel:
+During the model-training phase (2026-04 to 2026-05-07) a 3-GPU fleet ran the
+data → train → evaluate flywheel below — each GPU with a distinct role. Once the V0
+baseline was established and the V2.5 trajectory measured, the fleet had completed its
+purpose, and serving was deliberately consolidated to a single right-sized H100. This
+section is retired history; the live demo runs on one dedicated NVIDIA H100.
 
 | Pod | Hardware | Role | What's running |
 |---|---|---|---|
@@ -152,18 +155,20 @@ each with a distinct role in the training/serving/evaluation flywheel:
         └─────────────────────────────────────────────────────────────────┘
 ```
 
-The loop runs continuously. No GPU sits idle for >12h (idle-deletion-risk per
-internal ops rule). PRs are the human-inspected checkpoints; the work between
-PRs is autonomous.
+While it ran, the loop operated continuously, with PRs as the human-inspected
+checkpoints between autonomous work. It was decommissioned alongside the
+2026-05-07 consolidation.
 
-**Sovereignty floor:** every box above runs on hardware we control. The only
-cloud dependency is **OpenAI's gpt-4.1** as the canonical judge (and that's
-optional — sovereign-only Qwen ensemble works, just with less calibration
-against the OpenAI HealthBench paper baseline).
+**Sovereignty floor:** every box above ran on hardware under our control. The
+sovereignty contract still holds for the live demo today — no cloud LLM API keys
+are in the inference path (see the Sovereignty contract section below).
 
 ---
 
 ## Architecture
+
+> *Target architecture. The live demo on a single H100 implements a subset of this
+> pipeline today; the remaining stages are the build plan.*
 
 ```
 [user query, modality bundle (text + optional image / audio / video)]
