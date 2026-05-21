@@ -44,6 +44,8 @@ const VOICE_SELECT_STORAGE_KEY = "medomni:tts:voice";
 import { usePatientId } from "@/hooks/usePatientId";
 import { usePersona } from "@/hooks/usePersona";
 import { saveReceipt, type Receipt } from "@/lib/4uwhat/receipts";
+import { TraceTimeline } from "./TraceTimeline";
+import type { TraceStage, TurnMetrics } from "@/lib/4uwhat/trace";
 
 const VOICE_OUT_STORAGE_KEY = "medomni:voiceOut";
 
@@ -128,6 +130,44 @@ function splitForSpeech(buffer: string): { chunks: string[]; rest: string } {
     lastEnd = re.lastIndex;
   }
   return { chunks, rest: buffer.slice(lastEnd) };
+}
+
+// --- Inference-trace extraction ------------------------------------------
+//
+// The /api/agent route streams the Phase-1 trace as AI-SDK custom data
+// parts: one `data-stage` per measured stage and one terminal
+// `data-turn-metrics`. They land in an assistant message's `parts` array
+// interleaved with text/reasoning/tool parts. This helper pulls them out so
+// AskYourRecord can render a <TraceTimeline> under the answer.
+//
+// Stages keyed by id are reconciled by the SDK already (later writes to the
+// same id replace earlier ones); we dedupe defensively anyway and preserve
+// stream order.
+
+interface MessagePartLike {
+  type: string;
+  data?: unknown;
+}
+
+function extractTrace(parts: readonly MessagePartLike[]): {
+  stages: TraceStage[];
+  metrics?: TurnMetrics;
+} {
+  const stages: TraceStage[] = [];
+  const seen = new Set<string>();
+  let metrics: TurnMetrics | undefined;
+  for (const part of parts) {
+    if (part.type === "data-stage" && part.data) {
+      const stage = part.data as TraceStage;
+      if (typeof stage.id === "string" && !seen.has(stage.id)) {
+        seen.add(stage.id);
+        stages.push(stage);
+      }
+    } else if (part.type === "data-turn-metrics" && part.data) {
+      metrics = part.data as TurnMetrics;
+    }
+  }
+  return { stages, metrics };
 }
 
 export function AskYourRecord({
@@ -690,6 +730,28 @@ export function AskYourRecord({
                 }
                 return null;
               })}
+
+              {/* Inference trace — Phase 1 "make the stack visible". The
+                  /api/agent route streams a measured stage trace as custom
+                  data parts; TraceTimeline renders it under the answer with
+                  per-stage latency + the turn summary (TTFT, tok/s, total).
+                  Rendered for assistant turns once any trace data has
+                  arrived; extractTrace returns empty for user turns and the
+                  component self-hides when there is nothing to show. */}
+              {m.role === "assistant" &&
+                (() => {
+                  const { stages, metrics } = extractTrace(
+                    m.parts as MessagePartLike[],
+                  );
+                  if (stages.length === 0 && !metrics) return null;
+                  return (
+                    <TraceTimeline
+                      stages={stages}
+                      metrics={metrics}
+                      streaming={busy}
+                    />
+                  );
+                })()}
 
               {/* Verification monitor badge — under every assistant turn.
                   This is the "specification monitor" thesis from the YC
