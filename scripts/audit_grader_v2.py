@@ -55,22 +55,22 @@ class Check:
         self.reason: str = "(no check ran)"
         self.evidence: list[str] = []
 
-    def _set(self, status: str, reason: str, evidence: tuple) -> "Check":
+    def _set(self, status: str, reason: str, evidence: tuple) -> Check:
         self.status = status
         self.reason = reason
         self.evidence = [str(e) for e in evidence]
         return self
 
-    def passed(self, reason: str, *evidence) -> "Check":
+    def passed(self, reason: str, *evidence) -> Check:
         return self._set("PASS", reason, evidence)
 
-    def failed(self, reason: str, *evidence) -> "Check":
+    def failed(self, reason: str, *evidence) -> Check:
         return self._set("FAIL", reason, evidence)
 
-    def deferred(self, reason: str, *evidence) -> "Check":
+    def deferred(self, reason: str, *evidence) -> Check:
         return self._set("DEFERRED", reason, evidence)
 
-    def na(self, reason: str) -> "Check":
+    def na(self, reason: str) -> Check:
         return self._set("N/A", reason, ())
 
 
@@ -189,7 +189,9 @@ def check_b1_per_pattern_sigma() -> Check:
     ev = (
         f"patterns total: {len(stats)}",
         f"patterns with σ < 0.10: {len(bad)}",
-        "lowest σ: " + ", ".join(f"{p}={s:.3f}" for p, s in worst) if worst else "lowest σ: (none below 0.10)",
+        "lowest σ: " + ", ".join(f"{p}={s:.3f}" for p, s in worst)
+        if worst
+        else "lowest σ: (none below 0.10)",
     )
     if not bad:
         return c.passed(f"all {len(stats)} patterns have σ ≥ 0.10", *ev)
@@ -253,13 +255,18 @@ def check_b4_keep_decision_honest() -> Check:
         return c.deferred("no iter=1 result file")
     text = result.read_text()
     invalid = "provisionally INVALID" in text
-    sigma_fail = check_b1_per_pattern_sigma().status == "FAIL" or check_b2_variance_retention().status == "FAIL"
+    sigma_fail = (
+        check_b1_per_pattern_sigma().status == "FAIL"
+        or check_b2_variance_retention().status == "FAIL"
+    )
     ev = (
         f"'provisionally INVALID' phrase present in result: {invalid}",
         f"any σ-criterion currently failing: {sigma_fail}",
     )
     if sigma_fail and invalid:
-        return c.passed("σ-checks fail AND result already marks KEEP as INVALID — conjunctive rule honored", *ev)
+        return c.passed(
+            "σ-checks fail AND result already marks KEEP as INVALID — conjunctive rule honored", *ev
+        )
     if not sigma_fail and not invalid:
         return c.passed("σ-checks pass AND result does not invalidate KEEP — consistent", *ev)
     return c.failed(
@@ -412,7 +419,9 @@ def main() -> int:
     claude_md_path = REPO / "CLAUDE.md"
     if not claude_md_path.exists():
         # Hard fail with markdown stub
-        print("# audit (v2) — CLAUDE.md not found\n\nCannot grade without `CLAUDE.md`. This is structural, not a v2-check failure.")
+        print(
+            "# audit (v2) — CLAUDE.md not found\n\nCannot grade without `CLAUDE.md`. This is structural, not a v2-check failure."
+        )
         return 0
 
     claude_md = claude_md_path.read_text()
@@ -461,7 +470,9 @@ def main() -> int:
     out.append(f"- **DEFERRED:** {deferred_}")
     out.append(f"- **N/A:** {na_}")
     out.append("")
-    out.append("Category D (decorative-legacy) is reported separately and does **not** count toward the headline.")
+    out.append(
+        "Category D (decorative-legacy) is reported separately and does **not** count toward the headline."
+    )
     out.append("")
     out.append("## A. Hot-path discipline (`CLAUDE.md` §0)")
     out.append("")
