@@ -55,6 +55,13 @@ import {
   stripMcpPrefix,
   type OpenAIFunctionTool,
 } from "@/lib/mcp/tool-spec-adapter";
+import {
+  estimateTokens,
+  tokensPerSecond,
+  type TraceStage,
+  type TraceStageKind,
+  type TurnMetrics,
+} from "@/lib/4uwhat/trace";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -411,6 +418,125 @@ async function* iterSseLines(stream: ReadableStream<Uint8Array>): AsyncGenerator
   if (buffer.startsWith("data: ")) yield buffer.slice(6);
 }
 
+// --- Trace instrumentation -------------------------------------------------
+//
+// Phase 1 of the flagship-demo plan: measure every real stage of a turn and
+// stream it as AI-SDK custom data parts alongside the existing reasoning /
+// text / tool stream. The data model + transport contract live in
+// `lib/4uwhat/trace.ts`. This recorder owns the turn clock and stage-id
+// allocation; the route calls it at stage boundaries.
+//
+// Honesty rule (SPEC §6 Phase 1 / §8): a stage is recorded only when it
+// REALLY runs. There are no placeholder stages. Each label names the actual
+// open-source component ("Nemotron-3-Nano-Omni inference", "tool: <name>").
+
+class TraceRecorder {
+  private readonly startedAt: number;
+  private readonly writer: UIMessageStreamWriter;
+  private nextIndex = 0;
+  /** Set once, from the first model token of the turn. */
+  private ttftMs: number | null = null;
+  /** Running estimate of output (text + reasoning) tokens for the turn. */
+  private outputTokens = 0;
+
+  constructor(writer: UIMessageStreamWriter, startedAt: number) {
+    this.writer = writer;
+    this.startedAt = startedAt;
+  }
+
+  /** ms since the turn began. */
+  elapsed(): number {
+    return Date.now() - this.startedAt;
+  }
+
+  /**
+   * Record the time-to-first-token, once. The first model token of the
+   * whole turn (whether it lands in `reasoning` or `content`) defines TTFT.
+   * Later calls are ignored so a multi-step turn keeps the true first-token
+   * latency.
+   */
+  markFirstToken(): void {
+    if (this.ttftMs === null) this.ttftMs = this.elapsed();
+  }
+
+  /** Add streamed output text toward the turn's token estimate. */
+  addOutputText(text: string): void {
+    if (text) this.outputTokens += estimateTokens(text);
+  }
+
+  /**
+   * Emit one finished stage as a `data-stage` part. `startedAtMs` and
+   * `durationMs` are caller-measured. Returns nothing — the stage is on the
+   * stream. The id is stable (`stage-${index}`) so a future in-place update
+   * would reconcile rather than duplicate.
+   */
+  emitStage(stage: {
+    label: string;
+    kind: TraceStageKind;
+    startedAtMs: number;
+    durationMs: number;
+    detail?: string;
+  }): void {
+    const id = `stage-${this.nextIndex++}`;
+    const data: TraceStage = {
+      id,
+      label: stage.label,
+      kind: stage.kind,
+      startedAtMs: Math.max(0, Math.round(stage.startedAtMs)),
+      durationMs: Math.max(0, Math.round(stage.durationMs)),
+      ...(stage.detail ? { detail: stage.detail } : {}),
+    };
+    this.writer.write({ type: "data-stage", data, id });
+  }
+
+  /**
+   * Emit the terminal `data-turn-metrics` part. `generationMs` is the sum
+   * of measured model-generation windows for the turn — the honest basis
+   * for tok/s (wall time includes tool I/O the model is not generating
+   * during, so dividing tokens by total wall time would understate decode
+   * throughput).
+   */
+  emitTurnMetrics(generationMs: number): void {
+    const totalMs = this.elapsed();
+    const data: TurnMetrics = {
+      ttftMs: this.ttftMs ?? totalMs,
+      totalMs,
+      tokens: this.outputTokens,
+      tokPerSec: tokensPerSecond(this.outputTokens, generationMs),
+    };
+    this.writer.write({ type: "data-turn-metrics", data });
+  }
+}
+
+/**
+ * Build the one-line `detail` for a tool trace stage. Surfaces the query
+ * (or score) argument the model passed, and an honest "error" marker when
+ * the tool returned an error — so a failed tool reads as failed in the
+ * timeline rather than silently. Returns undefined when there is nothing
+ * useful to show.
+ */
+function toolStageDetail(argsRaw: string, output: unknown): string | undefined {
+  let arg: string | undefined;
+  try {
+    const parsed = JSON.parse(argsRaw || "{}") as Record<string, unknown>;
+    const candidate = parsed.query ?? parsed.score ?? parsed.complaint;
+    if (typeof candidate === "string" && candidate.trim()) {
+      arg = candidate.trim().slice(0, 80);
+    }
+  } catch {
+    // Unparseable args — no arg detail; the error branch below still applies.
+  }
+  const errored =
+    typeof output === "object" &&
+    output !== null &&
+    "error" in output &&
+    typeof (output as { error: unknown }).error === "string";
+  if (arg && errored) return `"${arg}" · error`;
+  if (arg) return `"${arg}"`;
+  if (errored) return "error";
+  return undefined;
+}
+
 interface DeltaToolCall {
   id?: string;
   type?: "function";
@@ -442,6 +568,12 @@ interface StepResult {
   finishReason: string | null;
   toolCalls: ToolCallAcc[];
   contentEmitted: string;
+  /**
+   * Measured model-generation wall time for this step: the upstream
+   * request -> the SSE stream's [DONE], in ms. Used for the per-step
+   * inference trace row and as the basis for honest tok/s.
+   */
+  generationMs: number;
 }
 
 async function streamOneStep(
@@ -450,6 +582,7 @@ async function streamOneStep(
   writer: UIMessageStreamWriter,
   step: number,
   toolSpec: readonly unknown[] = TOOL_SPEC,
+  trace?: TraceRecorder,
 ): Promise<StepResult> {
   const payload = {
     model: MODEL_ID,
@@ -464,6 +597,11 @@ async function streamOneStep(
     tools: toolSpec,
     tool_choice: "auto",
   };
+
+  // Generation clock for this step. Starts at the upstream request so the
+  // measured window is request -> stream end, matching what a caller
+  // perceives as "the model generating this step".
+  const genStartedAt = Date.now();
 
   const upstream = await fetch(`${tunnelUrl}/v1/chat/completions`, {
     method: "POST",
@@ -503,6 +641,9 @@ async function streamOneStep(
     if (delta) {
       const reasoningDelta = delta.reasoning ?? delta.reasoning_content;
       if (reasoningDelta) {
+        // First model token of the turn (reasoning or content) defines TTFT.
+        trace?.markFirstToken();
+        trace?.addOutputText(reasoningDelta);
         if (!reasoningOpen) {
           writer.write({ type: "reasoning-start", id: reasoningId });
           reasoningOpen = true;
@@ -510,6 +651,8 @@ async function streamOneStep(
         writer.write({ type: "reasoning-delta", id: reasoningId, delta: reasoningDelta });
       }
       if (delta.content) {
+        trace?.markFirstToken();
+        trace?.addOutputText(delta.content);
         if (!textOpen) {
           writer.write({ type: "text-start", id: textId });
           textOpen = true;
@@ -560,7 +703,12 @@ async function streamOneStep(
   if (textOpen) writer.write({ type: "text-end", id: textId });
 
   const toolCalls = [...toolAcc.values()].sort((a, b) => a.index - b.index);
-  return { finishReason, toolCalls, contentEmitted };
+  return {
+    finishReason,
+    toolCalls,
+    contentEmitted,
+    generationMs: Date.now() - genStartedAt,
+  };
 }
 
 // --- Tool execution --------------------------------------------------------
@@ -832,26 +980,61 @@ export async function POST(req: NextRequest) {
       const startedAt = Date.now();
       const wallClockExceeded = () => Date.now() - startedAt > WALL_CLOCK_MS;
 
+      // Phase 1 trace recorder. Shares the turn clock with the wall-clock
+      // governor above so trace offsets and the budget agree. `generationMs`
+      // accumulates only the measured model-generation windows — tool I/O
+      // is excluded so the final tok/s reflects real decode throughput.
+      const trace = new TraceRecorder(writer, startedAt);
+      let generationMs = 0;
+
       for (let step = 0; step < MAX_STEPS; step++) {
         if (wallClockExceeded()) {
           writer.write({
             type: "error",
             errorText: `Wall-clock budget (${WALL_CLOCK_MS / 1000}s) exceeded; stopping the agent loop.`,
           });
+          trace.emitTurnMetrics(generationMs);
           return;
         }
 
+        const stepStartedAtMs = trace.elapsed();
         let result: StepResult;
         try {
-          result = await streamOneStep(tunnelUrl, history, writer, step, effectiveToolSpec);
+          result = await streamOneStep(
+            tunnelUrl,
+            history,
+            writer,
+            step,
+            effectiveToolSpec,
+            trace,
+          );
         } catch (e) {
           writer.write({ type: "error", errorText: (e as Error).message });
+          trace.emitTurnMetrics(generationMs);
           return;
         }
+
+        // One inference stage per model-generation step. Labeled with the
+        // actual model + serving stack; `detail` notes the step index and
+        // whether the step ended in tool calls or a final answer.
+        generationMs += result.generationMs;
+        trace.emitStage({
+          label: "Nemotron-3-Nano-Omni inference",
+          kind: "inference",
+          startedAtMs: stepStartedAtMs,
+          durationMs: result.generationMs,
+          detail:
+            result.toolCalls.length > 0
+              ? `step ${step + 1} · vLLM · requested ${result.toolCalls.length} tool call${
+                  result.toolCalls.length === 1 ? "" : "s"
+                }`
+              : `step ${step + 1} · vLLM · final answer`,
+        });
 
         if (result.finishReason !== "tool_calls" || result.toolCalls.length === 0) {
           // Final answer (or refusal). Stream is closed by writer's
           // text-end/reasoning-end events emitted in streamOneStep.
+          trace.emitTurnMetrics(generationMs);
           return;
         }
 
@@ -889,7 +1072,8 @@ export async function POST(req: NextRequest) {
         // as Anthropic's parallel tool-use guidance: prefer one turn with N
         // parallel calls over N turns with 1 call each. Per-call quota check
         // happens before dispatch; over-budget calls get the quota error
-        // instead of running.
+        // instead of running. Each call's wall time is measured for its
+        // trace stage; over-budget calls are not timed (they never ran).
         const dispatched = await Promise.all(
           result.toolCalls.map(async (tc) => {
             totalToolCalls += 1;
@@ -899,20 +1083,34 @@ export async function POST(req: NextRequest) {
                 output: {
                   error: `Tool budget for this query (${MAX_TOOL_CALLS_PER_TURN} calls) exceeded. Do not call any more tools — answer from prior knowledge and acknowledge the limit.`,
                 },
+                startedAtMs: trace.elapsed(),
+                durationMs: 0,
               };
             }
+            const toolStartedAtMs = trace.elapsed();
+            const toolStartedAt = Date.now();
             try {
               const output = await runTool(tc.name, tc.argsRaw, {
                 patientId: requestPatientId,
               });
-              return { tc, output };
+              return {
+                tc,
+                output,
+                startedAtMs: toolStartedAtMs,
+                durationMs: Date.now() - toolStartedAt,
+              };
             } catch (e) {
-              return { tc, output: { error: (e as Error).message } };
+              return {
+                tc,
+                output: { error: (e as Error).message },
+                startedAtMs: toolStartedAtMs,
+                durationMs: Date.now() - toolStartedAt,
+              };
             }
           }),
         );
 
-        for (const { tc, output } of dispatched) {
+        for (const { tc, output, startedAtMs, durationMs } of dispatched) {
           writer.write({
             type: "tool-output-available",
             toolCallId: tc.id,
@@ -923,6 +1121,16 @@ export async function POST(req: NextRequest) {
             tool_call_id: tc.id,
             content: JSON.stringify(output),
           });
+          // One tool stage per call. Label names the actual tool; `detail`
+          // surfaces the query/score argument when present, or an error
+          // marker so a failed tool reads honestly in the timeline.
+          trace.emitStage({
+            label: `tool: ${tc.name}`,
+            kind: "tool",
+            startedAtMs,
+            durationMs,
+            detail: toolStageDetail(tc.argsRaw, output),
+          });
         }
       }
 
@@ -930,6 +1138,7 @@ export async function POST(req: NextRequest) {
         type: "error",
         errorText: `Agent loop exceeded ${MAX_STEPS} steps without a final answer.`,
       });
+      trace.emitTurnMetrics(generationMs);
     },
     onError: (e) => `Agent error: ${(e as Error).message}`,
   });

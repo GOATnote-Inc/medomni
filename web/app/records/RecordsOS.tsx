@@ -36,6 +36,7 @@ import {
   Wordmark,
 } from "@/components/4uwhat";
 import { AskYourRecord } from "@/components/4uwhat/AskYourRecord";
+import { SystemPanel } from "@/components/4uwhat/SystemPanel";
 import { Resizer, loadPersistedVar } from "@/components/4uwhat/Resizer";
 // Direct import: A2's parallel branch lands the PatientPicker file at
 // this path. Bypassing the barrel keeps this file's imports isolated to
@@ -1853,6 +1854,13 @@ export function RecordsOS() {
         {/* Ask your record (AI) */}
         <div style={{ padding: "20px 22px", borderBottom: "1px solid #1f1f1f" }}>
           <AskYourRecord suggestions={SAMPLE_AI_SUGGESTIONS} />
+        </div>
+
+        {/* System panel — Phase 1 "make the stack visible". Persistent:
+            shows the model + serving stack + sovereignty, and polls
+            /api/telemetry for live vLLM serving metrics every ~5s. */}
+        <div style={{ padding: "16px 22px", borderBottom: "1px solid #1f1f1f" }}>
+          <SystemPanel />
         </div>
 
         {/* Care team */}

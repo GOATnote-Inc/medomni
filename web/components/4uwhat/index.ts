@@ -32,3 +32,7 @@ export { ShareDrawer } from "./ShareDrawer";
 
 // Imaging gallery panel (B — imaging gallery)
 export { ImagingPanel } from "./ImagingPanel";
+
+// Phase 1 "make the stack visible" — live inference trace + system panel
+export { TraceTimeline } from "./TraceTimeline";
+export { SystemPanel } from "./SystemPanel";
