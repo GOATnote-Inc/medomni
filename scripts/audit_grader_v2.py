@@ -253,12 +253,22 @@ def check_b4_keep_decision_honest() -> Check:
     result = DIAG_DIR / "ITER1_DIAGNOSTIC_RESULT.md"
     if not result.exists():
         return c.deferred("no iter=1 result file")
+    b1 = check_b1_per_pattern_sigma()
+    b2 = check_b2_variance_retention()
+    # If σ-checks themselves are DEFERRED (e.g. corpus JSONLs not in this
+    # checkout because they're gitignored — the default in CI), B4 cannot
+    # be evaluated: we do not know whether to expect KEEP-honored or
+    # KEEP-flipped. Treating DEFERRED as "σ-checks passing" was the bug
+    # the v2 grader's first CI run on issue #410 surfaced.
+    if b1.status == "DEFERRED" or b2.status == "DEFERRED":
+        return c.deferred(
+            "σ-checks DEFERRED (likely missing corpus JSONLs in this checkout); KEEP-consistency cannot be evaluated",
+            f"B1 status: {b1.status}",
+            f"B2 status: {b2.status}",
+        )
     text = result.read_text()
     invalid = "provisionally INVALID" in text
-    sigma_fail = (
-        check_b1_per_pattern_sigma().status == "FAIL"
-        or check_b2_variance_retention().status == "FAIL"
-    )
+    sigma_fail = b1.status == "FAIL" or b2.status == "FAIL"
     ev = (
         f"'provisionally INVALID' phrase present in result: {invalid}",
         f"any σ-criterion currently failing: {sigma_fail}",
