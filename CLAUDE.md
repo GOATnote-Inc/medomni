@@ -7,35 +7,37 @@ deployed to `medomni.vercel.app`). It hosts `web/` (Next.js BFF + UI) and
 release artifacts. Active research/training lives in the **private** sister
 repo `github.com/GOATnote-Inc/prism42-nemotron-med` (factory_loop, PEFT
 production training, evals, CARDs — no web app). Same public/private split
-pattern as `prism42` (public) ↔ `prism2` (private). The hot-path markers
-below were inherited from the private repo's charter and still apply
-verbatim until split out — the isolation contract (don't touch the
-prism42 prod surface, don't touch ElevenLabs/LiveKit/DNS) holds for both.
+pattern as `prism42` (public) ↔ `prism2` (private). §0 below was split
+out from the inherited prism42 charter on 2026-05-22 — only lines that
+load-bear on every medomni session remain; the rest moved into
+`.claude/skills/` and loads on demand. The isolation contract still
+holds: don't touch the prism42 prod surface, ElevenLabs, LiveKit, DNS
+(see §1 for the explicit list).
 
-## §0 — HOT-PATH MARKERS (read first, every session)
+## §0 — HOT-PATH MARKERS (read every session · ≤15 lines · justify-or-evict)
 
-**RunPod proxy ssh = PTY-echo surface, treat like the prism42 systemctl-show
-incident.** The proxy at `ssh.runpod.io` requires PTY allocation for command
-execution; PTYs echo stdin to stdout by default. Any secret pushed via
-heredoc / base64 / inline-env / stdin-pipe through this proxy is mirrored
-to the conversation transcript and to Claude Code task-output JSONL files.
-Server-side echo behavior — cannot be disabled from the client.
+Last audited: 2026-05-22 (issue #396). These earn entry by being things this
+session would otherwise violate. New entries replace weaker ones — no growth
+without eviction.
 
-The 2026-04-29 evening incident leaked an HF_TOKEN base64 form during a
-Phase 2.2 build; rotated within minutes per the prism42 2026-04-27 precedent.
-Durable mitigations:
-- `scripts/_runpod_ssh.sh` carries a hard secret-grep guard (HF_TOKEN, hf_*,
-  nvapi-*, sk-*, sk-ant-*, xai-*, AIza*, ghp_*, ghs_*, plus generic
-  `(API_KEY|SECRET|PASSWORD|TOKEN)=` patterns). Refuses to forward.
-- Provision RunPod secrets via the console's Pod Environment Variables UI
-  OR via the user's own interactive ssh session (separate from any
-  Claude-driven shell).
-- Never read `.env` value directly; use `awk -F= '/^KEY=/ {print $2}' .env`
-  to file-pipe, never to a shell variable that gets interpolated into a
-  `_runpod_ssh.sh` command body.
+1. **`nemotron-serve` on Brev pod `exact-kind-orca` is live production** —
+   serves `thegoatnote.com/4UWHAt`. Never `docker stop`, never `podStop`.
+2. **Vercel git auto-deploy is disconnected (since 2026-05-21)** — merges to
+   `main` do NOT deploy. Production = manual
+   `vercel --prod --cwd /Users/kiteboard/medomni --scope goatnote --yes --archive=tgz`.
+   Reconnect is a founder dashboard action.
+3. **No `git add -A` / `git add .`** — enforced by `.claude/settings.json`
+   PreToolUse hook; the hook refuses the tool call.
+4. **No cloud LLM keys in any code path.** Sovereign stack;
+   `.env.example` permits only `HF_TOKEN` + `BREV_PEM_PATH`. Pre-commit
+   blocks the literal key strings outside `.env.example` (full list in §5).
+5. **Verify-then-claim** — every change ends with a verifying command;
+   read artifact JSON, not exit code (memory `feedback_eval_preflight_judge_key.md`).
 
-The `_runpod_ssh.sh` guard's bypass env var (`RUNPOD_SSH_ALLOW_SECRET_GREP_BYPASS=1`)
-exists for false-positive recovery only. Never use it to push real secrets.
+Load-on-demand content lives in `.claude/skills/`. This split came from
+issue #396 / @m13v's comment that the audit grades scaffold presence, not
+weight. See `.claude/README.md` for the philosophy and open follow-ups
+(§1, "what this repo is", §6 all have the same problem).
 
 ## What this repo is
 
