@@ -1,0 +1,40 @@
+name: audit-grader-v2
+
+# Weight-aware best-practices dashboard — structural replacement for the v1
+# hourly bot at issue #396. See:
+#   - scripts/audit_grader_v2.py             (the grader)
+#   - findings/research/2026-05-23-audit-grader-v2/SPEC.md  (design)
+#   - issue #410                              (the dashboard surface)
+#
+# Cadence: daily, not hourly. v1 had 10 consecutive identical hourly updates
+# before this rewrite — hourly was theater for slow-moving structural drift.
+# The adversarial-probe workflow already covers sub-day regressions; this
+# workflow covers slow drift.
+
+on:
+  schedule:
+    - cron: "7 14 * * *"   # 14:07 UTC daily (off-minute per Claude Code Cron advisory)
+  workflow_dispatch: {}
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate dashboard
+        run: python3 scripts/audit_grader_v2.py > /tmp/dashboard.md
+
+      - name: Edit v2 dashboard issue (#410)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit 410 --repo "$GITHUB_REPOSITORY" --body-file /tmp/dashboard.md
