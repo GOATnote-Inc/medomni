@@ -61,8 +61,15 @@ scripts/spike/.medplum-data/
 scripts/spike/synthea/
 scripts/spike/.spike-token
 
-# Claude Code worktrees + agent state (local agent scratch, 4+ GB, never commit)
-.claude/
+# Claude Code worktrees (`.claude/worktrees/`) and per-machine scratch
+# (`.claude/scripts/`) are local-only (4+ GB). The repo-level operating
+# layer — settings, hooks, skills, README — IS tracked (see issue #396).
+# Use `.claude/*` (not `.claude/`) so re-includes work.
+.claude/*
+!.claude/settings.json
+!.claude/README.md
+!.claude/hooks/
+!.claude/skills/
 
 # Vercel project linkage (local-only; project configured by `vercel link`)
 .vercel/
