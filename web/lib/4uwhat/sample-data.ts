@@ -221,7 +221,7 @@ export const SAMPLE_CONDITIONS: SampleCondition[] = [
   { id: "asthma", name: "Asthma, mild persistent", onset: "2009", status: "active", icd: "J45.30" },
   { id: "dyslip", name: "Dyslipidemia", onset: "2023", status: "active", icd: "E78.5" },
   { id: "iron", name: "Iron deficiency anemia", onset: "2022", status: "resolved", icd: "D50.9" },
-  { id: "wisdom", name: "Impacted wisdom teeth", onset: "2018", status: "resolved", icd: "K01.1" },
+  { id: "wisdom", name: "Impacted wisdom teeth", onset: "2009", status: "resolved", icd: "K01.1" },
 ];
 
 export const SAMPLE_MEDS: SampleMed[] = [
