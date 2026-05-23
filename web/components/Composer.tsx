@@ -11,11 +11,7 @@ const SAMPLE_PROMPT =
 type ContentBlock =
   | { type: "text"; text: string }
   | { type: "image_url"; image_url: { url: string } }
-  // vLLM/Nemotron-Omni expects input_audio (base64 + format) per the
-  // gpt-4o-audio-preview convention, not audio_url. AudioRecorder produces
-  // data:audio/wav;base64,<...>, parsed inline in the block-construction
-  // path below.
-  | { type: "input_audio"; input_audio: { data: string; format: string } };
+  | { type: "audio_url"; audio_url: { url: string } };
 
 export function Composer() {
   const [prompt, setPrompt] = useState("");
@@ -46,16 +42,7 @@ export function Composer() {
     if (imageDataUrl || audioDataUrl) {
       const blocks: ContentBlock[] = [];
       if (audioDataUrl) {
-        // Parse `data:audio/<fmt>;base64,<data>` and emit input_audio per the
-        // gpt-4o-audio-preview convention (same fix as /api/agent route).
-        // Non-data URLs are silently dropped (no other supported path).
-        const m = audioDataUrl.match(/^data:audio\/([^;]+);base64,(.+)$/);
-        if (m) {
-          blocks.push({
-            type: "input_audio",
-            input_audio: { data: m[2], format: m[1] },
-          });
-        }
+        blocks.push({ type: "audio_url", audio_url: { url: audioDataUrl } });
       }
       if (imageDataUrl) {
         blocks.push({ type: "image_url", image_url: { url: imageDataUrl } });

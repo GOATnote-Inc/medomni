@@ -348,11 +348,7 @@ function isPatientRole(params: URLSearchParams): boolean {
 type ContentBlock =
   | { type: "text"; text: string }
   | { type: "image_url"; image_url: { url: string } }
-  // vLLM / Nemotron-Omni's OpenAI-compat endpoint expects `input_audio`
-  // blocks (base64 data + format, per the gpt-4o-audio-preview convention),
-  // NOT `audio_url`. The prior `audio_url` shape was silently dropped by
-  // vLLM, so the model received text-only and could not transcribe.
-  | { type: "input_audio"; input_audio: { data: string; format: string } };
+  | { type: "audio_url"; audio_url: { url: string } };
 
 interface ChatMessage {
   role: "system" | "user" | "assistant" | "tool";
@@ -383,19 +379,7 @@ function uiMessagesToChat(messages: UIMessage[]): ChatMessage[] {
         textAccum += part.text;
       } else if (part.type === "file" && part.url) {
         if (part.mediaType?.startsWith("audio/")) {
-          // AudioRecorder (web/components/AudioRecorder.tsx) calls
-          // blobToDataUrl(wavBlob) and hands us `data:audio/wav;base64,<...>`.
-          // Parse that inline and emit `input_audio` per the gpt-4o-audio
-          // convention vLLM/Nemotron-Omni accepts; a non-data URL is
-          // silently dropped (no other supported path here — preserving
-          // the prior behavior for any unexpected URL shape).
-          const m = part.url.match(/^data:audio\/([^;]+);base64,(.+)$/);
-          if (m) {
-            blocks.push({
-              type: "input_audio",
-              input_audio: { data: m[2], format: m[1] },
-            });
-          }
+          blocks.push({ type: "audio_url", audio_url: { url: part.url } });
         } else if (part.mediaType?.startsWith("image/")) {
           blocks.push({ type: "image_url", image_url: { url: part.url } });
         }
