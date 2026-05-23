@@ -130,7 +130,7 @@ export interface SampleShare {
 export const SAMPLE_PATIENT: SamplePatient = {
   name: "Maya Okafor",
   dob: "1991-04-12",
-  age: 34,
+  age: 35,
   mrn: "P42-0096-MAYA",
   pronouns: "she/her",
   bloodType: "O+",
@@ -326,7 +326,7 @@ export const SAMPLE_CARE_TEAM: SampleCareTeamMember[] = [
     online: true,
     nextAppointment: {
       date: "2026-10-21",
-      type: "Annual physical (in-person)",
+      type: "Six-month follow-up (in-person)",
     },
     itemsToWatch: [
       "LDL 92 on rosuvastatin 5 mg — recheck lipids in 8 weeks",
