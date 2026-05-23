@@ -619,6 +619,11 @@ async function streamOneStep(
   let reasoningOpen = false;
   let textOpen = false;
   let contentEmitted = "";
+  // Track reasoning-channel content separately so we can promote it to the
+  // text channel at stream end when the model produces a reasoning-only
+  // response — the documented Omni + `nemotron_v3` + audio routing per
+  // /api/ask/route.ts lines 103-107.
+  let reasoningEmitted = "";
   let finishReason: string | null = null;
 
   // Map index → accumulator. vllm emits the first tool_call chunk with
@@ -649,6 +654,7 @@ async function streamOneStep(
           reasoningOpen = true;
         }
         writer.write({ type: "reasoning-delta", id: reasoningId, delta: reasoningDelta });
+        reasoningEmitted += reasoningDelta;
       }
       if (delta.content) {
         trace?.markFirstToken();
@@ -700,6 +706,23 @@ async function streamOneStep(
   }
 
   if (reasoningOpen) writer.write({ type: "reasoning-end", id: reasoningId });
+
+  // Reasoning-channel fallback: when the `nemotron_v3` reasoning-parser routes
+  // an answer through `delta.reasoning` and leaves `delta.content` empty
+  // (the documented Omni audio behavior — see /api/ask/route.ts lines 103-107
+  // and the ssh confirmation that orca runs Omni FP8 + reasoning-parser
+  // nemotron_v3), promote the accumulated reasoning text into the text
+  // channel so the UI surfaces it as the answer. No-op for text-only turns
+  // where content was emitted normally.
+  if (!contentEmitted && reasoningEmitted) {
+    if (!textOpen) {
+      writer.write({ type: "text-start", id: textId });
+      textOpen = true;
+    }
+    writer.write({ type: "text-delta", id: textId, delta: reasoningEmitted });
+    contentEmitted = reasoningEmitted;
+  }
+
   if (textOpen) writer.write({ type: "text-end", id: textId });
 
   const toolCalls = [...toolAcc.values()].sort((a, b) => a.index - b.index);

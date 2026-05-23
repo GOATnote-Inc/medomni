@@ -87,15 +87,67 @@ async function fetchServingMetrics(): Promise<MetricsResult> {
   }
 }
 
+/**
+ * Read-only GET to vLLM's `/v1/models` endpoint. Returns the actual loaded
+ * model id + HF root path (e.g. `nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-FP8`)
+ * so the System panel can show what is REALLY serving — not just the UX
+ * label in `SYSTEM_FACTS.model`. Returns `null` on any failure (same posture
+ * as `fetchServingMetrics`: a telemetry hiccup must not look like an outage).
+ *
+ * This exists because "what's actually serving on orca" became an ssh-only
+ * question during the 2026-05-23 audio-fix incident; surfacing it through the
+ * panel makes the next such question a single curl from any maintainer.
+ */
+async function fetchServedModel(): Promise<{ id: string; root: string } | null> {
+  const tunnelUrl = process.env.MEDOMNI_TUNNEL_URL;
+  if (!tunnelUrl) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), METRICS_FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${tunnelUrl.replace(/\/$/, "")}/v1/models`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      data?: Array<{ id: string; root?: string }>;
+    };
+    const first = data.data?.[0];
+    if (!first) return null;
+    return { id: first.id, root: first.root ?? first.id };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function GET() {
-  const metrics = await fetchServingMetrics();
-  return new Response(JSON.stringify({ ...SYSTEM_FACTS, metrics }), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/json",
-      // Telemetry is live state — never serve a cached body. The panel
-      // polls this for fresh numbers.
-      "Cache-Control": "no-store",
+  const [metrics, served] = await Promise.all([
+    fetchServingMetrics(),
+    fetchServedModel(),
+  ]);
+  return new Response(
+    JSON.stringify({
+      ...SYSTEM_FACTS,
+      // `served` is what vLLM reports for the actual loaded model. May
+      // differ from `SYSTEM_FACTS.model` (which is a UX label) — the System
+      // panel can surface both so "what's actually serving" is never a
+      // mystery requiring ssh access. `null` when the tunnel is unreachable
+      // or `/v1/models` returns non-OK.
+      served,
+      metrics,
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        // Telemetry is live state — never serve a cached body. The panel
+        // polls this for fresh numbers.
+        "Cache-Control": "no-store",
+      },
     },
-  });
+  );
 }
