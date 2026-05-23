@@ -1,6 +1,11 @@
 // /api/ask — SSE proxy from browser to vllm Nemotron-3-Nano-Omni on the H100.
-// Sampling-mode aware: detects audio_url / image_url / text-only and applies
+// Sampling-mode aware: detects input_audio / image_url / text-only and applies
 // the right Nemotron-Omni params (per model card + REDTEAM-SAMPLING.md).
+// Audio blocks: gpt-4o-audio-preview convention — { type: "input_audio",
+// input_audio: { data: <base64>, format: "wav" } }. Older clients sending
+// the legacy { type: "audio_url" } shape are accepted by `detectMode` for
+// back-compat (the route forwards messages as-is, but the detection is
+// what gates the ASR-mode sampling params).
 //
 // Body cap: reject > 4 MB to clean-413 instead of leaking past Vercel's 4.5 MB limit.
 
@@ -31,6 +36,9 @@ const MAX_BODY_BYTES = 4_000_000;
 type ContentBlock =
   | { type: "text"; text?: string }
   | { type: "image_url"; image_url?: { url?: string } }
+  // gpt-4o-audio-preview convention: { type: "input_audio", input_audio: { data, format } }.
+  // Older clients may still send { type: "audio_url" } — accepted for back-compat.
+  | { type: "input_audio"; input_audio?: { data?: string; format?: string } }
   | { type: "audio_url"; audio_url?: { url?: string } }
   | { type: string; [k: string]: unknown };
 
@@ -43,7 +51,7 @@ function detectMode(messages: Message[]): "asr" | "image" | "text" {
   for (const m of messages) {
     if (Array.isArray(m.content)) {
       for (const block of m.content) {
-        if (block.type === "audio_url") return "asr";
+        if (block.type === "input_audio" || block.type === "audio_url") return "asr";
       }
     }
   }
