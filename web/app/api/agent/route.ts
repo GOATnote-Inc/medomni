@@ -348,11 +348,7 @@ function isPatientRole(params: URLSearchParams): boolean {
 type ContentBlock =
   | { type: "text"; text: string }
   | { type: "image_url"; image_url: { url: string } }
-  // vLLM / Nemotron-Omni's OpenAI-compat endpoint expects `input_audio`
-  // blocks (base64 data + format, per the gpt-4o-audio-preview convention),
-  // NOT `audio_url`. The prior `audio_url` shape was silently dropped by
-  // vLLM, so the model received text-only and could not transcribe.
-  | { type: "input_audio"; input_audio: { data: string; format: string } };
+  | { type: "audio_url"; audio_url: { url: string } };
 
 interface ChatMessage {
   role: "system" | "user" | "assistant" | "tool";
@@ -383,19 +379,7 @@ function uiMessagesToChat(messages: UIMessage[]): ChatMessage[] {
         textAccum += part.text;
       } else if (part.type === "file" && part.url) {
         if (part.mediaType?.startsWith("audio/")) {
-          // AudioRecorder (web/components/AudioRecorder.tsx) calls
-          // blobToDataUrl(wavBlob) and hands us `data:audio/wav;base64,<...>`.
-          // Parse that inline and emit `input_audio` per the gpt-4o-audio
-          // convention vLLM/Nemotron-Omni accepts; a non-data URL is
-          // silently dropped (no other supported path here — preserving
-          // the prior behavior for any unexpected URL shape).
-          const m = part.url.match(/^data:audio\/([^;]+);base64,(.+)$/);
-          if (m) {
-            blocks.push({
-              type: "input_audio",
-              input_audio: { data: m[2], format: m[1] },
-            });
-          }
+          blocks.push({ type: "audio_url", audio_url: { url: part.url } });
         } else if (part.mediaType?.startsWith("image/")) {
           blocks.push({ type: "image_url", image_url: { url: part.url } });
         }
@@ -635,6 +619,11 @@ async function streamOneStep(
   let reasoningOpen = false;
   let textOpen = false;
   let contentEmitted = "";
+  // Track reasoning-channel content separately so we can promote it to the
+  // text channel at stream end when the model produces a reasoning-only
+  // response — the documented Omni + `nemotron_v3` + audio routing per
+  // /api/ask/route.ts lines 103-107.
+  let reasoningEmitted = "";
   let finishReason: string | null = null;
 
   // Map index → accumulator. vllm emits the first tool_call chunk with
@@ -665,6 +654,7 @@ async function streamOneStep(
           reasoningOpen = true;
         }
         writer.write({ type: "reasoning-delta", id: reasoningId, delta: reasoningDelta });
+        reasoningEmitted += reasoningDelta;
       }
       if (delta.content) {
         trace?.markFirstToken();
@@ -716,6 +706,23 @@ async function streamOneStep(
   }
 
   if (reasoningOpen) writer.write({ type: "reasoning-end", id: reasoningId });
+
+  // Reasoning-channel fallback: when the `nemotron_v3` reasoning-parser routes
+  // an answer through `delta.reasoning` and leaves `delta.content` empty
+  // (the documented Omni audio behavior — see /api/ask/route.ts lines 103-107
+  // and the ssh confirmation that orca runs Omni FP8 + reasoning-parser
+  // nemotron_v3), promote the accumulated reasoning text into the text
+  // channel so the UI surfaces it as the answer. No-op for text-only turns
+  // where content was emitted normally.
+  if (!contentEmitted && reasoningEmitted) {
+    if (!textOpen) {
+      writer.write({ type: "text-start", id: textId });
+      textOpen = true;
+    }
+    writer.write({ type: "text-delta", id: textId, delta: reasoningEmitted });
+    contentEmitted = reasoningEmitted;
+  }
+
   if (textOpen) writer.write({ type: "text-end", id: textId });
 
   const toolCalls = [...toolAcc.values()].sort((a, b) => a.index - b.index);
