@@ -16,9 +16,10 @@ holds: don't touch the prism42 prod surface, ElevenLabs, LiveKit, DNS
 
 ## §0 — HOT-PATH MARKERS (read every session · ≤15 lines · justify-or-evict)
 
-Last audited: 2026-05-22 (issue #396). These earn entry by being things this
-session would otherwise violate. New entries replace weaker ones — no growth
-without eviction.
+Last audited: 2026-05-24 (audio P0 retrospective —
+`findings/research/2026-05-24-audio-outage-retrospective/POSTMORTEM.md`).
+These earn entry by being things this session would otherwise violate. New
+entries replace weaker ones — no growth without eviction.
 
 1. **`nemotron-serve` on Brev pod `exact-kind-orca` is live production** —
    serves `thegoatnote.com/4UWHAt`. Never `docker stop`, never `podStop`.
@@ -33,6 +34,9 @@ without eviction.
    blocks the literal key strings outside `.env.example` (full list in §5).
 5. **Verify-then-claim** — every change ends with a verifying command;
    read artifact JSON, not exit code (memory `feedback_eval_preflight_judge_key.md`).
+6. **vLLM audio on orca needs `librosa`+`soundfile` baked into the image** —
+   `vllm/vllm-openai:latest` lacks them; vLLM 400s on the first audio
+   request. Use `scripts/serve_orca_h100.sh build` for any rebuild.
 
 Load-on-demand content lives in `.claude/skills/`. This split came from
 issue #396 / @m13v's comment that the audit grades scaffold presence, not
