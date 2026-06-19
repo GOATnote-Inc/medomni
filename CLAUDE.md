@@ -21,8 +21,12 @@ Last audited: 2026-05-24 (audio P0 retrospective —
 These earn entry by being things this session would otherwise violate. New
 entries replace weaker ones — no growth without eviction.
 
-1. **`nemotron-serve` on Brev pod `exact-kind-orca` is live production** —
-   serves `thegoatnote.com/4UWHAt`. Never `docker stop`, never `podStop`.
+1. **`/4UWHAt` prod runs on the Claude API (Opus 4.8), NOT a self-hosted GPU**
+   — migrated 2026-06-19/20 (see `project_medomni_claude_migration` in memory +
+   `findings/2026-06-19-claude-cutover/`). The Brev pod `exact-kind-orca`
+   (`nemotron-serve`) is **decommissioned** (backed up to
+   `~/orca-backup.tar.gz`; deleted to end ~$89/day). Re-provision self-hosted
+   serving only via `scripts/serve_orca_h100.sh` if ever needed.
 2. **Vercel git auto-deploy is disconnected (since 2026-05-21)** — merges to
    `main` do NOT deploy. Production = manual
    `vercel --prod --cwd /Users/kiteboard/medomni --scope goatnote --yes --archive=tgz`.
