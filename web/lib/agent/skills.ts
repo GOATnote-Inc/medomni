@@ -31,6 +31,11 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import {
+  getAnthropic,
+  llmProvider,
+  CLASSIFIER_MODEL_ID as ANTHROPIC_CLASSIFIER_MODEL_ID,
+} from "@/lib/llm/anthropic";
 
 const SKILLS_DIR = path.join(process.cwd(), "lib", "agent", "skills");
 
@@ -168,16 +173,35 @@ const CLASSIFIER_MODEL_ID = "nemotron";
  * fall back to `classifyIntent` (keyword heuristic) on any throw.
  */
 export async function classifyIntentLLM(text: string): Promise<SkillIntent> {
-  const tunnelUrl = process.env.MEDOMNI_TUNNEL_URL;
-  if (!tunnelUrl) {
-    throw new Error("MEDOMNI_TUNNEL_URL not set");
-  }
   const trimmed = text.trim();
   if (!trimmed) return "default";
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), CLASSIFIER_TIMEOUT_MS);
   try {
+    // Anthropic path: a fast Haiku classification. Haiku (not Opus) keeps this
+    // inside the 2s budget; on any throw the caller degrades to keywords.
+    if (llmProvider() === "anthropic") {
+      const msg = await getAnthropic().messages.create(
+        {
+          model: ANTHROPIC_CLASSIFIER_MODEL_ID,
+          max_tokens: CLASSIFIER_MAX_TOKENS,
+          system: CLASSIFIER_SYSTEM_PROMPT,
+          messages: [{ role: "user", content: trimmed }],
+        },
+        { signal: ctrl.signal },
+      );
+      const raw = msg.content
+        .map((b) => (b.type === "text" ? b.text : ""))
+        .join("");
+      return parseIntentJson(raw);
+    }
+
+    // vLLM path (rollback only).
+    const tunnelUrl = process.env.MEDOMNI_TUNNEL_URL;
+    if (!tunnelUrl) {
+      throw new Error("MEDOMNI_TUNNEL_URL not set");
+    }
     const upstream = await fetch(`${tunnelUrl}/v1/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

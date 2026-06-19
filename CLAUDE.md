@@ -29,9 +29,14 @@ entries replace weaker ones — no growth without eviction.
    Reconnect is a founder dashboard action.
 3. **No `git add -A` / `git add .`** — enforced by `.claude/settings.json`
    PreToolUse hook; the hook refuses the tool call.
-4. **No cloud LLM keys in any code path.** Sovereign stack;
-   `.env.example` permits only `HF_TOKEN` + `BREV_PEM_PATH`. Pre-commit
-   blocks the literal key strings outside `.env.example` (full list in §5).
+4. **Cloud LLM keys: web BFF only (2026-06 SANCTIONED exception).** The
+   `/4UWHAt` web inference path (`web/app/api/agent`, `/api/ask`,
+   `lib/agent/skills`) runs on the **Claude API** (Opus 4.8) to retire the
+   ~$100/day Brev H100 — gated by `MEDOMNI_LLM_PROVIDER` (`anthropic` default,
+   `vllm` = rollback while orca is warm). `ANTHROPIC_API_KEY` lives in Vercel
+   env + `.env.example` only; code uses bare `new Anthropic()` (no literal, so
+   the `no-cloud-llm-keys` hook still guards code paths). The
+   research/eval/training stack stays **sovereign** (local judge + serve). §2.
 5. **Verify-then-claim** — every change ends with a verifying command;
    read artifact JSON, not exit code (memory `feedback_eval_preflight_judge_key.md`).
 6. **vLLM audio on orca needs `librosa`+`soundfile` baked into the image** —
@@ -70,14 +75,32 @@ NEVER, under any condition:
 7. Touch DNS — no GoDaddy API calls, no records on `*.thegoatnote.com`. Pod access is ssh-tunnel only; no public ingress, no Caddy, no TLS termination on the new pods.
 8. ssh into `prism-mla-b300-h4h5` or any voice-pod handle. Only the two Brev pods authorized for this repo: `prism-mla-h100` (Hyperstack, montreal-canada-2) and `warm-lavender-narwhal` (Nebius, eu-north1).
 
-## §2 — Sovereignty by construction
+## §2 — Sovereignty by construction (+ the sanctioned web exception)
 
-Zero cloud LLM API keys in any code path. The `.env.example` permits exactly two secrets:
+The **research / eval / training stack stays sovereign**: the judge runs locally
+on H100 (Llama-3.1-Nemotron-70B-Reward), the serve runs locally on H200,
+guardrails run locally (Llama-Guard-3), RAG runs locally (NV-Embed-v2 +
+nx-cugraph). Do **not** add cloud LLM keys to the eval loop, training scripts,
+or `sovereign_bench`/`ci-medomni` — external keys there defeat the premise.
+
+The `.env.example` permits these secrets:
 
 - `HF_TOKEN` — Hugging Face read-only, gated-model access. **NEW** token scoped to this private repo. Not the prod-shared one.
 - `BREV_PEM_PATH` — path to existing brev.pem at `/Users/kiteboard/.brev/brev.pem` (already on disk).
+- `ANTHROPIC_API_KEY` — **web BFF only** (2026-06 migration). See below.
 
-If you ever feel tempted to add `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` to `.env.example` or to a script — **stop and reconsider the design**. The judge runs locally on H100 (Llama-3.1-Nemotron-70B-Reward). The serve runs locally on H200. Guardrails run locally (Llama-Guard-3). RAG runs locally (NV-Embed-v2 + nx-cugraph). External keys defeat the entire premise.
+**Sanctioned exception (2026-06): the public `/4UWHAt` web demo runs on the
+Claude API.** Brandon directed the migration of the web inference path off the
+self-hosted Nemotron-Omni H100 (~$100/day) to **Claude Opus 4.8** — the accuracy
+winner for emergency-med reasoning in our HealthCraft eval (Pass@1 23.7% vs
+GPT-5.5 13.7%). This is intentional; **do NOT "fix" it back to sovereign-only.**
+Rules that still hold: the key is read only by `@anthropic-ai/sdk` via bare
+`new Anthropic()` (never a literal in code → the `no-cloud-llm-keys` hook still
+fires on code paths); the key lives in Vercel env + `.env.example`; provision a
+NEW medomni-scoped key with **zero-data-retention** enabled (demo/synthetic
+data, no PHI) and do NOT reuse the prod-shared key in
+`/Users/kiteboard/lostbench/.env` (§1.6 still bars reading that file). Rollback:
+set `MEDOMNI_LLM_PROVIDER=vllm` and redeploy while orca is warm.
 
 ## §3 — Hardware reality
 

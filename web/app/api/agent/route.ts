@@ -62,6 +62,9 @@ import {
   type TraceStageKind,
   type TurnMetrics,
 } from "@/lib/4uwhat/trace";
+import type Anthropic from "@anthropic-ai/sdk";
+import { getAnthropic, llmProvider, OPUS_MODEL_ID } from "@/lib/llm/anthropic";
+import { toAnthropicMessages, toAnthropicTools } from "@/lib/llm/translate";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -345,10 +348,11 @@ function isPatientRole(params: URLSearchParams): boolean {
 // UIMessage to vllm as an OpenAI-compat content array (string for text-only,
 // array of typed blocks otherwise).
 
+// Audio (audio_url) was dropped in the 2026-06 Claude migration — Claude has
+// no native audio input. Image is preserved (Claude vision).
 type ContentBlock =
   | { type: "text"; text: string }
-  | { type: "image_url"; image_url: { url: string } }
-  | { type: "audio_url"; audio_url: { url: string } };
+  | { type: "image_url"; image_url: { url: string } };
 
 interface ChatMessage {
   role: "system" | "user" | "assistant" | "tool";
@@ -378,9 +382,8 @@ function uiMessagesToChat(messages: UIMessage[]): ChatMessage[] {
       if (part.type === "text" && typeof part.text === "string") {
         textAccum += part.text;
       } else if (part.type === "file" && part.url) {
-        if (part.mediaType?.startsWith("audio/")) {
-          blocks.push({ type: "audio_url", audio_url: { url: part.url } });
-        } else if (part.mediaType?.startsWith("image/")) {
+        // Audio dropped in the Claude migration; image preserved (Claude vision).
+        if (part.mediaType?.startsWith("image/")) {
           blocks.push({ type: "image_url", image_url: { url: part.url } });
         }
       }
@@ -574,6 +577,12 @@ interface StepResult {
    * inference trace row and as the basis for honest tok/s.
    */
   generationMs: number;
+  /**
+   * Anthropic path only: the raw assistant content blocks (thinking +
+   * tool_use + text) for this step, replayed verbatim on the next step so
+   * extended-thinking + tool-use continuity holds (signatures preserved).
+   */
+  assistantContent?: Anthropic.ContentBlockParam[];
 }
 
 async function streamOneStep(
@@ -734,6 +743,127 @@ async function streamOneStep(
   };
 }
 
+// --- Anthropic (Claude) step ----------------------------------------------
+//
+// Mirrors streamOneStep's contract (same writer events, same StepResult) but
+// drives Claude via the Messages API. Adaptive thinking is on with summarized
+// display so the reasoning channel the UI renders is preserved; the raw
+// assistant content blocks (thinking + tool_use, signatures intact) are
+// returned in StepResult.assistantContent and replayed verbatim next step.
+
+async function streamOneStepAnthropic(
+  system: string,
+  messages: Anthropic.MessageParam[],
+  tools: Anthropic.Tool[],
+  writer: UIMessageStreamWriter,
+  step: number,
+  trace?: TraceRecorder,
+): Promise<StepResult> {
+  const reasoningId = `reasoning_${step}`;
+  const textId = `text_${step}`;
+  let reasoningOpen = false;
+  let textOpen = false;
+  let contentEmitted = "";
+  // Anthropic content-block index → the tool-call id streaming under it, so
+  // input_json_delta chunks route to the right card.
+  const toolIndexToId = new Map<number, string>();
+
+  const genStartedAt = Date.now();
+
+  const stream = getAnthropic().messages.stream({
+    model: OPUS_MODEL_ID,
+    max_tokens: 16384,
+    system,
+    messages,
+    ...(tools.length > 0 ? { tools } : {}),
+    thinking: { type: "adaptive", display: "summarized" },
+    output_config: { effort: "high" },
+  });
+
+  for await (const event of stream) {
+    if (event.type === "content_block_start") {
+      const block = event.content_block;
+      if (block.type === "tool_use") {
+        toolIndexToId.set(event.index, block.id);
+        writer.write({
+          type: "tool-input-start",
+          toolCallId: block.id,
+          toolName: block.name,
+        });
+      }
+    } else if (event.type === "content_block_delta") {
+      const delta = event.delta;
+      if (delta.type === "thinking_delta") {
+        trace?.markFirstToken();
+        trace?.addOutputText(delta.thinking);
+        if (!reasoningOpen) {
+          writer.write({ type: "reasoning-start", id: reasoningId });
+          reasoningOpen = true;
+        }
+        writer.write({ type: "reasoning-delta", id: reasoningId, delta: delta.thinking });
+      } else if (delta.type === "text_delta") {
+        trace?.markFirstToken();
+        trace?.addOutputText(delta.text);
+        if (!textOpen) {
+          writer.write({ type: "text-start", id: textId });
+          textOpen = true;
+        }
+        writer.write({ type: "text-delta", id: textId, delta: delta.text });
+        contentEmitted += delta.text;
+      } else if (delta.type === "input_json_delta") {
+        const id = toolIndexToId.get(event.index);
+        if (id && delta.partial_json) {
+          writer.write({
+            type: "tool-input-delta",
+            toolCallId: id,
+            inputTextDelta: delta.partial_json,
+          });
+        }
+      }
+    }
+  }
+
+  if (reasoningOpen) writer.write({ type: "reasoning-end", id: reasoningId });
+  if (textOpen) writer.write({ type: "text-end", id: textId });
+
+  const finalMessage = await stream.finalMessage();
+
+  // Build the structured tool calls from the authoritative final message.
+  const toolCalls: ToolCallAcc[] = [];
+  finalMessage.content.forEach((block, index) => {
+    if (block.type === "tool_use") {
+      toolCalls.push({
+        id: block.id,
+        name: block.name,
+        argsRaw: JSON.stringify(block.input ?? {}),
+        index,
+      });
+    }
+  });
+
+  const finishReason = finalMessage.stop_reason === "tool_use" ? "tool_calls" : finalMessage.stop_reason ?? "stop";
+
+  // Surface a refusal as visible text so the turn isn't silently empty.
+  if (finalMessage.stop_reason === "refusal" && !contentEmitted) {
+    if (!textOpen) writer.write({ type: "text-start", id: textId });
+    writer.write({
+      type: "text-delta",
+      id: textId,
+      delta: "I can't help with that request.",
+    });
+    writer.write({ type: "text-end", id: textId });
+    contentEmitted = "I can't help with that request.";
+  }
+
+  return {
+    finishReason,
+    toolCalls,
+    contentEmitted,
+    generationMs: Date.now() - genStartedAt,
+    assistantContent: finalMessage.content as Anthropic.ContentBlockParam[],
+  };
+}
+
 // --- Tool execution --------------------------------------------------------
 
 type ToolResult =
@@ -852,8 +982,9 @@ async function runTool(
 // --- Route handler ---------------------------------------------------------
 
 export async function POST(req: NextRequest) {
+  const provider = llmProvider();
   const tunnelUrl = process.env.MEDOMNI_TUNNEL_URL;
-  if (!tunnelUrl) {
+  if (provider === "vllm" && !tunnelUrl) {
     return new Response(JSON.stringify({ error: "MEDOMNI_TUNNEL_URL not set on server." }), {
       status: 503,
       headers: { "Content-Type": "application/json" },
@@ -994,10 +1125,18 @@ export async function POST(req: NextRequest) {
 
   const stream = createUIMessageStream({
     async execute({ writer }) {
+      const chatTail = uiMessagesToChat(incoming);
       const history: ChatMessage[] = [
         { role: "system", content: systemContent },
-        ...uiMessagesToChat(incoming),
+        ...chatTail,
       ];
+      // Anthropic path keeps a native message array (vLLM path uses `history`).
+      // Capturing raw assistant content blocks each step preserves thinking
+      // signatures for tool-use continuity.
+      const anthropicMessages: Anthropic.MessageParam[] =
+        provider === "anthropic" ? toAnthropicMessages(chatTail) : [];
+      const anthropicTools: Anthropic.Tool[] =
+        provider === "anthropic" ? toAnthropicTools(effectiveToolSpec) : [];
 
       let totalToolCalls = 0;
       const startedAt = Date.now();
@@ -1023,14 +1162,24 @@ export async function POST(req: NextRequest) {
         const stepStartedAtMs = trace.elapsed();
         let result: StepResult;
         try {
-          result = await streamOneStep(
-            tunnelUrl,
-            history,
-            writer,
-            step,
-            effectiveToolSpec,
-            trace,
-          );
+          result =
+            provider === "anthropic"
+              ? await streamOneStepAnthropic(
+                  systemContent,
+                  anthropicMessages,
+                  anthropicTools,
+                  writer,
+                  step,
+                  trace,
+                )
+              : await streamOneStep(
+                  tunnelUrl as string,
+                  history,
+                  writer,
+                  step,
+                  effectiveToolSpec,
+                  trace,
+                );
         } catch (e) {
           writer.write({ type: "error", errorText: (e as Error).message });
           trace.emitTurnMetrics(generationMs);
@@ -1041,17 +1190,22 @@ export async function POST(req: NextRequest) {
         // actual model + serving stack; `detail` notes the step index and
         // whether the step ended in tool calls or a final answer.
         generationMs += result.generationMs;
+        const inferenceLabel =
+          provider === "anthropic"
+            ? "Claude Opus 4.8 inference"
+            : "Nemotron-3-Nano-Omni inference";
+        const inferenceEngine = provider === "anthropic" ? "Anthropic API" : "vLLM";
         trace.emitStage({
-          label: "Nemotron-3-Nano-Omni inference",
+          label: inferenceLabel,
           kind: "inference",
           startedAtMs: stepStartedAtMs,
           durationMs: result.generationMs,
           detail:
             result.toolCalls.length > 0
-              ? `step ${step + 1} · vLLM · requested ${result.toolCalls.length} tool call${
+              ? `step ${step + 1} · ${inferenceEngine} · requested ${result.toolCalls.length} tool call${
                   result.toolCalls.length === 1 ? "" : "s"
                 }`
-              : `step ${step + 1} · vLLM · final answer`,
+              : `step ${step + 1} · ${inferenceEngine} · final answer`,
         });
 
         if (result.finishReason !== "tool_calls" || result.toolCalls.length === 0) {
@@ -1061,18 +1215,26 @@ export async function POST(req: NextRequest) {
           return;
         }
 
-        // Append the assistant turn with the structured tool calls to history,
-        // exactly as OpenAI tool-calling expects. Tool calls inside one
-        // response array are dispatched in parallel below.
-        history.push({
-          role: "assistant",
-          content: result.contentEmitted || null,
-          tool_calls: result.toolCalls.map((tc) => ({
-            id: tc.id,
-            type: "function",
-            function: { name: tc.name, arguments: tc.argsRaw || "{}" },
-          })),
-        });
+        // Append the assistant turn carrying the tool calls. Anthropic replays
+        // the raw content blocks (thinking signatures intact); the vLLM path
+        // uses the OpenAI tool-calling shape. Tool calls inside one response
+        // array are dispatched in parallel below.
+        if (provider === "anthropic") {
+          anthropicMessages.push({
+            role: "assistant",
+            content: result.assistantContent ?? [],
+          });
+        } else {
+          history.push({
+            role: "assistant",
+            content: result.contentEmitted || null,
+            tool_calls: result.toolCalls.map((tc) => ({
+              id: tc.id,
+              type: "function",
+              function: { name: tc.name, arguments: tc.argsRaw || "{}" },
+            })),
+          });
+        }
 
         // Surface each tool call's input frame first so the UI cards transition
         // input-streaming → input-available → output-* cleanly.
@@ -1133,17 +1295,26 @@ export async function POST(req: NextRequest) {
           }),
         );
 
+        const toolResultBlocks: Anthropic.ToolResultBlockParam[] = [];
         for (const { tc, output, startedAtMs, durationMs } of dispatched) {
           writer.write({
             type: "tool-output-available",
             toolCallId: tc.id,
             output,
           });
-          history.push({
-            role: "tool",
-            tool_call_id: tc.id,
-            content: JSON.stringify(output),
-          });
+          if (provider === "anthropic") {
+            toolResultBlocks.push({
+              type: "tool_result",
+              tool_use_id: tc.id,
+              content: JSON.stringify(output),
+            });
+          } else {
+            history.push({
+              role: "tool",
+              tool_call_id: tc.id,
+              content: JSON.stringify(output),
+            });
+          }
           // One tool stage per call. Label names the actual tool; `detail`
           // surfaces the query/score argument when present, or an error
           // marker so a failed tool reads honestly in the timeline.
@@ -1154,6 +1325,11 @@ export async function POST(req: NextRequest) {
             durationMs,
             detail: toolStageDetail(tc.argsRaw, output),
           });
+        }
+        // Anthropic requires all tool_results for one assistant turn in a
+        // single following user message.
+        if (provider === "anthropic" && toolResultBlocks.length > 0) {
+          anthropicMessages.push({ role: "user", content: toolResultBlocks });
         }
       }
 
