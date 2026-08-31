@@ -17,6 +17,7 @@
 // undersupported for vllm-style audio. Manual passthrough is one screen of
 // code with no provider wrangling.
 
+import { createHash, timingSafeEqual } from "node:crypto";
 import {
   createUIMessageStream,
   createUIMessageStreamResponse,
@@ -849,9 +850,111 @@ async function runTool(
   return { error: `unknown tool: ${name}` };
 }
 
+// --- Access control + rate limiting (fail closed) --------------------------
+//
+// Readiness-audit P1-6: this route was a public, unauthenticated, unmetered
+// model endpoint — a budget-drain vector with a cloud-API backend and a
+// GPU-DoS vector with a self-hosted one. Contract:
+//
+//   - If MEDOMNI_API_TOKEN is set, every request must carry
+//     `Authorization: Bearer <token>` (timing-safe comparison).
+//   - If MEDOMNI_API_TOKEN is unset in a production build, the route FAILS
+//     CLOSED with 503 and a clear operator message. Enabling the token in
+//     the deployment environment is an operator step.
+//   - Local development stays usable without a token only via the explicit
+//     opt-out MEDOMNI_DEV_OPEN=1, and only in non-production builds — the
+//     flag cannot re-open a production deployment.
+//
+// The per-IP limiter is a best-effort, per-instance token bucket: on
+// serverless it bounds burst abuse per warm instance but is NOT a global
+// quota. Platform-level rate limiting (e.g. a WAF rule) is the durable
+// control and is an operator step.
+
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 10; // per IP per window per instance
+
+const rateBuckets = new Map<string, { windowStart: number; count: number }>();
+
+function sha256(s: string): Buffer {
+  return createHash("sha256").update(s, "utf8").digest();
+}
+
+/** Constant-time string equality via digest comparison. */
+function tokenMatches(presented: string, expected: string): boolean {
+  return timingSafeEqual(sha256(presented), sha256(expected));
+}
+
+function jsonError(status: number, error: string, extraHeaders?: Record<string, string>) {
+  return new Response(JSON.stringify({ error }), {
+    status,
+    headers: { "Content-Type": "application/json", ...extraHeaders },
+  });
+}
+
+/** Returns an error Response when the request must be refused, else null. */
+function agentAccessGate(req: NextRequest): Response | null {
+  const expected = process.env.MEDOMNI_API_TOKEN;
+  if (expected) {
+    const auth = req.headers.get("authorization") ?? "";
+    const presented = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length).trim() : "";
+    if (!presented || !tokenMatches(presented, expected)) {
+      return jsonError(
+        401,
+        "Unauthorized: this endpoint requires `Authorization: Bearer <MEDOMNI_API_TOKEN>`.",
+      );
+    }
+    return null;
+  }
+  if (process.env.NODE_ENV !== "production" && process.env.MEDOMNI_DEV_OPEN === "1") {
+    return null; // explicit local-dev opt-out only
+  }
+  return jsonError(
+    503,
+    "Agent endpoint disabled (fail-closed): MEDOMNI_API_TOKEN is not configured on this " +
+      "deployment. Operators: set MEDOMNI_API_TOKEN in the environment to enable access. " +
+      "Local development: run a non-production build with MEDOMNI_DEV_OPEN=1.",
+  );
+}
+
+/** Best-effort per-instance fixed-window limiter. Returns 429 or null. */
+function rateLimitGate(req: NextRequest): Response | null {
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
+  const now = Date.now();
+  const bucket = rateBuckets.get(ip);
+  if (!bucket || now - bucket.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    rateBuckets.set(ip, { windowStart: now, count: 1 });
+    // Opportunistic cleanup so the map cannot grow unbounded on a warm
+    // instance under address-rotation abuse.
+    if (rateBuckets.size > 10_000) {
+      for (const [k, b] of rateBuckets) {
+        if (now - b.windowStart >= RATE_LIMIT_WINDOW_MS) rateBuckets.delete(k);
+      }
+    }
+    return null;
+  }
+  bucket.count += 1;
+  if (bucket.count > RATE_LIMIT_MAX_REQUESTS) {
+    const retryAfterS = Math.ceil(
+      (bucket.windowStart + RATE_LIMIT_WINDOW_MS - now) / 1000,
+    );
+    return jsonError(
+      429,
+      `Rate limit exceeded: max ${RATE_LIMIT_MAX_REQUESTS} requests per minute per client.`,
+      { "Retry-After": String(Math.max(retryAfterS, 1)) },
+    );
+  }
+  return null;
+}
+
 // --- Route handler ---------------------------------------------------------
 
 export async function POST(req: NextRequest) {
+  const refused = agentAccessGate(req) ?? rateLimitGate(req);
+  if (refused) return refused;
+
   const tunnelUrl = process.env.MEDOMNI_TUNNEL_URL;
   if (!tunnelUrl) {
     return new Response(JSON.stringify({ error: "MEDOMNI_TUNNEL_URL not set on server." }), {
