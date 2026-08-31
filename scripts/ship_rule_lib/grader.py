@@ -201,6 +201,13 @@ def grade_healthbench_record(
     """Grade a single HealthBench record using simple-evals' rubric arithmetic.
 
     Bridges to scripts/_healthbench_grader_bridge.py (vendored, MIT).
+
+    Recusal contract: a judge failure (`criteria_met: None` after retries)
+    RECUSES the whole record — `score: None`, `recused: True` — it is never
+    coerced to "criterion not met". Scoring a judge outage as a verdict
+    biases the aggregate (negative-point criteria get inflated); the
+    HealthBench runner already recuses in this situation
+    (scripts/healthbench_runner.py) and this grader must match it.
     """
     from _healthbench_grader_bridge import (  # type: ignore
         RubricItem,
@@ -217,10 +224,24 @@ def grade_healthbench_record(
     judge_log: list[dict] = []
     grading_results: list[dict] = []
     response = record.get("response", "")
+    recused = False
     for r in rubric:
         out = grader_fn(response, r["criterion"])
-        grading_results.append({"criteria_met": bool(out.get("criteria_met") or False)})
         judge_log.append(out)
+        met = out.get("criteria_met")
+        if met is None:
+            recused = True
+            continue
+        grading_results.append({"criteria_met": bool(met)})
+    if recused:
+        return {
+            "score": None,
+            "recused": True,
+            "n_rubrics": len(items),
+            "judge_log": judge_log,
+            "reason": "judge_error: at least one rubric judgment failed after retries; "
+            "record recused, not scored",
+        }
     score = calculate_score(items, grading_results)
     return {"score": score, "n_rubrics": len(items), "judge_log": judge_log}
 
@@ -247,6 +268,7 @@ def grade_jsonl(
     primary_fn: Callable[..., dict] | None = None
     n_graded = 0
     n_missing = 0
+    n_recused = 0
     sums = {"v0": 0.0, "v25": 0.0}
     counts = {"v0": 0, "v25": 0}
 
@@ -284,7 +306,10 @@ def grade_jsonl(
 
             score = graded.get("score")
             if score is None:
-                n_missing += 1
+                if graded.get("recused"):
+                    n_recused += 1
+                else:
+                    n_missing += 1
             else:
                 n_graded += 1
                 if arm in sums:
@@ -299,6 +324,7 @@ def grade_jsonl(
         "benchmark": benchmark,
         "n_graded": n_graded,
         "n_missing": n_missing,
+        "n_recused": n_recused,
         "v0_mean": sums["v0"] / counts["v0"] if counts["v0"] else None,
         "v25_mean": sums["v25"] / counts["v25"] if counts["v25"] else None,
         "n_v0": counts["v0"],
