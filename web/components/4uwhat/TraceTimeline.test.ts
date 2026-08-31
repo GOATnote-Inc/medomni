@@ -156,17 +156,27 @@ async function main(): Promise<void> {
   await test("SystemPanel: renders model and serving stack", () => {
     const html = renderToStaticMarkup(createElement(SystemPanel, {}));
     assert(
-      html.includes("Nemotron-3-Nano-Omni"),
+      html.includes("Claude Opus (Anthropic API)"),
       "model name missing from SystemPanel",
     );
-    assert(html.includes("vLLM"), "serving stack missing from SystemPanel");
+    assert(
+      html.includes("Anthropic API via web BFF"),
+      "serving stack missing from SystemPanel",
+    );
   });
 
-  await test("SystemPanel: renders the sovereignty line", () => {
+  await test("SystemPanel: renders the third-party inference disclosure (never the sovereignty line pre-confirmation)", () => {
+    // The pre-fetch default MUST be the non-sovereign disclosure: the
+    // panel may only claim sovereignty after /api/telemetry confirms it.
     const html = renderToStaticMarkup(createElement(SystemPanel, {}));
     assert(
-      html.includes("Sovereign") && html.includes("no third-party AI APIs"),
-      "sovereignty line missing or incomplete",
+      html.includes("Third-party inference") &&
+        html.includes("Anthropic Claude API"),
+      "third-party inference disclosure missing",
+    );
+    assert(
+      !html.includes("no third-party AI APIs"),
+      "must not render the sovereignty claim before the server confirms it",
     );
   });
 

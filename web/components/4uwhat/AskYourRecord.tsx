@@ -773,11 +773,11 @@ export function AskYourRecord({
                       .replace(/_/g, " "),
                   );
                 const checks = [
-                  "Patient privacy: your data stayed on our servers — never sent to a third-party AI",
+                  "Privacy: queries are processed by the Anthropic Claude API — do not enter PHI",
                   "Coverage check: when a guideline isn't in our registry, the agent says so instead of guessing",
                   "Drug-interaction check: cross-referenced against PrimeKG and PubMed",
                   "Source-of-truth: every claim traceable to a tool result or your record",
-                  "Sovereign stack: the model runs on dedicated hardware we operate · no third-party AI APIs called",
+                  "Backend: inference via the Anthropic Claude API through the web BFF (self-hosted GPU service decommissioned)",
                 ];
                 return (
                   <details
