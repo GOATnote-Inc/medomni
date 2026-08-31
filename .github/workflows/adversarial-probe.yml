@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload CARD artifact
         if: always() && steps.card.outputs.card_dir != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: adversarial-probe-card-${{ github.run_id }}
           path: ${{ steps.card.outputs.card_dir }}
