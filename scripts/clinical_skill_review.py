@@ -19,8 +19,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import anthropic
-
 MODEL = "claude-opus-4-7"
 MAX_DIFF_CHARS = 60_000  # truncate diff to keep prompt + cost bounded
 
@@ -103,19 +101,37 @@ def get_clinical_diff(base_ref: str) -> tuple[str, list[str]]:
 
 
 def parse_verdict(text: str) -> tuple[str, dict, str]:
-    """Extract JSON verdict + remaining rationale."""
+    """Extract JSON verdict + remaining rationale.
+
+    Fail closed: this is a clinical-safety gate, so output the model
+    produced that we cannot parse — no JSON, invalid JSON, or an unknown
+    verdict value — is treated as BLOCK, never silently downgraded to a
+    mergeable FLAG. A human clears the gate by fixing the review run.
+    """
     m = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
     if not m:
         m = re.search(r"(\{[^{}]*\"verdict\"[^{}]*\})", text, re.DOTALL)
     if not m:
-        return "FLAG", {"summary": "could not parse model output", "findings": []}, text
+        return (
+            "BLOCK",
+            {"summary": "could not parse model output (fail-closed BLOCK)", "findings": []},
+            text,
+        )
     try:
         blob = json.loads(m.group(1))
     except json.JSONDecodeError:
-        return "FLAG", {"summary": "model returned invalid JSON", "findings": []}, text
-    verdict = str(blob.get("verdict", "FLAG")).upper()
+        return (
+            "BLOCK",
+            {"summary": "model returned invalid JSON (fail-closed BLOCK)", "findings": []},
+            text,
+        )
+    verdict = str(blob.get("verdict", "")).upper()
     if verdict not in {"PASS", "FLAG", "BLOCK"}:
-        verdict = "FLAG"
+        blob["summary"] = (
+            f"model returned unknown verdict {verdict or '(empty)'!s} (fail-closed BLOCK); "
+            + str(blob.get("summary", ""))
+        )
+        verdict = "BLOCK"
     rationale = text[m.end() :].strip()
     return verdict, blob, rationale
 
@@ -123,9 +139,11 @@ def parse_verdict(text: str) -> tuple[str, dict, str]:
 def post_comment(pr: str, body: str) -> None:
     p = Path("/tmp/clinical_review_comment.md")
     p.write_text(body)
+    # check=True: if the review comment cannot be posted, the gate must
+    # fail loudly rather than pass silently with its findings unseen.
     subprocess.run(
         ["gh", "pr", "comment", pr, "--body-file", str(p)],
-        check=False,
+        check=True,
     )
 
 
@@ -141,6 +159,10 @@ def main() -> int:
     print(f"Reviewing {len(files)} clinical-content file(s):")
     for f in files:
         print(f"  - {f}")
+
+    # Imported lazily so the parse/verdict logic above stays unit-testable
+    # without the SDK installed (CI unit env installs no cloud SDKs).
+    import anthropic
 
     client = anthropic.Anthropic()
     msg = client.messages.create(
