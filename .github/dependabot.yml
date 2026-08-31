@@ -1,0 +1,23 @@
+# Weekly dependency update PRs. Ecosystems:
+#   - pip: pyproject.toml (runtime + dev extras) at the repo root
+#   - github-actions: workflow action pins under .github/workflows/
+#   - npm: web/ (pnpm; Next.js app)
+# All PRs still pass the required checks (lint, secrets-scan, unit,
+# manifest-determinism) plus web-build before merge.
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "npm"
+    directory: "/web"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (2026-08-31 — public-repo readiness fix pass)
+
+- README, CLAUDE.md, web banner/telemetry/system panel, CITATION.cff, and
+  SECURITY.md now state the current architecture: the self-hosted GPU
+  serving deployment is decommissioned (June 2026) and demo inference is
+  migrating to the Anthropic Claude API via the web BFF; sovereignty claims
+  are scoped to the pre-June-2026 deployment (#482)
+- `pip install -e .` works: [build-system], declared dependencies + dev/
+  grading extras, uv.lock; CI installs from pyproject with no masking;
+  project metadata renamed to `medomni` / Apache-2.0 (#484)
+- agent-pr-review hardened: no --admin or default-token merge fallbacks,
+  path guard on .github/, base-commit rubric, untrusted-input fencing,
+  default COMMENT_AND_WAIT (#481)
+- detect-secrets gate activated (correct baseline filename + regenerated
+  audited baseline); clinical-skill-review fails closed on unparseable
+  output; adversarial probe is workflow_dispatch-only (#481)
+- Ship-rule grader recuses records on judge failure and reports n_recused
+  in stats.json instead of scoring outages as "criterion not met" (#485)
+- /api/agent requires a bearer token (fail-closed 503 when unconfigured in
+  production; explicit MEDOMNI_DEV_OPEN=1 for local dev) and rate-limits
+  per IP (#486)
+- Operator paths, public host IPs, and the production pod handle scrubbed;
+  agent ops logs removed (#487)
+
 ### Added
 
 - Initial public scaffolding for `GOATnote-Inc/medomni`

@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+# Read-only default token: none of these jobs write to the repo.
+permissions:
+  contents: read
 jobs:
   unit:
     runs-on: ubuntu-latest
