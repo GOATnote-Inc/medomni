@@ -21,9 +21,9 @@ In scope:
 - The MedOmni codebase under this repository
 - The reproducibility manifest emitter (`scripts/emit_manifest.py`)
 - The pre-commit and CI gates (`.pre-commit-config.yaml`, `.github/workflows/`)
-- The sovereignty contract (CLAUDE.md §2) — any code path that introduces a cloud LLM API call
-  is in scope as a security defect
-- The persona-tagged-graph schema (`docs/SPEC.md` §5.5)
+- The API-key handling contract (CLAUDE.md §2) — any code path that leaks or commits a cloud
+  LLM API key is in scope as a security defect
+- The persona-tagged-graph schema ([`findings/research/2026-04-29-medomni-v1-northstar/SPEC.md`](findings/research/2026-04-29-medomni-v1-northstar/SPEC.md) §5.5)
 
 Out of scope:
 
@@ -60,7 +60,7 @@ the value into a shell variable that gets re-exported.
 
 ### Never push secrets through SSH proxies that allocate a PTY
 
-The 2026-04-29 incident (see [SECURITY-INCIDENTS.md](SECURITY-INCIDENTS.md)) leaked an HF_TOKEN
+The 2026-04-29 incident (full postmortem in the private research repo) leaked an HF_TOKEN
 through `ssh.runpod.io`'s required PTY allocation. PTYs echo stdin to stdout server-side; the
 client cannot disable this. Heredoc, base64, inline-env, and stdin-pipe all leak.
 
@@ -75,12 +75,16 @@ Provision pod secrets via:
 
 Never via a Claude-driven shell.
 
-### Never commit cloud LLM API keys to any path
+### Never commit cloud LLM API key VALUES to any path
 
-Per [CLAUDE.md](CLAUDE.md) §2 (sovereignty contract), MedOmni runs with exactly two secrets:
-`HF_TOKEN` (Hugging Face read-only) and `BREV_PEM_PATH` (filesystem path, not a value).
+Per [CLAUDE.md](CLAUDE.md) §2, cloud LLM keys are scoped, not forbidden: the demo BFF uses an
+Anthropic key held only in Vercel project env, eval graders source keys out-of-band on the
+operator's machine, and CI uses the `ANTHROPIC_API_KEY_PR_REVIEW` repo secret. (The historical
+"exactly two secrets / no cloud LLM keys in any code path" contract described the pre-June-2026
+self-hosted deployment.)
 
-`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `XAI_API_KEY`, etc. are blocked by:
+Key VALUES in the repo — `OPENAI_API_KEY=sk-...`, `ANTHROPIC_API_KEY=sk-ant-...`, etc. — are
+blocked by:
 - The `no-cloud-llm-keys.sh` pre-commit hook
 - The `detect-secrets` baseline (Yelp, Apache-2.0; aligns with the
   `NVIDIA-NeMo` org convention used by NeMo, NeMo-Run, and NeMo-Curator)
@@ -128,10 +132,11 @@ intentional and reviewed quarterly.
 MedOmni is a clinical decision-support codebase. Its threat model is shaped by:
 
 1. **Hallucinated medical content** — addressed by the constrained-decoding cite rail
-   (`docs/SPEC.md` §5.3 stage 9) and the output-rail Nemotron-Content-Safety-Reasoning-4B with
+   ([SPEC](findings/research/2026-04-29-medomni-v1-northstar/SPEC.md) §5.3 stage 9) and the output-rail Nemotron-Content-Safety-Reasoning-4B with
    clinical policy.
-2. **PHI leak** — addressed by sovereignty (no cloud LLM calls), HIPAA-by-construction, and the
-   airplane-mode demo. PHI never leaves the pod.
+2. **PHI leak** — the demo forbids PHI entry (persistent banner) because the current
+   architecture sends queries to the Anthropic Claude API; the historical self-hosted
+   deployment kept inference on-pod. Do not represent the demo as PHI-safe.
 3. **Adversarial jailbreak** — addressed by the input-rail NemoGuard JailbreakDetect.
 4. **Methodology-side circularity** — addressed by held-out fixtures with non-overlapping evidence
    base, cross-family judge, and N≥3 seeded trials with deterministic decoding.

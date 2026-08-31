@@ -2,13 +2,18 @@
   © 2026 GOATnote, Inc. and contributors. All rights reserved.
 
   Code in this repository is licensed under the Apache License, Version 2.0
-  (see LICENSE). Documentation, architecture briefs, methodology notes, demo
-  fixtures, and held-out benchmark artifacts are released under CC-BY-4.0
-  for public benefit and to surface our research as proof-of-quality.
+  (see LICENSE). Documentation, architecture briefs, methodology notes, and
+  held-out benchmark artifacts are released under CC-BY-4.0 for public
+  benefit and to surface our research as proof-of-quality. Demo fixtures
+  under corpus/demo-fixtures/ carry their own per-file licenses — several
+  are CC BY-SA 3.0 (share-alike) from Wikimedia Commons; see the
+  fixture-*-LICENSE.md file beside each asset and the "Demo fixture
+  licenses" section below.
 
   You are welcome to read, fork, cite, learn from, and build on this work.
-  Attribution is required (Apache 2.0 + CC-BY-4.0). Trademarks "MedOmni"
-  and "GOATnote" are reserved by GOATnote, Inc.
+  Attribution is required (Apache 2.0 + CC-BY-4.0 + the per-fixture
+  licenses). Trademarks "MedOmni" and "GOATnote" are reserved by
+  GOATnote, Inc.
 
   This is a working research repository — methodology notes include negative
   results and corrected diagnoses. Reproducibility manifests are first-class
@@ -20,7 +25,18 @@
 
 # MedOmni
 
-**Sovereign nurse-first medical reasoning on NVIDIA's open-component stack.**
+**Nurse-first medical reasoning — trained and evaluated on NVIDIA's open-component stack.**
+
+> **Architecture status (2026-08).** The training/eval program below ran
+> entirely on self-hosted NVIDIA GPUs ("sovereign by construction") and its
+> results stand as published. The **live demo no longer runs on that
+> stack**: the dedicated GPU serving pod was decommissioned in June 2026 and
+> demo inference is migrating to the **Anthropic Claude API via the web
+> BFF** (branch `feat/claude-opus-migration`). Queries to the demo are
+> processed by a third-party AI service — the demo is **not** sovereign.
+> The demo is degraded/unavailable while the migration completes. Any
+> "no cloud LLM in the inference path" claim in historical documents in
+> this repo describes the pre-June-2026 deployment only.
 
 **Headline (2026-05-07, paired-bootstrap N=600 per benchmark, gpt-4.1 grader, `thinking=True`):**
 
@@ -37,11 +53,20 @@ These are the **base-model-with-thinking-enabled** numbers. The V2.5 reasoning-S
 [![CUDA](https://img.shields.io/badge/CUDA-13.2-76B900.svg)](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html)
 [![RAPIDS](https://img.shields.io/badge/RAPIDS-26.04-7400B8.svg)](https://rapids.ai/)
 [![NeMo](https://img.shields.io/badge/NeMo-Framework_2.7-76B900.svg)](https://github.com/NVIDIA-NeMo/NeMo)
-[![Reproducibility](https://img.shields.io/badge/manifest-9--layer-success.svg)](docs/SPEC.md#56-the-9-layer-reproducibility-manifest)
+[![Reproducibility](https://img.shields.io/badge/manifest-9--layer-success.svg)](findings/research/2026-04-29-medomni-v1-northstar/SPEC.md)
 
 ---
 
-## Live demo — `https://www.thegoatnote.com/4UWHAt`
+## Demo — `https://www.thegoatnote.com/4UWHAt`
+
+> **Demo status: degraded during migration.** The demo backend is mid-way
+> through the move from the decommissioned self-hosted GPU service to the
+> Anthropic Claude API and has been failing since 2026-06-26 pending the
+> production API key configuration. Until the migration lands, treat the
+> URL as a UI preview, not a working agent. The deployed page still shows
+> an outdated "no third-party AI APIs called" banner from the pre-migration
+> build; that claim is wrong for the Claude-backed architecture and is
+> corrected in this repository — do not rely on it.
 
 Public demo URL, no login, no account. Routes via Vercel edge rewrite from
 the `www.thegoatnote.com` apex (owned by `v0-goat-note-landing-page-3c`)
@@ -52,17 +77,27 @@ to `medomni.vercel.app/4UWHAt`. The page is the **Records OS** dashboard:
 - **Imaging gallery** — three click-to-view DetailDrawer cards (X-ray · MRI · panoramic) backed by real CC0 / CC-BY reference films from Wikimedia Commons. Track D's FHIR `ImagingStudy` ingestion populates the same shape from a real EHR.
 - **Five-tool agent** — `pubmed_search`, `primekg_lookup`, `guideline_currency_check`, `clinical_calculate`, `get_patient_context` (FHIR R4). Tool call provenance + verification badge under every assistant turn.
 - **FHIR R4 Bundle export** — Share button produces a valid Bundle with Patient + Conditions + Observations + MedicationRequests + AllergyIntolerances + DiagnosticReports + ImagingStudies, downloadable as JSON.
-- **Demo banner** — `Private by design · runs on dedicated NVIDIA hardware · no third-party AI APIs called` (for evaluation only; do not enter PHI).
+- **Demo banner** — "For evaluation only; do not enter PHI." The banner also states which backend serves inference; the pre-migration "no third-party AI APIs called" wording is retired (see the inference path note below).
 
-Inference path: every keystroke / image / audio chunk hits **Nemotron-3-Nano-Omni-30B-A3B-Reasoning** (FP8) on a dedicated NVIDIA H100 via vllm. No cloud LLM API keys in the path; the only external service is the public `medomni.vercel.app` Vercel deploy that proxies `/api/agent` to the H100 vllm endpoint.
+**Inference path (current architecture):** the browser talks to the web BFF
+(`web/app/api/agent`), which forwards the conversation to the model backend.
 
-Architecture decision behind the patient slice: **Pattern B (dual lookup)** — the agent hits FHIR (Medplum, self-hosted) and PrimeKG independently and merges in-prompt. Measured p95 = **11 ms** for the FHIR fetch across 12 patients, 60 samples (`findings/2026-05-04-pattern-b-spike/RESULTS.md`).
+- **Pre-June-2026 (decommissioned):** Nemotron-3-Nano-Omni-30B-A3B-Reasoning
+  (FP8) on a dedicated NVIDIA H100 via vllm; no cloud LLM API keys in the
+  serving path. This is the deployment the published eval numbers describe.
+- **Current (migration in progress, branch `feat/claude-opus-migration`):**
+  the BFF calls the **Anthropic Claude API** (Claude Opus). User queries —
+  including any text, image, or audio submitted to the demo — are sent to
+  Anthropic for processing. Do not enter PHI. The dedicated GPU service is
+  decommissioned.
 
-The training / eval / methodology stack below is the proof-of-quality behind that demo. Read on if you care how the model got there. Or [open the demo](https://www.thegoatnote.com/4UWHAt).
+Architecture decision behind the patient slice: **Pattern B (dual lookup)** — the agent hits FHIR (Medplum, self-hosted) and PrimeKG independently and merges in-prompt. Measured p95 = **11 ms** for the FHIR fetch across 12 patients, 60 samples in a dev environment (`findings/2026-05-04-pattern-b-spike/RESULTS.md`); the same file's production caveat measured 150-400 ms end-to-end.
 
-For the **world-class trajectory** (V2.5 reasoning-SFT → V2.7 tool-call SFT → V3 GRPO → V3.5 DPO refusal → V_final HF release as Apache-2.0; eval gauntlet with MedAgentBench as the headline target), see the navigable index at [`findings/INDEX.md`](findings/INDEX.md). 16+ pre-registered documents covering every stage with surgical recipe additions per the iter-38 4-agent improvement-dimensions synthesis; ~32-41 H200-hrs total.
+The training / eval / methodology stack below is the proof-of-quality behind that demo. Read on if you care how the model got there.
 
-**Live status (2026-05-07):** V2.5 reasoning-SFT eval landed (PR [#122](https://github.com/GOATnote-Inc/medomni/pull/122)) — A5 ablation closed with both arms FAILing the pre-registered ship rule. Real story is the V0 baseline strength (numbers above) once `enable_thinking=True` is set as canonical. Production demo at [`/4UWHAt`](https://www.thegoatnote.com/4UWHAt) now serves V0 FP8 from a single H100 (Hopper, 80 GB) — migrated from the prior 3-GPU B300+H200×2 fleet on 2026-05-07 with ~80% cost reduction (~$15-20/hr → $3.70/hr). The Karpathy-autoresearcher training loop (catfish + lobster + narwhal) is decommissioned; future SFT runs (V2.5b corpus-tweak, V2.7 PRM channel) wait for the next training-budget cycle (Issue [#130](https://github.com/GOATnote-Inc/medomni/issues/130)).
+For the **full planned trajectory** (V2.5 reasoning-SFT → V2.7 tool-call SFT → V3 GRPO → V3.5 DPO refusal → V_final HF release as Apache-2.0; eval gauntlet with MedAgentBench as the headline target), see the navigable index at [`findings/INDEX.md`](findings/INDEX.md). 16+ pre-registered documents covering every stage; ~32-41 H200-hrs total.
+
+**Status (2026-08):** V2.5 reasoning-SFT eval landed (PR [#122](https://github.com/GOATnote-Inc/medomni/pull/122)) — A5 ablation closed with both arms FAILing the pre-registered ship rule; the durable result is the V0 baseline strength (numbers above) with `enable_thinking=True` canonical. The single-H100 serving pod that carried the demo from 2026-05-07 was decommissioned in June 2026; demo inference is migrating to the Anthropic Claude API (see the architecture status note at the top). The Karpathy-autoresearcher training loop (3-GPU fleet) was decommissioned 2026-05-07; future SFT runs wait for the next training-budget cycle (Issue [#130](https://github.com/GOATnote-Inc/medomni/issues/130)).
 
 ---
 
@@ -95,12 +130,12 @@ case (drug + device + image + auscultation audio + family history + prior labs) 
 register-shaped answers — one for the **physician** (full diagnostic depth + literature citations),
 one for the **nurse** (clinical depth + early-warning escalation cues + teaching scaffold), one for
 the **family** (caregiver register + plain-language analogies + when-to-call-911), one for the
-**patient** (FKGL ≤ 8 + shared-decision-making tone) — each with a **cited graph path** beneath the
-answer that a malpractice attorney could read out at deposition.
+**patient** (FKGL ≤ 8 + shared-decision-making tone) — each with an auditable **cited graph path**
+beneath the answer.
 
 **Irreducible core feature**: the persona-tagged grounded explanation. Same case, same evidence,
-four registers, one auditable subgraph, manifest-locked reproducibility. Nothing else open-source
-does this on one stack, on-prem, with provenance.
+four registers, one auditable subgraph, manifest-locked reproducibility. We are not aware of
+another open-source system that combines these on one stack with provenance.
 
 The literature gap that justifies the wedge: only **6%** of 67 medical-KG studies addressed
 nursing-specific applications ([JMIR AI 2025](https://ai.jmir.org/2025/1/e58670/)). The four-persona
@@ -159,9 +194,11 @@ While it ran, the loop operated continuously, with PRs as the human-inspected
 checkpoints between autonomous work. It was decommissioned alongside the
 2026-05-07 consolidation.
 
-**Sovereignty floor:** every box above ran on hardware under our control. The
-sovereignty contract still holds for the live demo today — no cloud LLM API keys
-are in the inference path (see the Sovereignty contract section below).
+**Sovereignty floor (historical):** every box above ran on hardware under our
+control, and that property held for the live demo through June 2026 while it
+served Nemotron from the dedicated H100. It does NOT hold for the current
+demo architecture, which routes inference to the Anthropic Claude API (see
+the "Cloud API usage" section below).
 
 ---
 
@@ -226,9 +263,11 @@ are in the inference path (see the Sovereignty contract section below).
 | Frontend serving | Triton Inference Server with OpenAI-compat | 26.03 |
 | Judge (cross-family, sovereign) | Qwen/Qwen2.5-7B-Instruct | FP8 TRT-LLM engine |
 
-The **only** non-NVIDIA weights in the whole pipeline are Qwen2.5-7B-Instruct, which acts as the
-cross-family judge per NVIDIA's own published Nemotron-3 reproducibility recipe. Sovereignty by
-construction: zero cloud LLM API keys in any code path.
+The **only** non-NVIDIA weights in the target pipeline are Qwen2.5-7B-Instruct, which acts as the
+cross-family judge per NVIDIA's own published Nemotron-3 reproducibility recipe. Note this
+describes the *self-hosted target architecture*, not every code path in the repo: the ship-rule
+and HealthBench graders call gpt-4.1 / Claude, CI review calls the Claude API, and the current
+demo routes inference to the Claude API (see "Cloud API usage" below).
 
 For the full architecture spec, see [`findings/research/2026-04-29-medomni-v1-northstar/SPEC.md`](findings/research/2026-04-29-medomni-v1-northstar/SPEC.md).
 
@@ -295,13 +334,12 @@ medomni/
 ├── SECURITY.md                # disclosure email + scope + durable doctrine
 ├── CODE_OF_CONDUCT.md         # Contributor Covenant 2.1
 ├── CHANGELOG.md               # Keep-a-Changelog
-├── SECURITY-INCIDENTS.md      # 2026-04-29 HF_TOKEN PTY-echo postmortem
-├── CLAUDE.md                  # AI-agent operating charter (sovereignty contract, isolation rules)
+├── CLAUDE.md                  # AI-agent operating charter (isolation rules, current architecture)
 ├── CITATION.cff               # citation metadata
 ├── pyproject.toml             # PEP 621 + uv-compatible
 ├── Makefile                   # health, manifest, ci-medomni, demo-pre-flight
 ├── DEMO.md                    # 12-minute on-stage demo runbook
-├── .env.example               # two secrets total (HF_TOKEN + BREV_PEM_PATH)
+├── .env.example               # env template (HF_TOKEN, NGC_API_KEY, BREV_PEM_PATH, tunnel URLs)
 ├── .pre-commit-config.yaml    # ruff + detect-secrets + custom hooks
 ├── .secrets.baseline          # detect-secrets baseline (no secrets in baseline; verified)
 ├── .github/                   # workflows, ISSUE_TEMPLATE, PR template, CODEOWNERS
@@ -321,19 +359,27 @@ medomni/
 
 ---
 
-## Sovereignty contract
+## Cloud API usage (honesty ledger)
 
-Per [CLAUDE.md §2](CLAUDE.md), MedOmni runs with **exactly two secrets**:
+Earlier revisions of this README claimed "no cloud LLM API keys exist in any
+code path." That was true of the *self-hosted serving path* while it ran; it
+was never true of the whole repository, and it is not true of the current
+demo. The actual ledger:
 
-- `HF_TOKEN` — Hugging Face read-only, gated-model access.
-- `BREV_PEM_PATH` — path to the Brev SSH key on disk.
+| Path | Backend | Why |
+|---|---|---|
+| Demo inference (current) | **Anthropic Claude API** via the web BFF | The dedicated GPU pod was decommissioned in June 2026; migration branch `feat/claude-opus-migration` |
+| Demo inference (pre-June-2026, decommissioned) | Self-hosted Nemotron FP8 on H100 via vllm | The published "sovereign" deployment |
+| Ship-rule / HealthBench rubric grading | OpenAI `gpt-4.1` (laptop-side), `claude-opus-4-7` (HealthBench runner) | Pre-registered eval protocol graders |
+| CI PR review + clinical-content gate | Claude API (`ANTHROPIC_API_KEY_PR_REVIEW` repo secret) | `.github/workflows/agent-pr-review.yml`, `clinical-skill-review.yml` |
+| Sovereign cross-check judge | Qwen2.5-7B-Instruct, self-hosted | Cross-family judge of the eval recipe |
 
-**No cloud LLM API keys exist in any code path.** The judge runs locally on H100. The serve runs
-locally on H200. Guardrails run locally. RAG runs locally. External keys defeat the entire premise.
+"Sovereign" in the historical documents under `findings/` describes the
+pre-June-2026 self-hosted inference deployment only.
 
 The 2026-04-29 HF_TOKEN PTY-echo incident and its durable mitigation (the `_runpod_ssh.sh` secret-grep
-guard) are documented in [SECURITY-INCIDENTS.md](SECURITY-INCIDENTS.md). Operational maturity is
-shipping the postmortem alongside the fix.
+guard) are summarized in [SECURITY.md](SECURITY.md); the full postmortem lives in the private
+research repo. Operational maturity is shipping the postmortem alongside the fix.
 
 ---
 
@@ -358,7 +404,7 @@ demo's `Imaging` rail (X-ray · MRI · panoramic) is the first surface that bene
 
 **Audit ledger — [`GOATnote-Inc/receipts`](https://github.com/GOATnote-Inc/receipts)** — append-only
 intent-vs-execution attestation layer that sits beside MedOmni's existing Medplum `AuditEvent` +
-S3 Object Lock pipeline and turns it into malpractice-defense-grade evidence. Every 5-tool /
+S3 Object Lock pipeline and turns it into audit-grade evidence. Every 5-tool /
 4-persona inference becomes a `clinical_drift_finding` row plus a Merkle hash-chain attestation;
 the κ-graded dual-judge agreement engine (`claude-opus-4-7` + `gpt-5.4-2026-03-05`) scores each
 output against the encounter contract; the FHIRConnector then writes an `AttestationExtension`
@@ -381,6 +427,25 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). The manifest discipline is the load-bear
 **every PR that touches the inference path must attach a fresh manifest hash from a re-bench.**
 
 Bug reports + feature requests + reproducibility issues all have templates in [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/).
+
+---
+
+## Demo fixture licenses
+
+Every image/audio fixture under `corpus/demo-fixtures/` ships a per-file
+`fixture-*-LICENSE.md` with source URL, author, and license. They are NOT
+all CC-BY-4.0; the share-alike items keep their original terms:
+
+| Fixture | License |
+|---|---|
+| `auscultation/fixture-aud-001-crackles-pneumonia.{wav,mp3}` | **CC BY-SA 3.0** / GFDL 1.2+ (dual) — share-alike; cannot be relicensed |
+| `pill/fixture-pill-001-warfarin-tablets.png` | **CC BY-SA 3.0** / GFDL 1.2+ (dual) — share-alike; cannot be relicensed |
+| `cxr/fixture-cxr-001-rml-pneumonia.png` | CC0 1.0 (public domain) |
+| `ecg/fixture-ecg-001-stemi-12lead.png` | CC BY 4.0 |
+
+If you redistribute the CC BY-SA fixtures, your derivative of *those files*
+must carry CC BY-SA 3.0 terms regardless of this repo's Apache-2.0 /
+CC-BY-4.0 defaults.
 
 ---
 
