@@ -6,7 +6,7 @@
 
 ## TL;DR
 
-`exact-kind-orca`'s `nemotron-serve` container launched with `--limit-mm-per-prompt '{"audio":1,...}'`, promising audio capability. The `vllm/vllm-openai:latest` base image was missing the audio decoder backend (`librosa`, `soundfile`, `torchcodec` all `ModuleNotFoundError`). vLLM lazily holds a `PlaceholderModule` and only fails on the first real audio request with HTTP 400 "Invalid or unsupported audio file". Startup looked healthy. Detection waited until end-user audio attempts during the a16z investor session.
+the H100 serving pod's `nemotron-serve` container launched with `--limit-mm-per-prompt '{"audio":1,...}'`, promising audio capability. The `vllm/vllm-openai:latest` base image was missing the audio decoder backend (`librosa`, `soundfile`, `torchcodec` all `ModuleNotFoundError`). vLLM lazily holds a `PlaceholderModule` and only fails on the first real audio request with HTTP 400 "Invalid or unsupported audio file". Startup looked healthy. Detection waited until end-user audio attempts during the a16z investor session.
 
 Fix: snapshot the running container after `pip install librosa soundfile` → restart from the snapshot. ~90 s downtime. Durable path is `scripts/serve_orca_h100.sh build` (Dockerfile FROM `vllm/vllm-openai:latest` + `RUN pip install` audio deps).
 

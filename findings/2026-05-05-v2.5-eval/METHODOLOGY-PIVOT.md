@@ -59,4 +59,4 @@ This is the comparison the PREREG ship-rule conditions were intended to test.
 - `findings/2026-05-05-v2.5-eval/SHIP-RULE-RESULTS.{md,json}` — thinking=False results (PR #122 commit `10f94d6`)
 - `findings/2026-05-05-v2.5-eval-thinking/` — thinking=True results (in flight)
 - PR #120 §E7 — E-track determinism audit that flagged the hardcoded `enable_thinking=False`
-- `~/.claude/projects/-Users-kiteboard/memory/feedback_two_stage_grading_pattern_is_canonical.md` — gpt-4.1 grading from `/lostbench/.env` is laptop-only; pod side has no cloud key
+- `feedback_two_stage_grading_pattern_is_canonical.md` (operator agent memory; not in repo) — gpt-4.1 grading from the operator secrets file is laptop-only; pod side has no cloud key

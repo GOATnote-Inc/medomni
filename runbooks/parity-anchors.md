@@ -50,7 +50,7 @@ ssh unnecessary-peach-catfish '
 # The first hash directory IS the revision sha.
 
 # 3. Launch flags hash (so a future drift check is one diff)
-shasum -a 256 /Users/kiteboard/medomni/scripts/launch_b300_prod.sh | awk "{print \$1}"
+shasum -a 256 scripts/launch_b300_prod.sh | awk "{print \$1}"
 ```
 
 ### Narwhal (H200, factory + RAG)

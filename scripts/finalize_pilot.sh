@@ -59,9 +59,9 @@ ssh -o BatchMode=yes warm-lavender-narwhal "
   done
   echo
   echo "--- prism42 HEAD ---"
-  git -C /Users/kiteboard/prism42 rev-parse HEAD
+  git -C "${PRISM42_DIR:-$HOME/prism42}" rev-parse HEAD
   echo "--- prism42 worktree diff hash ---"
-  git -C /Users/kiteboard/prism42 diff HEAD | shasum -a 256 | awk '{print $1}'
+  git -C "${PRISM42_DIR:-$HOME/prism42}" diff HEAD | shasum -a 256 | awk '{print $1}'
 } > "$PILOT_DIR/proof/freeze_after.txt"
 
 # Compare hashes (hash-only, formatting-tolerant)

@@ -27,7 +27,7 @@ export interface PatientSummary {
   dob: string;
 }
 
-// Hard-coded port from /Users/kiteboard/medomni/assets/app/data.jsx const PATIENT.
+// Hard-coded port from assets/app/data.jsx (repo root) const PATIENT.
 // Keep in lockstep with that file. The id is a stable sentinel ("design-sample-patient")
 // so the picker can auto-select it on first load when no FHIR sandbox is wired.
 export const DESIGN_FALLBACK_PATIENT: PatientSummary = {

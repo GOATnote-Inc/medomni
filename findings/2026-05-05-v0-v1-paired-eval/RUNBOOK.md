@@ -131,7 +131,7 @@ ssh evil-cyan-lobster '
 
 ```bash
 # From laptop (sovereign_bench.py invocation; tunnel through ssh -L if needed)
-cd /Users/kiteboard/prism42-nemotron-med
+cd "$REPO"  # your medomni checkout
 ssh -fN -L 8001:127.0.0.1:8001 evil-cyan-lobster
 ssh -fN -L 8002:127.0.0.1:8002 evil-cyan-lobster
 

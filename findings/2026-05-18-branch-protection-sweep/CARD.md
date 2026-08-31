@@ -92,7 +92,7 @@ For repos with no required status checks (medimage-corpus), `required_status_che
 
 ## 5. Deferred for founder action — prism42 (main)
 
-Per `~/.claude/projects/-Users-kiteboard/memory/MEMORY.md`:
+Per the operator's agent memory (MEMORY.md; not in repo):
 
 > **TEMPORARY (2026-04-23 to 2026-04-25):** Prism protection lifted for 48h solo-dev sprint — see `project_prism_branch_protection_lifted.md`. Other 4 repos unchanged.
 

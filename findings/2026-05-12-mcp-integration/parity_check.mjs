@@ -12,7 +12,7 @@
 //   stdout summary: per-rule pass rate + overall pass rate.
 //
 // The 5 calculator functions below are LIFTED VERBATIM (translated to JS)
-// from /Users/kiteboard/medomni/web/lib/tools/clinical-calculator.ts. If that
+// from web/lib/tools/clinical-calculator.ts (repo root). If that
 // file changes, update these to keep parity-test integrity.
 
 import { writeFileSync } from "node:fs";

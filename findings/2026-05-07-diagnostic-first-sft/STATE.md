@@ -118,9 +118,9 @@ Reasoning per conversation: cost-of-being-wrong asymmetric (~$150 + 36h sunk if 
 
 1. **Demo first.** `curl -sIL --max-time 8 https://www.thegoatnote.com/4UWHAt/` MUST return a 308→200 chain. If not, STOP and report. Demo is sacred.
 2. **No public-surface edits.** Forbidden paths:
-   - `/Users/kiteboard/medomni/web/**`
-   - `/Users/kiteboard/medomni/app/**`
-   - `/Users/kiteboard/medomni/vercel.json` (any vercel*)
+   - `<repo-root>/web/**`
+   - `<repo-root>/app/**`
+   - `<repo-root>/vercel.json` (any vercel*)
    - Anything that affects `https://www.thegoatnote.com/`, `/4UWHAt`, or `prism42-console.vercel.app/prism42-v3`
 3. **No commits / pushes / merges.** Work lives in:
    - `scripts/ship_rule_lib/failure_cluster.py` (impl)

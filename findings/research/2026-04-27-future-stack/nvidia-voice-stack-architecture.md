@@ -115,7 +115,7 @@ The product is a 911 dispatch backup that **must keep working when Cloudflare / 
 
 ### 8.1 H100 PCIe 80 GB fit (the substitute for the lost B300)
 
-The production target is B300; the working substitute today is the H100 PCIe pod (`prism-mla-h100`, 62.169.159.15). The same NVIDIA-blessed components fit:
+The production target is B300; the working substitute today is the H100 PCIe pod (`prism-mla-h100`; static IPv4 redacted). The same NVIDIA-blessed components fit:
 
 | Component | VRAM on H100 PCIe | Notes |
 |---|---|---|
@@ -134,7 +134,7 @@ Cloudflare-down resilience requires more than CF Tunnel. Three-tier ingress that
 |---|---|---|---|
 | 1 (primary) | CF Tunnel: `cloudflared tunnel run prism42-h100` → `prism42-h100.thegoatnote.com` | 30-100 ms | no |
 | 2 (secondary) | Tailscale Funnel: `tailscale serve http://localhost:7880` | 10-50 ms | yes (Tailscale's coordination plane is independent) |
-| 3 (on-site fallback) | Direct UDP WebRTC over the pod's static IPv4 (62.169.159.15:7880) | 0-20 ms | yes (no internet intermediary) |
+| 3 (on-site fallback) | Direct UDP WebRTC over the pod's static IPv4 (<pod-static-ipv4>:7880) | 0-20 ms | yes (no internet intermediary) |
 
 Tier 3 is the canonical 911 dispatch deployment — local fiber from the dispatch console to the pod, no internet at all between caller and AI. Tiers 1 and 2 are public demo / remote-test paths. Worker config publishes both as alternatives the LiveKit room can negotiate.
 

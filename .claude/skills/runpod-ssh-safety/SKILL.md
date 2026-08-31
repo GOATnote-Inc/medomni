@@ -9,7 +9,7 @@ description: Use when the user mentions RunPod, ssh.runpod.io, or any flow that 
 
 Only when the operation actually touches RunPod's ssh proxy
 (`ssh.runpod.io`). medomni's serving GPU is the Brev pod
-`exact-kind-orca`, which uses direct ssh with no PTY-echo issue (see
+the H100 serving pod, which used direct ssh with no PTY-echo issue (see
 memory `brev_ssh_direct_access.md`). So in the typical medomni session
 none of this applies — that is exactly why it lives in a load-on-demand
 skill rather than `CLAUDE.md §0`.

@@ -65,7 +65,7 @@ Recommendation: (a) first, treating it as a calibration update — the V0 baseli
 
 The scheduled `Adversarial Regression` workflow has failed every week since 2026-04-27 with `HTTP 401 Unauthorized` from `api.openai.com`. The repo secret has expired or been rotated.
 
-Per `MEMORY.md → feedback_never_read_env.md`, I cannot read `/Users/kiteboard/lostbench/.env` from this session. Founder action:
+Per `MEMORY.md → feedback_never_read_env.md`, I cannot read the operator secrets file ($SECRETS_ENV) from this session. Founder action:
 
 ```
 gh secret set OPENAI_API_KEY -R GOATnote-Inc/lostbench

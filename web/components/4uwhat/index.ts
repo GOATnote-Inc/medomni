@@ -1,6 +1,6 @@
 // 4UWHAt — atom + session-surface barrel.
 // Reusable primitives for the 4UWHAt patient-records surface.
-// Source designs: /Users/kiteboard/medomni/assets/ (read-only).
+// Source designs: assets/ (repo root, read-only) (read-only).
 
 // Atoms
 export { Avatar } from "./Avatar";

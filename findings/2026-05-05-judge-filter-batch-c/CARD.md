@@ -1,7 +1,7 @@
 # judge_filter Option-C batch — CARD
 
 **Status:** SHIPPED 2026-05-05 (iter-145).
-**Run dir:** `/Users/kiteboard/data-queue/curated/reasoning/` (laptop-local; not in repo).
+**Run dir:** `~/data-queue/curated/reasoning/` (operator-local; not in repo).
 **Trigger:** Iter-134 user request — judge new ~30K factory items while V2.5 cooks. Reframed to Option-C scope (~10K items at $80 budget) per cost projection at iter-133.
 
 ## Summary
@@ -19,7 +19,7 @@
 
 ## Pre-flight discovery
 
-Smoke run on 1+56=57 items revealed `ANTHROPIC_API_KEY` in `/Users/kiteboard/lostbench/.env`
+Smoke run on 1+56=57 items revealed `ANTHROPIC_API_KEY` in the operator secrets file
 returned **HTTP 401 invalid x-api-key**. Smoke pass=0/57 + Opus_spend=$0.00 was the
 smoking-gun signal — Opus was silently zeroing scores, blowing the |gpt41-opus47|>0.3
 disagreement gate on every item. Pre-flight saved ~$30 + ~1 hr of garbage output
@@ -32,8 +32,8 @@ key has 401-rotated; first incident was 2026-05-04 iter-80, task #80).
 
 ```bash
 .venv/bin/python3 scripts/judge_filter.py \
-  --input-dir /Users/kiteboard/data-queue \
-  --output-dir /Users/kiteboard/data-queue \
+  --input-dir ~/data-queue \
+  --output-dir ~/data-queue \
   --task reasoning \
   --mode one-shot \
   --budget-usd-daily 85 \
@@ -49,7 +49,7 @@ key has 401-rotated; first incident was 2026-05-04 iter-80, task #80).
 ## Output
 
 ```
-/Users/kiteboard/data-queue/curated/reasoning/
+~/data-queue/curated/reasoning/
 ├── 000000.jsonl   # 30 items (smoke-only first shard)
 ├── 000001.jsonl   # 583 items
 ├── 000002.jsonl   # 627 items
@@ -79,7 +79,7 @@ Each line is a JSON object with `task`, `question`, `final_answer` (cot_chain
 
 ## Cross-references
 
-- [feedback_anthropic_key_rotates_silently.md](../../../.claude/projects/-Users-kiteboard/memory/feedback_anthropic_key_rotates_silently.md)
-- [feedback_eval_preflight_judge_key.md](../../../.claude/projects/-Users-kiteboard/memory/feedback_eval_preflight_judge_key.md)
-- `scripts/judge_filter.py` — `/Users/kiteboard/prism42-nemotron-med/scripts/judge_filter.py`
+- `feedback_anthropic_key_rotates_silently.md` (operator agent memory; not in repo)
+- `feedback_eval_preflight_judge_key.md` (operator agent memory; not in repo)
+- `scripts/judge_filter.py` — private research repo, `scripts/judge_filter.py`
 - task #92 — prior 32K full-corpus judge (different setup, not on disk locally)

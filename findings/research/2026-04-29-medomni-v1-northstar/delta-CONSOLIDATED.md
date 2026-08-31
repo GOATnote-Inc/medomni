@@ -1,7 +1,7 @@
 # CARD delta — v0 (numpy retrieval, 50 chunks, single trial unseeded) → v1.0 consolidated (107 chunks, seed=42, N=3, hybrid)
 
-- **Baseline**: `/Users/kiteboard/prism42-nemotron-med/results/ci-medomni-heldout-20260429-142936/heldout.json`
-- **Candidate**: `/Users/kiteboard/prism42-nemotron-med/results/ci-medomni-heldout-consolidated-20260429-173557/heldout.json`
+- **Baseline**: `results/ci-medomni-heldout-20260429-142936/heldout.json`
+- **Candidate**: `results/ci-medomni-heldout-consolidated-20260429-173557/heldout.json`
 - **Mean score**: `0.273` → `0.385` (+0.112)
 - **Verdict**: PASS — significant lift, no major regression
 

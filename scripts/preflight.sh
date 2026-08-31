@@ -110,8 +110,8 @@ if [[ -z "$expected_head" ]]; then
   yellow "no prism42_head.txt baseline; run 'make freeze-baseline' first"
   fail "missing baseline; cannot verify freeze"
 else
-  current_head="$(git -C /Users/kiteboard/prism42 rev-parse HEAD)"
-  current_hash="$(git -C /Users/kiteboard/prism42 diff HEAD | shasum -a 256 | awk '{print $1}')"
+  current_head="$(git -C "${PRISM42_DIR:-$HOME/prism42}" rev-parse HEAD)"
+  current_hash="$(git -C "${PRISM42_DIR:-$HOME/prism42}" diff HEAD | shasum -a 256 | awk '{print $1}')"
   expected_hash="$(cat "$SESSION_DIR/prism42_worktree_hash.txt" 2>/dev/null || true)"
   if [[ "$current_head" = "$expected_head" && "$current_hash" = "$expected_hash" ]]; then
     pass

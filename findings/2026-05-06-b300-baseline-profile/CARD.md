@@ -2,7 +2,7 @@
 
 **Captured:** 2026-05-06
 **Pod:** `unnecessary-peach-catfish` (Brev B300, NVIDIA provisioning-bug recreate target)
-**Host:** `95.133.253.29`
+**Host:** (public IPv4 redacted; pod deleted)
 **Operator:** Claude (Opus 4.7), under live prod inference (no restart, no disruption)
 
 This is the **only** B300+NVFP4 perf evidence we will retain after the pod is recreated.

@@ -154,10 +154,10 @@ Voice-over: *"Bit-identical re-run. SHA256 byte-equal. The 9-layer manifest is t
 
 ## Sources
 
-- [SPEC.md §5–§7 + §13](/Users/kiteboard/prism42-nemotron-med/findings/research/2026-04-29-medomni-v1-northstar/SPEC.md)
-- [Phase 2.1 results](/Users/kiteboard/prism42-nemotron-med/findings/research/2026-04-29-medomni-v1-northstar/phase-2.1-results.md)
-- [Architecture v2 — four-persona](/Users/kiteboard/prism42-nemotron-med/findings/research/2026-04-29-medomni-v0/architecture-v2.md)
-- [POSITIONING.md](/Users/kiteboard/prism42-nemotron-med/findings/research/2026-04-29-medomni-v1-northstar/POSITIONING.md)
+- [SPEC.md §5–§7 + §13](SPEC.md)
+- [Phase 2.1 results](phase-2.1-results.md)
+- [Architecture v2 — four-persona](../2026-04-29-medomni-v0/architecture-v2.md)
+- [POSITIONING.md](POSITIONING.md)
 - [Mount Sinai × OpenEvidence Epic embed (March 2026)](https://www.mountsinai.org/about/newsroom/2026/mount-sinai-health-system-collaborates-with-openevidence-to-provide-evidence-based-knowledge-within-electronic-medical-record)
 - [BLS Registered Nurses 2024 OOH](https://www.bls.gov/ooh/healthcare/registered-nurses.htm)
 - [demandsage iPhone vs Android US share 2026](https://www.demandsage.com/iphone-vs-android-users/)

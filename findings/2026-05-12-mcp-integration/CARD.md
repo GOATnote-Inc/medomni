@@ -32,14 +32,14 @@ inputs medomni cannot currently compute.
   for PE, CURB-65, TIMI Risk Score, GRACE, NEXUS C-Spine, Ottawa
   Ankle, PSI/PORT, qSOFA, sPESI, etc.
 
-Source: `/Users/kiteboard/healthcraft/src/healthcraft/agents_assemble/streamable_http_server.py`.
+Source: `~/healthcraft/src/healthcraft/agents_assemble/streamable_http_server.py`.
 
 ## Parity check (50 prompts)
 
 Script: `parity_check.mjs` (this directory). Raw output:
 `parity_check_results.json`. Pure Node 18+ mjs with built-in fetch; the
 five medomni calculator functions are lifted-verbatim from
-`/Users/kiteboard/medomni/web/lib/tools/clinical-calculator.ts` so the
+`web/lib/tools/clinical-calculator.ts` so the
 test is hermetic against the production code path.
 
 | Rule         | Cases | Pass | Mismatch | Error | Comparison axis |
@@ -111,7 +111,7 @@ Both exposed via `Access-Control-Expose-Headers`.
 
 ## Deploy checklist (recommended; NOT performed in this session)
 
-1. Review the diff: `git -C /Users/kiteboard/medomni diff -- web/`.
+1. Review the diff: `git -C "$REPO" diff -- web/`.
 2. `git add -- web/lib/mcp/ed-rules-client.ts web/lib/mcp/tool-spec-adapter.ts web/app/api/agent/route.ts` (stage by name; no `-A`).
 3. Commit with `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`.
 4. Push to a branch (NOT main). Open a PR. Vercel preview deploy runs.

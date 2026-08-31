@@ -97,7 +97,7 @@ Pre-incident state of `repos/GOATnote-Inc/medomni/branches/main/protection`:
 }
 ```
 
-Compared to the 2026-03-06 audit recorded in `~/.claude/projects/-Users-kiteboard/memory/MEMORY.md → Branch Protection`:
+Compared to the 2026-03-06 audit recorded in the operator's agent memory (MEMORY.md, Branch Protection section; not in repo):
 
 > "All 5 repos: main branch protected. Required status checks + no force push + no deletions.
 > SG2: 20 required checks. LB: 5. OpenEM: 2. SS: 3. RS: 4."

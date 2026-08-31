@@ -272,10 +272,10 @@ Three independent NVIDIA-researcher critiques (methodology-status.md). Rubric-co
 
 ## Sources
 
-- [SPEC.md](/Users/kiteboard/prism42-nemotron-med/findings/research/2026-04-29-medomni-v1-northstar/SPEC.md)
-- [POSITIONING.md](/Users/kiteboard/prism42-nemotron-med/findings/research/2026-04-29-medomni-v1-northstar/POSITIONING.md)
-- [REVENUE-MODEL.md](/Users/kiteboard/prism42-nemotron-med/findings/research/2026-04-29-medomni-v1-northstar/REVENUE-MODEL.md)
-- [DEMO-RUNBOOK.md](/Users/kiteboard/prism42-nemotron-med/findings/research/2026-04-29-medomni-v1-northstar/DEMO-RUNBOOK.md)
+- [SPEC.md](SPEC.md)
+- [POSITIONING.md](POSITIONING.md)
+- [REVENUE-MODEL.md](REVENUE-MODEL.md)
+- [DEMO-RUNBOOK.md](DEMO-RUNBOOK.md)
 - [Sacra equity research, OpenEvidence April 2026](https://sacra-pdfs.s3.us-east-2.amazonaws.com/openevidence.pdf)
 - [BLS Registered Nurses 2024 OOH](https://www.bls.gov/ooh/healthcare/registered-nurses.htm)
 - [JMIR AI 2025 medical KG nursing-application gap](https://ai.jmir.org/2025/1/e58670/)

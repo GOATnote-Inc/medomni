@@ -2,10 +2,10 @@
 # Laptop-side: pull pod gen output, source canonical .env, run gpt-4.1 grading.
 # Per task: never `cat` the .env; use `set -a && source && set +a`.
 set -e
-REPO=/Users/kiteboard/medomni/.claude/worktrees/ship-rule-eval
+REPO="${REPO:?path to the medomni checkout (worktree) used for this eval}"
 EVAL_DIR=$REPO/findings/2026-05-05-v2.5-eval
 PY=$REPO/../../../.venv/bin/python3
-[ -x "$PY" ] || PY=/Users/kiteboard/medomni/.venv/bin/python3
+[ -x "$PY" ] || PY="$REPO/.venv/bin/python3"
 
 mkdir -p "$EVAL_DIR/gen-laptop" "$EVAL_DIR/graded"
 
@@ -13,7 +13,7 @@ echo "[$(date +%H:%M:%S)] pulling pod gen output to laptop"
 rsync -avz --exclude '_*' evil-cyan-lobster:/workspace/v2.5-eval/gen/ "$EVAL_DIR/gen-laptop/"
 
 echo "[$(date +%H:%M:%S)] sourcing canonical .env (key not echoed)"
-set -a; source /Users/kiteboard/lostbench/.env; set +a
+set -a; source "${SECRETS_ENV:?path to operator secrets file}"; set +a
 [ -n "${OPENAI_API_KEY:-}" ] || { echo "FAIL: OPENAI_API_KEY missing"; exit 1; }
 
 echo "[$(date +%H:%M:%S)] grader pre-flight"

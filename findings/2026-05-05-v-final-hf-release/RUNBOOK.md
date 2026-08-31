@@ -245,7 +245,7 @@ After production cutover succeeds and is stable for ≥1 hr, push to Hugging Fac
 
 ```bash
 # Laptop side
-cd /Users/kiteboard/medomni
+cd "$REPO"  # your medomni checkout
 huggingface-cli login --token $HF_TOKEN_WRITE  # write-scoped token
 
 # Pull the merged-BF16 from lobster (~60 GB)
@@ -259,8 +259,8 @@ cd /tmp/medomni-hf-bf16
 git lfs install
 git remote add hf https://huggingface.co/GOATnote-Inc/medomni-nemotron-3-nano-omni-medical
 # Copy README, SAFETY.md, model card, eval CARDs
-cp /Users/kiteboard/medomni/findings/2026-05-05-hf-model-card-draft/CARD.md README.md
-cp /Users/kiteboard/medomni/SAFETY.md SAFETY.md
+cp "$REPO"/findings/2026-05-05-hf-model-card-draft/CARD.md README.md
+cp "$REPO"/SAFETY.md SAFETY.md
 git add . && git commit -m "Initial release: v3.5 → BF16 merged" && git push hf main
 
 # Push NVFP4 variant as a separate revision

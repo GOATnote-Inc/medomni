@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # scripts/serve_orca_h100.sh — durable launch for `nemotron-serve` on Brev pod
-# `exact-kind-orca` (H100 80GB, Hopper, FP8). In-repo source of truth for what
+# the H100 serving pod (80GB, Hopper, FP8; since decommissioned). In-repo source of truth for what
 # serves `thegoatnote.com/4UWHAt` as MedOmni.
 #
 # Captured from a live `docker inspect nemotron-serve` on 2026-05-23.

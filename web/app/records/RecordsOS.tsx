@@ -2,7 +2,7 @@
 
 // 4UWHAt — Records OS dashboard.
 // Three-column desktop layout (nav rail · module grid · AI rail) ported
-// from /Users/kiteboard/medomni/assets/app/variant-records-os.jsx. Reads
+// from assets/app/variant-records-os.jsx (repo root). Reads
 // the active patientId via `usePatientId()`; if null (or until live FHIR
 // patient context wires up beyond the get_patient_context tool path), it
 // falls back to the design's synthetic "Maya Okafor" sample slice — that
