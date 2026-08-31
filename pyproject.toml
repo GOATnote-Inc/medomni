@@ -1,8 +1,49 @@
+# The repo runs in-place: pytest resolves imports via `pythonpath = ["."]`
+# below, and `scripts/` is invoked as files, not as an installed package.
+# `pip install -e .` / `uv sync` therefore install DEPENDENCY METADATA ONLY
+# (packages = [] — nothing is copied into site-packages); their job is to
+# make the README quickstart real: one command that yields a venv in which
+# `make test` passes.
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "prism42-nemotron-med"
+name = "medomni"
 version = "0.1.0"
-description = "Sovereign NVIDIA medical-LLM stack on Brev Hopper GPUs"
+description = "Nurse-first medical reasoning — eval harness, manifests, and web BFF (see README for current architecture)"
 requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+# Runtime deps of the laptop-side harness (scripts/ + mla/ + tests/).
+# Consolidates the three previously divergent lists (test.yml, Makefile,
+# README quickstart).
+dependencies = [
+    "pyyaml>=6.0",
+    "httpx>=0.27",
+    "requests>=2.32",
+    "jsonschema>=4.21",
+    "rank-bm25>=0.2.2",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "ruff==0.6.9",           # match CI pin (lint.yml)
+    "detect-secrets==1.5.0", # match CI pin (lint.yml)
+    "pre-commit>=3.7",
+]
+# Cloud graders used by laptop-side eval runs only (never required for the
+# unit suite; keys are sourced out-of-band).
+grading = [
+    "openai>=1.40",
+    "anthropic>=0.39",
+]
+
+[tool.setuptools]
+packages = []
+py-modules = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "mla/tests"]
@@ -32,10 +73,12 @@ addopts = [
     "--ignore=mla/tests/test_runpod_provisioner.py",
 ]
 markers = [
-    "integration: requires live H100 or H200 Brev pod via SSH (brev.pem + network)",
-    "h200: requires the warm-lavender-narwhal H200 pod",
-    "h100: requires the prism-mla-h100 pod (NOT the voice-freeze H100)",
+    "integration: requires a live GPU pod via SSH (decommissioned; historical)",
+    "h200: required the (decommissioned) H200 pod",
+    "h100: required the (decommissioned) H100 pod",
     "training: long-running NeMo PEFT LoRA training",
+    "cuda: requires a CUDA-capable GPU + torch",
+    "gpu: requires a local GPU",
 ]
 
 [tool.ruff]

@@ -15,10 +15,10 @@ help:
 # Local dev
 # ---------------------------------------------------------------------------
 .PHONY: venv
-venv: ## Create local .venv and install dev deps
+venv: ## Create local .venv and install dev deps (single source: pyproject.toml)
 	test -d $(VENV) || python3 -m venv $(VENV)
 	$(PIP) install --upgrade pip
-	$(PIP) install ruff pytest pytest-asyncio detect-secrets pre-commit pyyaml httpx
+	$(PIP) install -e ".[dev]"
 
 .PHONY: lint
 lint: ## Run ruff check + format check

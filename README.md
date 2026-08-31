@@ -281,7 +281,7 @@ git clone https://github.com/GOATnote-Inc/medomni.git
 cd medomni
 
 # 2. Install (uv recommended; pip + venv supported)
-uv venv && uv sync                 # OR: python3 -m venv .venv && pip install -e .
+uv sync --extra dev                # OR: python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 
 # 3. Configure sovereignty-only env
 cp .env.example .env
