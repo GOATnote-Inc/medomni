@@ -9,12 +9,15 @@
 //
 // Honesty (SPEC §6 Phase 1 / §8): the model / stack / sovereign lines are
 // true by construction of this deployment. The metrics are live reads from
-// the vLLM Prometheus endpoint; when that endpoint is unreachable the panel
-// shows an explicit "metrics unavailable" state — never a fabricated value.
+// the legacy vLLM Prometheus endpoint; when that endpoint is unreachable
+// the panel shows an explicit "metrics unavailable" state — never a
+// fabricated value.
 //
-// Sovereignty line ("no third-party AI APIs"): this is the load-bearing
-// differentiator — every inference runs on hardware GOATnote operates, with
-// no cloud LLM API on the path (CLAUDE.md §2).
+// Sovereignty: the self-hosted GPU deployment was decommissioned in June
+// 2026 and inference is served by the Anthropic Claude API through the web
+// BFF, so `sovereign` is false and the panel says so explicitly. The old
+// "no third-party AI APIs" line must not render for this architecture
+// (CLAUDE.md §0).
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { BASE_PATH } from "@/lib/basePath";
@@ -153,10 +156,13 @@ export function SystemPanel({
   }, []);
 
   // Static facts shown before the first response lands. These are the
-  // deployment's true configuration; the route confirms them live.
-  const model = data?.model ?? "Nemotron-3-Nano-Omni";
-  const servingStack = data?.servingStack ?? "vLLM";
-  const sovereign = data?.sovereign ?? true;
+  // deployment's true configuration; the route confirms them live. The
+  // pre-fetch fallbacks must match /api/telemetry's SYSTEM_FACTS — and
+  // `sovereign` must default to false: never claim sovereignty before the
+  // server has confirmed it.
+  const model = data?.model ?? "Claude Opus (Anthropic API)";
+  const servingStack = data?.servingStack ?? "Anthropic API via web BFF";
+  const sovereign = data?.sovereign ?? false;
 
   // Metrics block: only "available" once the route says so AND the last
   // fetch did not error.
@@ -206,36 +212,36 @@ export function SystemPanel({
         <Row label="SERVING" value={servingStack} />
       </div>
 
-      {/* Sovereignty line — the differentiator. */}
-      {sovereign ? (
-        <div
+      {/* Backend disclosure — always rendered, honest in both states. */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 7,
+          padding: "7px 9px",
+          border: "1px solid rgba(255,0,150,0.2)",
+          background: "rgba(255,0,150,0.03)",
+        }}
+      >
+        <span
+          aria-hidden
+          style={{ color: "var(--accent)", fontWeight: 700, fontSize: 11 }}
+        >
+          {sovereign ? "✓" : "→"}
+        </span>
+        <span
           style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 7,
-            padding: "7px 9px",
-            border: "1px solid rgba(255,0,150,0.2)",
-            background: "rgba(255,0,150,0.03)",
+            fontFamily: "var(--font-mono)",
+            fontSize: 9.5,
+            lineHeight: 1.45,
+            color: "rgba(255,255,255,0.7)",
           }}
         >
-          <span
-            aria-hidden
-            style={{ color: "var(--accent)", fontWeight: 700, fontSize: 11 }}
-          >
-            ✓
-          </span>
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 9.5,
-              lineHeight: 1.45,
-              color: "rgba(255,255,255,0.7)",
-            }}
-          >
-            Sovereign — runs on hardware we operate · no third-party AI APIs
-          </span>
-        </div>
-      ) : null}
+          {sovereign
+            ? "Sovereign — runs on hardware we operate · no third-party AI APIs"
+            : "Third-party inference — queries are sent to the Anthropic Claude API · do not enter PHI"}
+        </span>
+      </div>
 
       {/* Live serving metrics, or an explicit unavailable state. */}
       <div

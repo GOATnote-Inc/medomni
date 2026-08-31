@@ -1,22 +1,27 @@
 # medomni/web
 
-Public web UI for [MedOmni](../README.md) — sovereign nurse-first medical
-reasoning on the NVIDIA open-component stack.
+Public web UI for [MedOmni](../README.md) — nurse-first medical reasoning
+(see the parent README's "Architecture status" note for what currently
+serves inference).
 
-- Production: `https://medomni.thegoatnote.com` (DNS cutover post-v0)
+- Production: `https://www.thegoatnote.com/4UWHAt` (Vercel edge rewrite from
+  the apex to `medomni.vercel.app/4UWHAt`)
 - Methodology + manifests: parent repo (`..`)
-- Architecture decisions: [`../findings/research/2026-04-30-public-url-arch/INDEX.md`](../findings/research/2026-04-30-public-url-arch/INDEX.md)
 
-## v0 status (2026-04-30)
+## Status (2026-08)
 
-Day-0 scaffold. The composer renders a static demo answer client-side; the
-streaming wire-up to the Cloud Run BFF → Tailscale → B300 vllm pipeline lands
-across days 1-4 of the sovereign-only sprint. No frontier LLM API calls in v0.
+The Records OS dashboard (`/4UWHAt`) is the live surface. The BFF at
+`web/app/api/agent` forwards inference to the configured model backend:
 
-Locked decisions (see `INDEX.md` in the parent repo's findings):
-- Subdomain `medomni.thegoatnote.com`, NOT `/medomni` on apex
-- Sovereign-only at v0; `Frontier Peer` panel rendered but disabled with "Pro — coming soon" copy
-- No auth at v0; persistent "DEMO — do not enter PHI" banner is the gate
+- **Current architecture (migration in progress, branch
+  `feat/claude-opus-migration`):** the Anthropic Claude API. User queries
+  are processed by a third-party AI service.
+- **Former architecture (decommissioned June 2026):** self-hosted Nemotron
+  FP8 on a dedicated H100 via vllm behind a tunnel.
+
+Persistent "DEMO — do not enter PHI" banner is the gate; there is no auth
+at this stage (see the parent repo audit for the planned token gate on
+`/api/agent`).
 
 ## Local dev
 
@@ -29,12 +34,9 @@ pnpm dev
 
 ## Deploy (Vercel project root-directory = web)
 
-```bash
-cd web
-vercel link --yes
-vercel deploy            # preview
-vercel deploy --prod     # production
-```
+Deploys are a founder-only action; Vercel git auto-deploy is disconnected.
+Production is currently built from the `feat/claude-opus-migration` branch,
+not `main`.
 
 ## License
 

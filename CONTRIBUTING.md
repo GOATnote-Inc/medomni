@@ -127,19 +127,19 @@ dependency.
 If you discover you've staged a secret:
 
 1. **Do not** commit. Roll back the staging area.
-2. Rotate the secret immediately (see SECURITY-INCIDENTS.md for the 2026-04-29 precedent).
+2. Rotate the secret immediately (see SECURITY.md for the 2026-04-29 PTY-echo precedent).
 3. Surface to the maintainer.
 
 ## Reporting bugs
 
-Use [`.github/ISSUE_TEMPLATE/bug.yml`](.github/ISSUE_TEMPLATE/bug.yml). Include:
+Use [`.github/ISSUE_TEMPLATE/bug.md`](.github/ISSUE_TEMPLATE/bug.md). Include:
 - Manifest hash if reproducible
 - CARD.md path of the run
 - Pod ID (if pod-side bug)
 
 ## Reporting reproducibility issues
 
-Use [`.github/ISSUE_TEMPLATE/repro.yml`](.github/ISSUE_TEMPLATE/repro.yml). Reproducibility issues
+Use [`.github/ISSUE_TEMPLATE/reproducibility.md`](.github/ISSUE_TEMPLATE/reproducibility.md). Reproducibility issues
 take priority over feature work. Provide both manifest hashes (yours + the showcase) and the diff.
 
 ## Reporting security vulnerabilities

@@ -2,7 +2,7 @@
 # Machine-readable companion to the README's "Citation & Acknowledgements" section.
 cff-version: 1.2.0
 message: "If you reference this work, please cite it as below."
-title: "prism42-nemotron-med: a sovereign NVIDIA medical-LLM stack on Brev Hopper GPUs"
+title: "medomni: nurse-first medical reasoning trained and evaluated on NVIDIA's open-component stack"
 type: software
 authors:
   - family-names: Dent
@@ -10,11 +10,11 @@ authors:
     name-suffix: MD
     affiliation: GOATnote
     email: b@thegoatnote.com
-  - name: "prism42 contributors"
+  - name: "medomni contributors"
 date-released: "2026-04-28"
-url: "https://github.com/GOATnote-Inc/prism42/pull/11"
-repository-code: "https://github.com/GOATnote-Inc/prism42/tree/nemotron-med-hackathon/mvp/nemotron-med"
-license: MIT
+url: "https://github.com/GOATnote-Inc/medomni"
+repository-code: "https://github.com/GOATnote-Inc/medomni"
+license: Apache-2.0
 keywords:
   - "medical large language models"
   - "NVIDIA Nemotron"
@@ -26,11 +26,14 @@ keywords:
   - "vLLM"
   - "NeMo Guardrails"
 abstract: >-
-  prism42-nemotron-med is a sovereign NVIDIA medical-LLM stack that serves
-  Nemotron-3 on Brev Hopper GPUs and benchmarks against HealthBench Hard
-  with a sovereign judge — no cloud LLM API keys in any code path. The lane
-  is air-gapped from the prism42 production voice surface; isolation is
-  enforced via pre-commit hooks and per-commit production-page hash diffs.
+  medomni is a nurse-first medical-LLM research stack: Nemotron-3 served on
+  self-hosted NVIDIA Hopper GPUs during the 2026-04/06 training and eval
+  program, benchmarked against MedQA / PubMedQA / MedXpertQA / HealthBench
+  Hard with manifest-locked reproducibility and a documented negative
+  result. The self-hosted serving deployment was decommissioned in June
+  2026; the public demo is migrating to the Anthropic Claude API. Eval
+  grading uses cloud judges (gpt-4.1, Claude) per the pre-registered
+  protocol.
 references:
   - type: software
     title: "openai/simple-evals (HealthBench rubric grader, pinned at SHA ee3b0318)"
@@ -63,7 +66,7 @@ references:
     authors:
       - name: "NVIDIA"
     url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16"
-    notes: "BF16 Hopper-native variant served on warm-lavender-narwhal H200; same-family sister to the Blackwell-only NVFP4 variant on the prod B300 pod."
+    notes: "BF16 Hopper-native variant served on a self-hosted H200 during the training phase; same-family sister to the Blackwell-only NVFP4 variant."
 
   - type: software
     title: "Nemotron-3-Nano-Omni-30B-A3B-Reasoning"

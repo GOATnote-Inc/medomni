@@ -11,7 +11,7 @@ export function DemoBanner() {
       or personally identifiable patient information.
       <span className="mx-2 text-amber-400">·</span>
       <span className="font-mono text-xs text-amber-700">
-        Private by design · runs on dedicated NVIDIA hardware · no third-party AI APIs called
+        Inference via the Anthropic Claude API — queries are sent to a third-party AI service
       </span>
     </div>
   );

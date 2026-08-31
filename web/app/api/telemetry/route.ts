@@ -4,9 +4,11 @@
 // panel on /4UWHAt shows what is actually running. This route returns two
 // things:
 //   1. Static system FACTS — model, serving stack, sovereignty — which are
-//      true by construction of this deployment (see CLAUDE.md §2).
-//   2. LIVE serving metrics, fetched read-only from the vLLM Prometheus
-//      `/metrics` endpoint behind the existing tunnel.
+//      true by construction of this deployment (Claude API via the BFF;
+//      the self-hosted GPU service is decommissioned — see CLAUDE.md §0).
+//   2. LIVE serving metrics, fetched read-only from the legacy vLLM
+//      Prometheus `/metrics` endpoint IF a tunnel is configured; with the
+//      GPU service decommissioned this degrades to `available: false`.
 //
 // Honesty + safety contract (SPEC §2, §6 Phase 1, §8):
 //   - GET only. This route never mutates the serving pod and never does
@@ -29,13 +31,17 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Static facts about this deployment. These are not measured — they are
-// true by construction (the model we serve, the engine we serve it on, and
-// the sovereignty property the whole repo is built around: no third-party
-// AI API is on the inference path — CLAUDE.md §2).
+// true by construction of the current architecture: the self-hosted GPU
+// service (Nemotron on a dedicated H100 via vLLM) was decommissioned in
+// June 2026 and inference is served by the Anthropic Claude API through
+// this BFF (migration branch `feat/claude-opus-migration`). `sovereign`
+// is therefore FALSE: user queries are processed by a third-party AI
+// service. Do not flip this back to true unless inference genuinely
+// returns to hardware we operate.
 const SYSTEM_FACTS = {
-  model: "Nemotron-3-Nano-Omni",
-  servingStack: "vLLM",
-  sovereign: true,
+  model: "Claude Opus (Anthropic API)",
+  servingStack: "Anthropic Messages API via web BFF",
+  sovereign: false,
 } as const;
 
 // Keep the upstream `/metrics` read snappy — the System panel polls this
