@@ -1,22 +1,26 @@
 name: adversarial-probe
 
-# Track #4 of the Cherny-pattern initiative. Hourly red team that fires 20
+# Track #4 of the Cherny-pattern initiative. Red team that fires 20
 # hard clinical cases at the LIVE /api/agent endpoint, scores on substring
 # rubric, and opens a GitHub issue when the pass rate dips below threshold.
 #
-# Why hourly: the live agent is at the wrong end of a chain of
-# moving parts (Vercel deploys, B300 vllm, prompt edits, skills router).
-# A regression there is harder to spot than a unit-test break — only a
-# scheduled adversarial probe will catch silent prompt-shape drift.
+# MANUAL-ONLY (2026-08): the hourly cron is removed. When the endpoint was
+# down (2026-06-26 onward) the hourly schedule generated 60+ duplicate
+# INFRASTRUCTURE alarm issues until GitHub auto-disabled the workflow.
+# Re-add the `schedule:` trigger only after a `workflow_dispatch` run
+# passes green against the live endpoint.
 #
-# Why issue-on-fail (vs PR-blocking gate): the probe runs hourly against
+# The live agent is at the wrong end of a chain of moving parts (Vercel
+# deploys, the model-serving backend, prompt edits, skills router). A
+# regression there is harder to spot than a unit-test break; this probe
+# catches silent prompt-shape drift.
+#
+# Why issue-on-fail (vs PR-blocking gate): the probe runs against
 # production and must NEVER block a deploy on its own (substring rubric
 # has false positives by design). The signal is the trend across runs;
 # an issue is the right escalation surface.
 
 on:
-  schedule:
-    - cron: "0 * * * *"
   workflow_dispatch:
     inputs:
       threshold:
@@ -76,8 +80,8 @@ jobs:
         id: card
         if: always()
         run: |
-          # Pick the newest probe directory regardless of timestamp; cron
-          # writes a new one every hour.
+          # Pick the newest probe directory regardless of timestamp; each run
+          # writes a new one.
           card_dir=$(find findings -maxdepth 1 -type d -name '2026-05-05-adversarial-probe-*' | sort | tail -1)
           if [ -n "$card_dir" ] && [ -f "$card_dir/CARD.md" ]; then
             echo "card_dir=$card_dir" >> "$GITHUB_OUTPUT"
@@ -173,7 +177,7 @@ jobs:
               `**Run:** ${runUrl}`,
               `**Probe exit code:** ${rc} (${kindLabel})`,
               ``,
-              `Track #4 of the Cherny-pattern initiative. The hourly adversarial probe`,
+              `Track #4 of the Cherny-pattern initiative. The adversarial probe`,
               `against the live \`/api/agent\` endpoint hit a ${kindLabel} alarm. CARD`,
               `attached below; full per-case JSON in the`,
               `\`adversarial-probe-card-${context.runId}\` workflow artifact.`,

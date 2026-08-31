@@ -34,13 +34,18 @@ jobs:
       - name: Install detect-secrets
         run: pip install detect-secrets==1.5.0
 
+      # The baseline file is `.secrets.baseline` (repo root). A previous
+      # version of this step tested for `.detect-secrets.baseline` — a file
+      # that never existed — so the hook branch never ran and the fallback
+      # scan could not fail. The baseline is now REQUIRED: if it goes
+      # missing, this job fails instead of silently degrading.
       - name: detect-secrets scan
         run: |
-          if [ -f .detect-secrets.baseline ]; then
-            detect-secrets-hook --baseline .detect-secrets.baseline $(git ls-files | tr '\n' ' ')
-          else
-            detect-secrets scan --all-files --exclude-files '\.lock$|results/.*' > /dev/null
+          if [ ! -f .secrets.baseline ]; then
+            echo "::error::.secrets.baseline missing — the detect-secrets gate cannot run."
+            exit 1
           fi
+          detect-secrets-hook --baseline .secrets.baseline $(git ls-files | tr '\n' ' ')
 
       # TruffleHog OSS — verifier-based secret scanning. Replaces gitleaks-action
       # (which moved to a paid-license model in 2025). Aligns medomni with the
