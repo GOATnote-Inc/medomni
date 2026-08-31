@@ -313,6 +313,7 @@ def cmd_stats(args: argparse.Namespace) -> int:
         n_v0_total = 0
         n_v25_total = 0
         n_dropped_total = 0
+        n_recused_total = 0
         for seed in SEEDS:
             v0_p = graded_root / f"{bench}__v0__seed{seed}.jsonl"
             v25_p = graded_root / f"{bench}__v25__seed{seed}.jsonl"
@@ -320,6 +321,12 @@ def cmd_stats(args: argparse.Namespace) -> int:
             v25r_list = _load_graded_jsonl(v25_p) if v25_p.exists() else []
             n_v0_total += len(v0r_list)
             n_v25_total += len(v25r_list)
+            # Judge-failure recusals (grader.py recusal contract): counted
+            # so stats.json discloses how many records the judge could not
+            # grade instead of silently shrinking the paired sample.
+            n_recused_total += sum(
+                1 for r in (*v0r_list, *v25r_list) if (r.get("graded") or {}).get("recused")
+            )
             if not v0r_list or not v25r_list:
                 continue
             v0_aligned, v25_aligned, dropped = stats.align_paired(
@@ -347,6 +354,7 @@ def cmd_stats(args: argparse.Namespace) -> int:
             per_bench[bench] = {
                 "status": "insufficient_paired_items",
                 "n_paired": len(v0_scores),
+                "n_recused": n_recused_total,
             }
             continue
 
@@ -363,6 +371,7 @@ def cmd_stats(args: argparse.Namespace) -> int:
             "status": "ok",
             "n_paired": result.n_pairs,
             "n_dropped_unpaired": n_dropped_total,
+            "n_recused": n_recused_total,
             "v0_mean": result.v0_mean,
             "v25_mean": result.v25_mean,
             "delta": result.delta,
