@@ -29,7 +29,7 @@ the precise problem:
 
 That is exactly correct for medomni's inherited §0. The original §0
 was ~22 lines of RunPod PTY-echo guidance, fired on every turn,
-applying to a serving stack (`exact-kind-orca`) that runs on **Brev**
+applying to a serving stack (the H100 serving pod, since decommissioned) that ran on **Brev**
 (direct-ssh — no PTY-echo issue). It was paying token cost on every
 session for content that almost never applied to medomni at all.
 

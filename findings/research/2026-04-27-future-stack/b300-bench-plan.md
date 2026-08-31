@@ -166,7 +166,7 @@ phase); Team D runs locally (doc only).
   SOTA MLA kernels target `sm_100/sm_103`, not `sm_90`. Useful as
   the Hopper-rail reference (the dominant production GPU today) but
   not as a Blackwell-roadmap preview.
-- **Inputs:** `mla/` package (`/Users/kiteboard/prism42/mla/`), the
+- **Inputs:** `mla/` package (`~/prism42/mla/`), the
   evolutionary search runners, golden test set, production attention
   kernel implementations for SM 9.0.
 - **Success criteria:**
@@ -234,7 +234,7 @@ phase); Team D runs locally (doc only).
 - ❌ Train Nemotron on Claude-generated outputs.
 - ❌ Measure perf without an `nvidia-smi` capture in the artifact.
 - ❌ Claim a TRT-LLM-vs-vLLM win without a paired 24h shadow run.
-- ❌ Touch any file under `/Users/kiteboard/prism2/` (parallel
+- ❌ Touch any file under `~/prism2/` (parallel
   session's worktree).
 - ❌ Skip the verification step on any team's "done" claim.
 

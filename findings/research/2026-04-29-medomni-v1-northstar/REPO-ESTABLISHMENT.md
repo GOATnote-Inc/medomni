@@ -120,7 +120,7 @@ rsync -av --exclude=".git" --exclude=".venv" --exclude=".pytest_cache" --exclude
   --exclude="data/raw_pdfs/" --exclude="trt_engines/" --exclude="*.engine" \
   --exclude="nemo/checkpoints/" --exclude="reproducibility/captured/" \
   --exclude=".env" --exclude="third_party/" \
-  /Users/kiteboard/prism42-nemotron-med/ /tmp/medomni-fresh/
+  <repo-root>/ /tmp/medomni-fresh/
 
 # 4. Stage by name (NEVER -A or .)
 git add README.md LICENSE CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md \

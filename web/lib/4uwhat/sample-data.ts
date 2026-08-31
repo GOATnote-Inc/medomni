@@ -1,5 +1,5 @@
 // 4UWHAt — design fallback patient slice.
-// TypeScript port of /Users/kiteboard/medomni/assets/app/data.jsx, used by
+// TypeScript port of assets/app/data.jsx (repo root), used by
 // the Records OS dashboard when no live FHIR patient is selected (or the
 // `get_patient_context` tool fails). Persona: synthetic — Maya Okafor —
 // matches the design prototype 1:1. NOT PHI; safe to ship publicly.

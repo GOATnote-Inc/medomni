@@ -1,7 +1,7 @@
 # CARD delta — v0 (numpy retrieval) → v0.5 Phase 2.1 (cuVS+nx-cugraph+corpus extended)
 
-- **Baseline**: `/Users/kiteboard/prism42-nemotron-med/results/ci-medomni-heldout-20260429-142936/heldout.json`
-- **Candidate**: `/Users/kiteboard/prism42-nemotron-med/results/ci-medomni-heldout-phase2.1-20260429-231731/heldout.json`
+- **Baseline**: `results/ci-medomni-heldout-20260429-142936/heldout.json`
+- **Candidate**: `results/ci-medomni-heldout-phase2.1-20260429-231731/heldout.json`
 - **Mean score**: `0.273` → `0.335` (+0.062)
 - **Verdict**: MIXED — lift +0.062 but worst regression -0.150
 

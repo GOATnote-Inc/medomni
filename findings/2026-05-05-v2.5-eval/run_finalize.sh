@@ -1,9 +1,9 @@
 #!/bin/bash
 # Phase D: stats + leakage + manifest + report.
 set -e
-REPO=/Users/kiteboard/medomni/.claude/worktrees/ship-rule-eval
+REPO="${REPO:?path to the medomni checkout (worktree) used for this eval}"
 EVAL_DIR=$REPO/findings/2026-05-05-v2.5-eval
-PY=/Users/kiteboard/medomni/.venv/bin/python3
+PY="$REPO/.venv/bin/python3"
 
 cd "$REPO"
 

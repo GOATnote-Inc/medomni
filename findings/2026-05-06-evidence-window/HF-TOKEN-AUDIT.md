@@ -9,7 +9,7 @@ context. Per memory `feedback_never_read_env.md` and `feedback_no_secret_value_d
 
 ```bash
 awk -F= '/^HF_TOKEN=/ {print "HF_TOKEN: present, len=", length($2)}' \
-  /Users/kiteboard/prism42-nemotron-med/.env
+  <repo-root>/.env
 ```
 
 `awk` reads the file byte-by-byte and emits ONLY the length of the value;
@@ -24,7 +24,7 @@ HF_TOKEN: present, len= 37
 
 - 37 characters is consistent with a standard HuggingFace token (prefix
   `hf_` + 34-char body). Cannot distinguish read-only vs write from length
-  alone. The `.env.example` template at `/Users/kiteboard/prism42-nemotron-med/.env.example`
+  alone. The `.env.example` template at `<repo-root>/.env.example`
   documents this slot as "read-only, gated-model access" — but HF Hub
   upload requires WRITE scope. The user must verify scope manually before E8.
 
@@ -35,10 +35,10 @@ Before running `huggingface-cli upload` (see HF-MODEL-CARD-DRAFT.md):
 1. Confirm token write scope at https://huggingface.co/settings/tokens
    (token name "prism42-nemotron-med" or similar; "Write" scope, not just
    "Read"). If only Read, generate a fresh Write token, replace in
-   `/Users/kiteboard/prism42-nemotron-med/.env`, re-run this audit.
+   `<repo-root>/.env`, re-run this audit.
 
 2. Verify token is NOT the prod-shared token from
-   `/Users/kiteboard/lostbench/.env` (per `prism42-nemotron-med/CLAUDE.md` §2,
+   `the operator secrets file ($SECRETS_ENV)` (per `prism42-nemotron-med/CLAUDE.md` §2,
    the medomni / prism42-nemotron-med repos must use a SEPARATE token to
    isolate scope).
 

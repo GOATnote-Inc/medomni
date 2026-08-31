@@ -193,4 +193,4 @@ V0 baselines (canonical gpt-4.1 graded, per `findings/2026-05-01-medgemma-recipe
 - [`findings/2026-05-05-v2.5-reasoning-sft/PREREG.yaml`](../2026-05-05-v2.5-reasoning-sft/PREREG.yaml) — pre-reg
 - [`findings/2026-05-05-fire-v2.5-runbook/RUNBOOK.md`](../2026-05-05-fire-v2.5-runbook/RUNBOOK.md) — Step 0-6 user-action
 - [`findings/2026-05-05-v2.5-base-precision-mismatch/CARD.md`](../2026-05-05-v2.5-base-precision-mismatch/CARD.md) — why BF16 not FP8
-- [`feedback_lobster_oom_judge_collision.md`](../../../.claude/projects/-Users-kiteboard/memory/feedback_lobster_oom_judge_collision.md) — durable lesson from iter-52 OOM
+- `feedback_lobster_oom_judge_collision.md` (operator agent memory; not in repo) — durable lesson from iter-52 OOM

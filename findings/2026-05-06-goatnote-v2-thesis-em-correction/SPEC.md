@@ -117,7 +117,7 @@ This is the load-bearing insight: **the repo already has EM-shaped artifacts.** 
 
 ### 3.1 `healthcraft` is an EM training environment
 
-From `~/.claude/projects/-Users-kiteboard/memory/MEMORY.md`:
+From the operator's agent memory (MEMORY.md; not in repo):
 > **HEALTHCRAFT** ... Emergency Medicine RL Training Environment adapting Corecraft architecture (arXiv:2602.16179v5). 195 eval tasks, 2,255 binary criteria (515 safety-critical), 6 categories. V8 results (authoritative, 2026-03-15): Claude Opus 4.6 Pass@1 24.8% [21.5–28.4] / Pass@3 37.9% / Pass^3 13.8% / reward 0.634 / safety-fail 27.5%. GPT-5.4 Pass@1 12.6% [10.2–15.6] / Pass@3 24.6% / Pass^3 3.1% / reward 0.546 / safety-fail 34.0%.
 
 This is already a publication-quality EM benchmark, with NeurIPS 2026 D&B whitepaper in dual-build.

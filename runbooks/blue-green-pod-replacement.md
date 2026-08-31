@@ -134,7 +134,7 @@ The web app at `medomni.vercel.app/4UWHAt` reads `MEDOMNI_TUNNEL_URL` to reach t
 **Pre-cutover hygiene** (memory: `feedback_vercel_deploy_from_main.md`):
 
 ```bash
-cd /Users/kiteboard/medomni
+cd "$REPO"  # your medomni checkout
 git checkout main
 git pull --ff-only
 ```
@@ -171,7 +171,7 @@ vercel env add MEDOMNI_TUNNEL_URL production    # paste green URL when prompted
 **Redeploy** (with `--archive=tgz` because medomni has 16K+ files; memory: `feedback_vercel_auto_deploy_can_silently_disconnect.md`):
 
 ```bash
-cd /Users/kiteboard/medomni
+cd "$REPO"  # your medomni checkout
 vercel --prod --archive=tgz
 ```
 
@@ -207,7 +207,7 @@ ssh unnecessary-peach-catfish 'docker stop vllm-omni-b300'
 If smoke fails or the cutover causes user-visible breakage, atomic rollback:
 
 ```bash
-cd /Users/kiteboard/medomni
+cd "$REPO"  # your medomni checkout
 git checkout main && git pull --ff-only
 
 # Restore previous URL
@@ -266,7 +266,7 @@ ls /home/ubuntu/data-queue/
 ### 2.3 Boot factory + RAG on green
 
 ```bash
-cd /Users/kiteboard/medomni    # (on the green pod, from /home/ubuntu/medomni)
+cd "$REPO"    # (on the green pod, from /home/ubuntu/medomni)
 export H200_VLLM_IMAGE_DIGEST="sha256:..."   # from §2.0
 bash scripts/launch_h200_factory.sh
 ```

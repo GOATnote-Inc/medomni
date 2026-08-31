@@ -339,13 +339,13 @@ Phases 1 and 2.1 run in parallel where possible; Phase 2.2 unblocks Phase 3's B3
 
 ## 10. Critical files for implementation
 
-- `/Users/kiteboard/prism42-nemotron-med/findings/research/2026-04-29-medomni-v0/architecture-v2.md`
-- `/Users/kiteboard/prism42-nemotron-med/findings/research/2026-04-29-medomni-v0/v2.5-b300-uplift.md`
-- `/Users/kiteboard/prism42-nemotron-med/findings/research/2026-04-29-medomni-v0/methodology-status.md`
-- `/Users/kiteboard/prism42-nemotron-med/findings/research/2026-04-29-omni-canonical/CANONICAL.md`
-- `/Users/kiteboard/prism42-nemotron-med/findings/research/2026-04-29-graph-rag-rethink/synthesis.md`
-- `/Users/kiteboard/prism42-nemotron-med/corpus/clinical-fixtures-heldout/MANIFEST.md`
-- `/Users/kiteboard/prism42-nemotron-med/results/ci-medomni-heldout-20260429-142936/CARD.md`
+- `findings/research/2026-04-29-medomni-v0/architecture-v2.md`
+- `findings/research/2026-04-29-medomni-v0/v2.5-b300-uplift.md`
+- `findings/research/2026-04-29-medomni-v0/methodology-status.md`
+- `findings/research/2026-04-29-omni-canonical/CANONICAL.md`
+- `findings/research/2026-04-29-graph-rag-rethink/synthesis.md`
+- `corpus/clinical-fixtures-heldout/MANIFEST.md`
+- `results/ci-medomni-heldout-20260429-142936/CARD.md`
 
 ---
 

@@ -109,7 +109,7 @@ The closed-loop framing is consistent with the medomni v1 architecture decisions
 
 ### 3.3 Layer 3 — EMDR-domain RAG
 
-The in-flight build at `/Users/kiteboard/emdr-rag` (memory `project_emdr_rag.md` — 42 commits, deployment-ready pending six user-action gates) is the foundation. It is sovereign: Nemotron 3 Nano Omni on vLLM (NVFP4 on B300 catfish, fp8 fallback on H100/H200), `llama-3.2-nv-embedqa-1b-v2` + `llama-3.2-nv-rerankqa-1b-v2` (NIM, both Apache-2.0-compatible — NV-Embed-v2's CC-BY-NC was disqualified for paid clinical), Milvus+cuVS, cuGraph, NeMo Guardrails Colang 1.0, FastAPI. Crisis path is **deterministic** regex+classifier → hard template, never LLM-improvised. The corpus is ~95 HTML pages + 20 Buzzsprout transcripts ~= 350K tokens.
+The in-flight build at `~/emdr-rag` (memory `project_emdr_rag.md` — 42 commits, deployment-ready pending six user-action gates) is the foundation. It is sovereign: Nemotron 3 Nano Omni on vLLM (NVFP4 on B300 catfish, fp8 fallback on H100/H200), `llama-3.2-nv-embedqa-1b-v2` + `llama-3.2-nv-rerankqa-1b-v2` (NIM, both Apache-2.0-compatible — NV-Embed-v2's CC-BY-NC was disqualified for paid clinical), Milvus+cuVS, cuGraph, NeMo Guardrails Colang 1.0, FastAPI. Crisis path is **deterministic** regex+classifier → hard template, never LLM-improvised. The corpus is ~95 HTML pages + 20 Buzzsprout transcripts ~= 350K tokens.
 
 For v2 the corpus expands beyond `scalingupemdr.com` to cover the full clinical evidence base:
 
@@ -403,7 +403,7 @@ Two bonus decisions of slightly lower priority:
 
 Three reasons the timing is correct.
 
-**(1) The substrate is live, not vapor.** The skills router (`findings/2026-05-05-skills-router-v1/CARD.md`) is wired to `https://medomni.vercel.app/api/agent?profile=v_final` today; the clinical-skill-review CI is gating PRs today; the adversarial-probe daemon is running today; the EMDR-RAG build (`/Users/kiteboard/emdr-rag`) is 42 commits, deployment-ready, license-clean, with a baseline pass@1=0.360 saved. Nothing in this SPEC requires a research breakthrough. Every layer has a working primitive in this repo or in a sibling repo.
+**(1) The substrate is live, not vapor.** The skills router (`findings/2026-05-05-skills-router-v1/CARD.md`) is wired to `https://medomni.vercel.app/api/agent?profile=v_final` today; the clinical-skill-review CI is gating PRs today; the adversarial-probe daemon is running today; the EMDR-RAG build (`~/emdr-rag`) is 42 commits, deployment-ready, license-clean, with a baseline pass@1=0.360 saved. Nothing in this SPEC requires a research breakthrough. Every layer has a working primitive in this repo or in a sibling repo.
 
 **(2) The YC RFS framing is current and converges.** The three letters (Alströmer / Blomfield / Hu) appeared together in Summer 2026's RFS; the deep-dive analyses (VC Corner / Epsilla / StartupHub) are May 2026, not 2024. The "twilight of SaaS / dawn of agents" framing is *the* current framing among YC-adjacent capital, which is the capital cohort GOATnote will most credibly raise from. Aligning the company narrative with the framing the relevant LPs already read each Tuesday is free leverage.
 

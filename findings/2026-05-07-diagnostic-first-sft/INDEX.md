@@ -43,7 +43,7 @@
   - Full: `N_PILOT=230 RUN_TAG=full_n230 .venv/bin/python pilot.py`
 - **`kappa_probe.py`** — emit κ review artifacts (one-shot).
 
-## Source code (in `/Users/kiteboard/medomni/scripts/ship_rule_lib/`)
+## Source code (in `scripts/ship_rule_lib/`)
 
 - `failure_cluster.py` — taxonomy, classifier, `rubric_deltas`, "Fails to..." rewrite. 16 tests in `tests/test_failure_cluster.py`.
 - `corpus_generator.py` — V2.5b corpus scaffold + `make_orca_generation_fn` factory. 17 tests in `tests/test_corpus_generator.py`.

@@ -686,7 +686,7 @@ def cmd_report(args: argparse.Namespace) -> int:
         'EVAL_DIR="$REPO/findings/2026-05-05-v2.5-eval"',
         "",
         "# 1. Pre-flight grader (laptop side).",
-        "set -a && source /Users/kiteboard/lostbench/.env && set +a",
+        'set -a && source "$SECRETS_ENV" && set +a',
         'python3 "$REPO/scripts/ship_rule_eval.py" smoke',
         "",
         "# 2. Pod-side gen (run on lobster). Loop arms × benchmarks × seeds.",

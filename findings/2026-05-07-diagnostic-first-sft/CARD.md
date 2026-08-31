@@ -68,7 +68,7 @@ The dominant remediation targets, in proportion:
 .venv/bin/ruff check scripts/ship_rule_lib/failure_cluster.py  # clean
 
 # Re-run full classification (~12 min, ~$1)
-set -a && source /Users/kiteboard/lostbench/.env && set +a
+set -a && source "${SECRETS_ENV:?path to operator secrets file}" && set +a
 N_PILOT=230 RUN_TAG=full_n230 .venv/bin/python findings/2026-05-07-diagnostic-first-sft/pilot.py
 ```
 

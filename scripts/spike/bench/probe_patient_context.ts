@@ -13,7 +13,7 @@
 //   2. scripts/spike/.spike-token exists with a valid bearer token.
 //
 // Run:
-//   cd /Users/kiteboard/medomni/web && npx tsx ../scripts/spike/bench/probe_patient_context.ts
+//   cd web && npx tsx ../scripts/spike/bench/probe_patient_context.ts
 //
 // Output: Markdown table to stdout with per-patient + aggregate p50/p95/p99
 // of the get_patient_context tool's wall-clock latency.

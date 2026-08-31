@@ -34,14 +34,15 @@ QWEN_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 def assert_openai_key() -> None:
     """Verify OPENAI_API_KEY is in env without printing it.
 
-    Source the key out-of-band via `set -a && source /Users/kiteboard/lostbench/.env && set +a`
+    Source the key out-of-band via `set -a && source "$SECRETS_ENV" && set +a`
+    (SECRETS_ENV = path to the operator secrets file; never committed)
     BEFORE running the driver. Raises RuntimeError if absent or short.
     """
     key = os.environ.get("OPENAI_API_KEY", "")
     if not key:
         raise RuntimeError(
             "OPENAI_API_KEY missing from env. Source the canonical .env via "
-            "`set -a && source /Users/kiteboard/lostbench/.env && set +a` "
+            '`set -a && source "$SECRETS_ENV" && set +a` '
             "BEFORE running the laptop-side grade subcommand. "
             "Per memory feedback_never_read_env.md, do NOT cat the .env."
         )

@@ -1,8 +1,8 @@
 # Diagnostic-first SFT V2.5b — failure-mode probe harness (step 1)
 
 Date: 2026-05-07
-Owner: kiteboard
-Pod: exact-kind-orca (H100 80GB Scaleway, sole pod for ~1 month)
+Owner: operator
+Pod: H100 80GB (Scaleway; sole pod for ~1 month, since decommissioned)
 Repo: medomni (this repo) — laptop-side tooling only this turn
 
 ## Origin
@@ -123,7 +123,7 @@ Outputs:
 5. Pilot N=10 first, inspect JSONL by hand, surface to user. Do NOT auto-fire
    N=230 without explicit user OK.
 6. The 6 graded JSONL files live in the worktree
-   `/Users/kiteboard/medomni/.claude/worktrees/ship-rule-eval/findings/2026-05-05-v2.5-eval-thinking/graded/`.
+   `<eval-worktree>/findings/2026-05-05-v2.5-eval-thinking/graded/`.
    Per memory `feedback_check_worktree_status_before_cherrypick.md`, those
    files are untracked in the worktree. Do not move them this turn — read in
    place via the `--graded-dir` flag.
@@ -134,7 +134,7 @@ Outputs:
 ```
 pytest tests/test_failure_cluster.py -v          # all green
 python scripts/ship_rule_eval.py failure-cluster \
-    --graded-dir /Users/kiteboard/medomni/.claude/worktrees/ship-rule-eval/findings/2026-05-05-v2.5-eval-thinking/graded \
+    --graded-dir "$REPO"/findings/2026-05-05-v2.5-eval-thinking/graded \
     --benchmark healthbench-hard \
     --n-pilot 10 \
     --out findings/2026-05-07-diagnostic-first-sft/

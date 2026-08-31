@@ -1,7 +1,7 @@
 # CARD delta — v1.0 N=6 (consolidated) → v1.0 N=30 (Phase 1.7 broadened)
 
-- **Baseline**: `/Users/kiteboard/prism42-nemotron-med/results/ci-medomni-heldout-consolidated-20260429-173557/heldout.json`
-- **Candidate**: `/Users/kiteboard/prism42-nemotron-med/results/ci-medomni-heldout-n30-20260429-211018/heldout.json`
+- **Baseline**: `results/ci-medomni-heldout-consolidated-20260429-173557/heldout.json`
+- **Candidate**: `results/ci-medomni-heldout-n30-20260429-211018/heldout.json`
 - **Mean score**: `0.385` → `0.369` (-0.016)
 - **Verdict**: REGRESSION — mean dropped -0.016
 

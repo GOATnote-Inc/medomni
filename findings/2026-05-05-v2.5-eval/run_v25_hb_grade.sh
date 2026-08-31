@@ -3,15 +3,16 @@
 set -e
 SEED=$1
 [ -z "$SEED" ] && { echo "usage: $0 <seed>"; exit 2; }
-EVAL=/Users/kiteboard/medomni/.claude/worktrees/ship-rule-eval/findings/2026-05-05-v2.5-eval
-PY=/Users/kiteboard/medomni/.venv/bin/python3
-SCRIPTS=/Users/kiteboard/medomni/.claude/worktrees/ship-rule-eval/scripts
+REPO="${REPO:?path to the medomni checkout (worktree) used for this eval}"
+EVAL="$REPO/findings/2026-05-05-v2.5-eval"
+PY="$REPO/.venv/bin/python3"
+SCRIPTS="$REPO/scripts"
 
 GEN_LOCAL="$EVAL/gen-laptop/healthbench-hard__v25__seed${SEED}.jsonl"
 OUT="$EVAL/graded/healthbench-hard__v25__seed${SEED}.jsonl"
 
 # Source key
-set -a; source /Users/kiteboard/lostbench/.env; set +a
+set -a; source "${SECRETS_ENV:?path to operator secrets file}"; set +a
 
 # Poll until pod has 200 records
 while true; do

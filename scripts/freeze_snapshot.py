@@ -198,7 +198,7 @@ def main() -> int:
     }
 
     # Layer 6 — corpora + graph
-    openem_path = Path("/Users/kiteboard/openem-corpus")
+    openem_path = Path.home() / "openem-corpus"
     openem_commit = _git("rev-parse", "HEAD", cwd=openem_path) if openem_path.exists() else None
     graph_artifact = REPO / "data" / "lazygraph" / "openem_370_persona_tagged_v1.gpickle"
     manifest["corpus"] = {

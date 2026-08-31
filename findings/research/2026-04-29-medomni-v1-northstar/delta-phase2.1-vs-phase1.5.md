@@ -1,7 +1,7 @@
 # CARD delta — Phase 2.1 (numpy fallback, 78 chunks) → Phase 1.5 (107 chunks: +PHS2008 verbatim + 5 trial summaries)
 
-- **Baseline**: `/Users/kiteboard/prism42-nemotron-med/results/ci-medomni-heldout-phase2.1-20260429-231731/heldout.json`
-- **Candidate**: `/Users/kiteboard/prism42-nemotron-med/results/ci-medomni-heldout-phase1.5-20260429-171233/heldout.json`
+- **Baseline**: `results/ci-medomni-heldout-phase2.1-20260429-231731/heldout.json`
+- **Candidate**: `results/ci-medomni-heldout-phase1.5-20260429-171233/heldout.json`
 - **Mean score**: `0.335` → `0.385` (+0.050)
 - **Verdict**: MIXED — lift +0.050 but worst regression -0.340
 

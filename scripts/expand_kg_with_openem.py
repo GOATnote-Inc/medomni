@@ -12,13 +12,13 @@ is a ~2000-node medical KG with multi-hop traversal via NetworkX (or
 nx-cugraph when `NETWORKX_BACKEND_PRIORITY=cugraph` is set).
 
 The OpenEM corpus is consumed read-only; this script does not write into
-`/Users/kiteboard/openem-corpus/`. Output lands under
+`~/openem-corpus/`. Output lands under
 `data/seed_kg/expansions/openem_370.gpickle` (gitignored).
 
 OpenEM corpus location is discovered via:
   1. --openem-root CLI arg, OR
   2. OPENEM_CORPUS env var, OR
-  3. default /Users/kiteboard/openem-corpus
+  3. default ~/openem-corpus
 
 License: OpenEM tier1 conditions are Apache-2.0 + CC-BY (per its CLAUDE.md
 §3 / §4); only that licensed corpus is allowed in tier1. We import only
@@ -54,7 +54,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SEED_KG_DIR = REPO_ROOT / "data" / "seed_kg"
 OUT_DIR = SEED_KG_DIR / "expansions"
 
-DEFAULT_OPENEM_ROOT = Path("/Users/kiteboard/openem-corpus")
+DEFAULT_OPENEM_ROOT = Path.home() / "openem-corpus"
 
 
 def _resolve_openem_root(cli_root: str | None) -> Path:
@@ -264,7 +264,9 @@ def validate(g: Any) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--openem-root", help="path to /Users/kiteboard/openem-corpus")
+    parser.add_argument(
+        "--openem-root", help="path to the openem-corpus checkout (default ~/openem-corpus)"
+    )
     parser.add_argument(
         "--no-merge",
         action="store_true",

@@ -7,6 +7,9 @@ PIP := $(VENV)/bin/pip
 POD_H200 := warm-lavender-narwhal
 POD_H100 := prism-mla-h100
 
+# Sibling prism42 checkout used by the freeze-baseline/freeze-verify targets.
+PRISM42_DIR ?= $(HOME)/prism42
+
 .PHONY: help
 help:
 	@grep -hE '^[a-zA-Z][a-zA-Z0-9_-]*:.*##' $(MAKEFILE_LIST) | sort | awk -F':.*?##' '{printf "  %-22s %s\n", $$1, $$2}'
@@ -47,8 +50,8 @@ freeze-baseline: ## Capture session-start prod-page hashes + public-repo HEAD
 	  printf "%s  " "$$url"; \
 	  curl -s --max-time 15 "https://prism42-console.vercel.app$$url" | shasum -a 256 | awk '{print $$1}'; \
 	done | tee /tmp/prism42-nemotron-med-session/prod_hashes_before.txt
-	@git -C /Users/kiteboard/prism42 rev-parse HEAD > /tmp/prism42-nemotron-med-session/prism42_head.txt
-	@git -C /Users/kiteboard/prism42 diff HEAD | shasum -a 256 | awk '{print $$1}' > /tmp/prism42-nemotron-med-session/prism42_worktree_hash.txt
+	@git -C $(PRISM42_DIR) rev-parse HEAD > /tmp/prism42-nemotron-med-session/prism42_head.txt
+	@git -C $(PRISM42_DIR) diff HEAD | shasum -a 256 | awk '{print $$1}' > /tmp/prism42-nemotron-med-session/prism42_worktree_hash.txt
 	@echo "Captured baseline at /tmp/prism42-nemotron-med-session/"
 
 .PHONY: freeze-verify
@@ -63,11 +66,11 @@ freeze-verify: ## Verify prod surfaces unchanged since freeze-baseline
 	@diff /tmp/_freeze_before.txt /tmp/_freeze_after.txt && echo "prod pages byte-identical to baseline" || (echo "FAIL: prod page hashes diverged"; exit 1)
 	@rm -f /tmp/_freeze_before.txt /tmp/_freeze_after.txt
 	@echo "=== prism42 HEAD ==="
-	@head_now=$$(git -C /Users/kiteboard/prism42 rev-parse HEAD); \
+	@head_now=$$(git -C $(PRISM42_DIR) rev-parse HEAD); \
 	 head_then=$$(cat /tmp/prism42-nemotron-med-session/prism42_head.txt); \
 	 [ "$$head_now" = "$$head_then" ] && echo "prism42 HEAD unchanged: $$head_now" || (echo "FAIL: prism42 HEAD moved"; exit 1)
 	@echo "=== prism42 worktree ==="
-	@hash_now=$$(git -C /Users/kiteboard/prism42 diff HEAD | shasum -a 256 | awk '{print $$1}'); \
+	@hash_now=$$(git -C $(PRISM42_DIR) diff HEAD | shasum -a 256 | awk '{print $$1}'); \
 	 hash_then=$$(cat /tmp/prism42-nemotron-med-session/prism42_worktree_hash.txt); \
 	 [ "$$hash_now" = "$$hash_then" ] && echo "prism42 worktree unchanged: $$hash_now" || (echo "FAIL: prism42 worktree diverged"; exit 1)
 
