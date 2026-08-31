@@ -71,6 +71,6 @@ jobs:
       # pull_request → base..head diff; schedule / workflow_dispatch →
       # full-history scan.
       - name: TruffleHog OSS — verifier-based secret scan
-        uses: trufflesecurity/trufflehog@v3.95.2
+        uses: trufflesecurity/trufflehog@v3.97.1
         with:
           extra_args: --results=verified,unknown
