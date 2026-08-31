@@ -43,7 +43,7 @@ jobs:
       # Base commit, NOT the PR head: the rubric prompt and any repo policy
       # files the agent reads must come from what is already on main.
       - name: Checkout base (rubric source)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
           ref: ${{ github.event.pull_request.base.sha }}
