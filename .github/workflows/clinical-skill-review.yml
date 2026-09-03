@@ -19,14 +19,10 @@ name: clinical-skill-review
 # Reuses existing repo secret ANTHROPIC_API_KEY_PR_REVIEW (same key used by
 # .github/workflows/agent-pr-review.yml). No new secrets added.
 
+# Frozen 2026-09: this workflow calls a paid model API and no key is provisioned;
+# it runs only on manual dispatch.
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
-    paths:
-      - "web/lib/agent/skills/**/*.md"
-      - "mvp/medomni-inference/skills/**/*.md"
-      - "mvp/medomni-inference/system_prompt_v1.md"
-      - "corpus/pins/**"
+  workflow_dispatch:
 
 permissions:
   contents: read
