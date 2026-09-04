@@ -1,6 +1,5 @@
 <!--
 
-> **Maintenance status (2026-09):** passive. This repository is kept available as a reference implementation; CI runs on pushes and pull requests only, Dependabot security alerts remain enabled, and no scheduled jobs or hosted services consume ongoing resources. No active development is planned.
 
   © 2026 GOATnote, Inc. and contributors. All rights reserved.
 
@@ -27,6 +26,8 @@
 -->
 
 # MedOmni
+
+> **Maintenance status (2026-09):** passive. This repository is kept available as a reference implementation; CI runs on pushes and pull requests only, Dependabot security alerts remain enabled, and no scheduled jobs or hosted services consume ongoing resources. No active development is planned.
 
 **Nurse-first medical reasoning — trained and evaluated on NVIDIA's open-component stack.**
 
