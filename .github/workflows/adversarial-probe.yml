@@ -50,8 +50,6 @@ jobs:
     # write of probe_rc and cascading into a spurious "failure" verdict.
     # 18 min gives headroom for slow vllm cold-starts + retries.
     timeout-minutes: 18
-    env:
-      PROBE_FINDINGS_DIR: ${{ runner.temp }}/adversarial-probe-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
 
@@ -61,6 +59,9 @@ jobs:
 
       - name: Install probe deps
         run: pip install requests==2.34.2
+
+      - name: Prepare probe output
+        run: echo "PROBE_FINDINGS_DIR=$RUNNER_TEMP/adversarial-probe-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
 
       - name: Run adversarial probe
         id: probe
