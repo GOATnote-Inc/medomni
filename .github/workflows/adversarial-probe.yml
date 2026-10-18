@@ -58,7 +58,10 @@ jobs:
           python-version: "3.11"
 
       - name: Install probe deps
-        run: pip install requests==2.32.3
+        run: pip install requests==2.34.2
+
+      - name: Prepare probe output
+        run: echo "PROBE_FINDINGS_DIR=$RUNNER_TEMP/adversarial-probe-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
 
       - name: Run adversarial probe
         id: probe
@@ -70,19 +73,23 @@ jobs:
         # success is decided by the final `gate` step below.
         continue-on-error: true
         run: |
+          mkdir -p "$PROBE_FINDINGS_DIR"
           set +e
           python scripts/adversarial_probe.py \
             --endpoint "$ENDPOINT" \
-            --threshold "$THRESHOLD"
+            --threshold "$THRESHOLD" \
+            --findings-dir "$PROBE_FINDINGS_DIR"
           echo "probe_rc=$?" >> "$GITHUB_OUTPUT"
 
-      - name: Locate latest CARD
+      - name: Locate this run's CARD
         id: card
         if: always()
         run: |
-          # Pick the newest probe directory regardless of timestamp; each run
-          # writes a new one.
-          card_dir=$(find findings -maxdepth 1 -type d -name '2026-05-05-adversarial-probe-*' | sort | tail -1)
+          # Never attach a checked-in historical CARD when preflight fails.
+          if [ ! -d "$PROBE_FINDINGS_DIR" ]; then
+            exit 0
+          fi
+          card_dir=$(find "$PROBE_FINDINGS_DIR" -mindepth 1 -maxdepth 1 -type d -name '2026-05-05-adversarial-probe-*' | sort | tail -1)
           if [ -n "$card_dir" ] && [ -f "$card_dir/CARD.md" ]; then
             echo "card_dir=$card_dir" >> "$GITHUB_OUTPUT"
             echo "card_path=$card_dir/CARD.md" >> "$GITHUB_OUTPUT"
@@ -106,7 +113,7 @@ jobs:
       #    creating a new one. Prevents the 200-issue runaway that pre-fix
       #    accumulated when the probe hit a 404 endpoint hourly.
       - name: Open or update alarm issue
-        if: steps.probe.outputs.probe_rc != '0' && steps.card.outputs.card_path != ''
+        if: always() && steps.probe.outputs.probe_rc != '' && steps.probe.outputs.probe_rc != '0'
         uses: actions/github-script@v7
         env:
           CARD_PATH: ${{ steps.card.outputs.card_path }}
@@ -116,14 +123,18 @@ jobs:
             const fs = require('fs');
             const cardPath = process.env.CARD_PATH;
             const rc = process.env.PROBE_RC;
-            const kindLabel = rc === '2' ? 'infrastructure' : 'regression';
-            const kindWord = rc === '2' ? 'INFRASTRUCTURE FAILURE' : 'regression detected';
+            const kindLabel = rc === '3' ? 'regression' : 'infrastructure';
+            const kindWord = rc === '3' ? 'regression detected' : 'INFRASTRUCTURE FAILURE';
 
-            let body = '';
-            try {
-              body = fs.readFileSync(cardPath, 'utf8');
-            } catch (e) {
-              body = `Could not read CARD at ${cardPath}: ${e.message}`;
+            let body = rc === '2'
+              ? 'Preflight failed; clinical cases were not run. See the probe logs for the infrastructure error. No result CARD was produced.'
+              : 'No result CARD was produced. See the probe logs for the failure.';
+            if (cardPath) {
+              try {
+                body = fs.readFileSync(cardPath, 'utf8');
+              } catch (e) {
+                body = `Could not read CARD at ${cardPath}: ${e.message}`;
+              }
             }
             const MAX = 60000;
             if (body.length > MAX) {
@@ -178,9 +189,10 @@ jobs:
               `**Probe exit code:** ${rc} (${kindLabel})`,
               ``,
               `Track #4 of the Cherny-pattern initiative. The adversarial probe`,
-              `against the live \`/api/agent\` endpoint hit a ${kindLabel} alarm. CARD`,
-              `attached below; full per-case JSON in the`,
-              `\`adversarial-probe-card-${context.runId}\` workflow artifact.`,
+              `against the live \`/api/agent\` endpoint hit a ${kindLabel} alarm.`,
+              cardPath
+                ? `CARD attached below; full per-case JSON is in the \`adversarial-probe-card-${context.runId}\` workflow artifact.`
+                : `No result artifact was produced; inspect the probe step in the linked run.`,
               ``,
               `Future failures of the same kind within 24h will append as comments`,
               `on this issue instead of opening duplicates. Close this issue when`,
@@ -199,24 +211,25 @@ jobs:
             });
             core.info(`Opened new ${kindLabel} issue.`);
 
-      - name: Gate — fail job on regression
+      - name: Gate — fail job on probe failure
         if: always()
+        env:
+          PROBE_RC: ${{ steps.probe.outputs.probe_rc }}
         run: |
-          rc='${{ steps.probe.outputs.probe_rc }}'
-          # Empty rc = probe step was cancelled / killed before it could
-          # write to GITHUB_OUTPUT (job timeout, runner pre-empted, etc.).
-          # Treat as infrastructure failure: same downstream issue label,
-          # different cause line than a 4xx endpoint.
-          if [ -z "$rc" ]; then
-            echo "Probe did not report an exit code — step was cancelled or"
-            echo "killed before writing to GITHUB_OUTPUT. Treating as"
-            echo "infrastructure failure; the upstream Open-or-update-alarm"
-            echo "step will skip because steps.probe.outputs.probe_rc is empty,"
-            echo "so this gate is the only alarm surface. Failing the job."
-            exit 2
-          fi
-          if [ "$rc" != "0" ]; then
-            echo "Adversarial probe regressed (rc=$rc); failing the job."
-            exit 1
-          fi
-          echo "Adversarial probe passed."
+          case "$PROBE_RC" in
+            0)
+              echo "Adversarial probe passed."
+              ;;
+            2)
+              echo "Adversarial probe infrastructure failure; clinical cases were not run. See probe logs."
+              exit 2
+              ;;
+            3)
+              echo "Adversarial probe regressed; pass rate was below threshold."
+              exit 3
+              ;;
+            *)
+              echo "Adversarial probe did not complete normally (rc=${PROBE_RC:-missing}); treating as infrastructure failure."
+              exit 2
+              ;;
+          esac
